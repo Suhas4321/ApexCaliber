@@ -1,4 +1,5 @@
 import ChatGPTCodeBlock from '../ChatGPTCodeBlock'
+import SolidPrincipleSimulator from './SolidPrincipleSimulator'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { SOLID_PLAYBOOK } from '../../lib/systemDesignData'
@@ -47,7 +48,7 @@ export default function SystemDesignSolidView({ index, onNavigate, completedIds,
       </div>
 
       {/* 1. Mental Model & Scenario */}
-      <section id="section-concept" className="space-y-3">
+      <section id="section-concept" className="space-y-4">
         <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
           <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-violet-500/15 font-mono text-2xs font-semibold text-violet-600 dark:text-violet-400">1</span>
           <span>Core Mental Model & Production Code Review</span>
@@ -62,6 +63,8 @@ export default function SystemDesignSolidView({ index, onNavigate, completedIds,
           </span>
           {solid.companyScenario}
         </blockquote>
+
+        <SolidPrincipleSimulator letter={solid.letter} name={solid.name} />
       </section>
 
       {/* 2. When to Use vs Not Use */}

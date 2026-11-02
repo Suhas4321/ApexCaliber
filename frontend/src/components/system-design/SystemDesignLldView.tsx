@@ -1,4 +1,5 @@
 import ChatGPTCodeBlock from '../ChatGPTCodeBlock'
+import LldDomainSimulator from './LldDomainSimulator'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { LLD_PROBLEMS } from '../../lib/systemDesignData'
@@ -78,14 +79,16 @@ export default function SystemDesignLldView({ index, onNavigate, completedIds, o
       </section>
 
       {/* 2. Invariant & Concurrency */}
-      <section id="section-invariant" className="space-y-3 pt-4 border-t border-line">
+      <section id="section-invariant" className="space-y-4 pt-4 border-t border-line">
         <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
           <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-cyan-500/15 font-mono text-2xs text-cyan font-semibold">2</span>
-          <span>Core Domain Invariant & Concurrency Guarantee</span>
+          <span>Core Domain Invariant & Interactive Concurrency Simulation</span>
         </h2>
         <blockquote className="rounded-r-md border-l-[3px] border-cyan bg-panel-2 px-4 py-3 font-mono text-xs sm:text-sm leading-relaxed text-chalk shadow-xs">
           {lld.invariant}
         </blockquote>
+
+        <LldDomainSimulator problemId={lld.id} problemTitle={lld.title} />
       </section>
 
       {/* 3. Production Implementation */}

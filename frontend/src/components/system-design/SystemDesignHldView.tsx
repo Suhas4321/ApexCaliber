@@ -1,5 +1,6 @@
-import { ArrowRight, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
+import ArchitectureFlowSimulator from './ArchitectureFlowSimulator'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { HLD_PROBLEMS } from '../../lib/systemDesignData'
@@ -103,47 +104,16 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
         </blockquote>
       </section>
 
-      {/* 3. Scaled Hop-by-Hop Flow */}
+      {/* 3. Scaled Hop-by-Hop Flow & Live Interactive Simulation */}
       <section id="section-architecture" className="space-y-4 pt-4 border-t border-line">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-amber-500/15 font-mono text-2xs text-amber font-semibold">3</span>
-            <span>Scaled Distributed Architecture (Hop-by-Hop Request Flow)</span>
-          </h2>
-          <span className="font-mono text-2xs text-muted">Hop {activeHop + 1} of {hld.architectureNodes.length}</span>
-        </div>
-
-        <div className="rounded-lg border border-line bg-panel p-4 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {hld.architectureNodes.map((node, idx) => {
-              const isCurrent = activeHop === idx
-              return (
-                <div key={node.id} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveHop(idx)}
-                    className={`rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors ${
-                      isCurrent
-                        ? 'border-amber bg-amber/15 text-chalk font-semibold shadow-xs'
-                        : 'border-line bg-panel-2 text-muted hover:text-chalk hover:bg-panel-3'
-                    }`}
-                  >
-                    <span className="font-mono text-[10px] uppercase text-faint block">0{idx + 1} · {node.metric}</span>
-                    <span className="font-semibold text-chalk mt-0.5">{node.label}</span>
-                  </button>
-                  {idx < hld.architectureNodes.length - 1 && <ArrowRight size={12} className="text-muted shrink-0" />}
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="rounded-md border border-line bg-panel-2 p-3 text-xs sm:text-sm">
-            <strong className="text-chalk block mb-1">
-              Hop 0{activeHop + 1}: {hld.architectureNodes[activeHop]?.label}
-            </strong>
-            <p className="text-muted leading-relaxed">{hld.architectureNodes[activeHop]?.role}</p>
-          </div>
-        </div>
+        <ArchitectureFlowSimulator
+          systemTitle={hld.title}
+          nodes={hld.architectureNodes}
+          peakRps={hld.scale.peakRps}
+          latencySla={hld.scale.latency}
+          activeHop={activeHop}
+          onHopChange={setActiveHop}
+        />
       </section>
 
       {/* 4. Chaos & Defenses Table */}
