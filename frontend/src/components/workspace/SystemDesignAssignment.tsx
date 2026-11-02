@@ -54,6 +54,7 @@ export default function SystemDesignAssignment({
   const [outcomes, setOutcomes] = useState<TestRunOutcome[] | null>(null)
   const [compileErr, setCompileErr] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [editorHeight, setEditorHeight] = useState<number>(540)
 
   const handleCodeChange = (next: string) => {
     setCode(next)
@@ -214,6 +215,34 @@ export default function SystemDesignAssignment({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 border-r border-line pr-2 mr-1 text-[11px] font-mono">
+              <span className="text-muted text-[10px] hidden sm:inline">Editor:</span>
+              <button
+                type="button"
+                onClick={() => setEditorHeight(420)}
+                className={`px-1.5 py-0.5 rounded transition-colors ${editorHeight === 420 ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'}`}
+                title="Compact Height (420px)"
+              >
+                420px
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorHeight(540)}
+                className={`px-1.5 py-0.5 rounded transition-colors ${editorHeight === 540 ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'}`}
+                title="Standard Height (540px)"
+              >
+                540px
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorHeight(720)}
+                className={`px-1.5 py-0.5 rounded transition-colors ${editorHeight === 720 ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'}`}
+                title="Expanded Height (720px)"
+              >
+                720px
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setShowHint((h) => !h)}
@@ -258,9 +287,9 @@ export default function SystemDesignAssignment({
           </blockquote>
         )}
 
-        {/* Generous 460px Editor (No tiny 210px box!) */}
+        {/* Generous Editor with user-controlled height (420px / 540px / 720px) */}
         <div className="overflow-hidden rounded-b-lg border border-line shadow-inner">
-          <CodeEditor value={code} onChange={handleCodeChange} height={460} />
+          <CodeEditor value={code} onChange={handleCodeChange} height={editorHeight} />
         </div>
 
         {/* Actions */}

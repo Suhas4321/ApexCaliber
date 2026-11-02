@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Layers, LayoutGrid, Server, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Layers, LayoutGrid, PanelLeftClose, Server, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HLD_PROBLEMS, LLD_PROBLEMS, SOLID_PLAYBOOK } from '../../lib/systemDesignData'
@@ -15,6 +15,8 @@ interface Props {
   completedIds: string[]
   solvedCount: number
   totalCount: number
+  width?: number
+  onClose?: () => void
 }
 
 export default function SystemDesignSidebar({
@@ -23,6 +25,8 @@ export default function SystemDesignSidebar({
   completedIds,
   solvedCount,
   totalCount,
+  width,
+  onClose,
 }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ solid: true, lld: true, hld: true })
   const toggle = (k: string) => setOpenSections((p) => ({ ...p, [k]: !p[k] }))
@@ -39,12 +43,28 @@ export default function SystemDesignSidebar({
   ]
 
   return (
-    <aside className="w-72 shrink-0 border-r border-line bg-panel flex flex-col h-screen sticky top-0 select-none overflow-hidden">
+    <aside
+      style={width ? { width: `${width}px` } : undefined}
+      className="w-72 shrink-0 border-r border-line bg-panel flex flex-col h-screen sticky top-0 select-none overflow-hidden transition-[width] duration-75"
+    >
       <div className="p-4 border-b border-line bg-panel-2 space-y-2.5">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-chalk transition-colors">
-          <ArrowLeft size={13} />
-          <span>Exit to Dashboard</span>
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-chalk transition-colors">
+            <ArrowLeft size={13} />
+            <span>Exit to Dashboard</span>
+          </Link>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center rounded p-1 text-muted hover:text-chalk hover:bg-panel-3 transition-colors"
+              title="Close Sidebar"
+              aria-label="Close Sidebar"
+            >
+              <PanelLeftClose size={15} />
+            </button>
+          )}
+        </div>
         <div>
           <div className="flex items-center justify-between text-2xs">
             <span className="font-plate font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Citadel VII</span>
