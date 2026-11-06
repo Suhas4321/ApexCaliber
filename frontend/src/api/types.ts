@@ -16,6 +16,12 @@ export type VisualizerKind =
   | 'cache_relational'
   | 'network_flow'
   | 'memory_view'
+  | 'auth_flow'
+  | 'queue_flow'
+  | 'token_flow'
+  | 'vector_space'
+  | 'rag_pipeline'
+  | 'agent_state_graph'
 
 export interface Progress {
   concept_done: boolean
@@ -139,6 +145,65 @@ export interface QuestionContent {
   pitch_script: string
   twist: { lc: number; title: string; why: string }
   viz: VizConfig
+  journey?: JourneyStage[] | null
+}
+
+export interface PredictionChoice {
+  id: string
+  label: string
+  explanation: string
+  is_correct?: boolean
+}
+
+export interface PoePrediction {
+  prompt: string
+  choices: PredictionChoice[]
+  revealed_explanation: string
+}
+
+export interface ControlDefinition {
+  id: string
+  label: string
+  type: 'slider' | 'select' | 'toggle' | 'button'
+  default: unknown
+  options?: string[] | number[]
+  min?: number
+  max?: number
+  step?: number
+  description?: string
+}
+
+export interface ApexTraceEnvelope {
+  version: 'apex.trace.v1'
+  session_id?: string
+  topic_slug?: string
+  stage_id?: string
+  timestamp_ms: number
+  source: 'mode_a_simulator' | 'mode_b_lab'
+  event_family: 'http' | 'network' | 'storage' | 'memory' | 'concurrency' | 'auth' | 'queue' | 'ai'
+  event_type: string
+  payload: Record<string, unknown>
+  annotations?: {
+    highlight_nodes?: string[]
+    log_level?: 'info' | 'warn' | 'error' | 'success'
+    callout_message?: string
+  }
+}
+
+export interface JourneyStage {
+  id: string
+  title: string
+  subtitle?: string
+  scenario: string
+  mechanism: string
+  prediction?: PoePrediction | null
+  controls?: ControlDefinition[]
+  visualizer_type?: string
+  visualizer_config?: Record<string, unknown>
+  default_trace?: ApexTraceEnvelope[] | Record<string, unknown>[]
+  lab_starter_code?: string | null
+  lab_solution?: string | null
+  lab_tests?: TestCase[]
 }
 
 export interface VizConfig {

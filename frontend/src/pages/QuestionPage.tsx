@@ -22,6 +22,7 @@ import InterviewAnswerPlaybook from '../components/workspace/InterviewAnswerPlay
 import LeetCodeLeftPanel, { type LeftTab } from '../components/workspace/LeetCodeLeftPanel'
 import LeetCodeRightPanel from '../components/workspace/LeetCodeRightPanel'
 import ResizableSplit from '../components/workspace/ResizableSplit'
+import JourneyPlayer from '../features/journey/JourneyPlayer'
 import { useGrimoire } from '../lib/grimoire'
 import { precomputeTraceNarration } from '../lib/narrator/index.ts'
 import { useDraft } from '../lib/useDraft'
@@ -44,7 +45,7 @@ export default function QuestionPage() {
     if (st === 2) return 'drills'
     return 'description'
   })
-  const [workspaceStep, setWorkspaceStep] = useState<'learn' | 'code' | 'interview'>(() => {
+  const [workspaceStep, setWorkspaceStep] = useState<'journey' | 'learn' | 'code' | 'interview'>(() => {
     const st = Number(search.get('stage'))
     if (st === 1) return 'learn'
     if (st === 4) return 'interview'
@@ -81,6 +82,11 @@ export default function QuestionPage() {
         setProgress(q.progress)
         progressRef.current = q.progress
         setTracedCode(q.content?.solution?.code || q.content?.starter_code || '')
+        if ((q.content?.journey && q.content.journey.length > 0) || (q.citadel_id && q.citadel_id !== 'dsa')) {
+          if (!search.get('stage')) {
+            setWorkspaceStep('journey')
+          }
+        }
       })
       .catch((e) => setError(e.message))
 
@@ -252,17 +258,30 @@ export default function QuestionPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* 3-Step Pedagogical Switcher: 1. Data Structure & Concept -> 2. Code Terminal -> 3. Interview Guide */}
+          {/* Pedagogical Step Switcher */}
           <div className="inline-flex items-center rounded-md border border-line bg-panel-2 p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setWorkspaceStep('learn')}
-              className={`rounded px-3 py-1 font-medium transition-colors ${
-                workspaceStep === 'learn' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
-              }`}
-            >
-              1. Data Structure & Concept
-            </button>
+            {((question.content?.journey && question.content.journey.length > 0) || (question.citadel_id && question.citadel_id !== 'dsa')) && (
+              <button
+                type="button"
+                onClick={() => setWorkspaceStep('journey')}
+                className={`rounded px-3 py-1 font-medium transition-colors ${
+                  workspaceStep === 'journey' ? 'bg-panel-3 text-brand-light font-semibold shadow-sm' : 'text-muted hover:text-chalk'
+                }`}
+              >
+                1. Concept Journey
+              </button>
+            )}
+            {(!question.citadel_id || question.citadel_id === 'dsa') && (
+              <button
+                type="button"
+                onClick={() => setWorkspaceStep('learn')}
+                className={`rounded px-3 py-1 font-medium transition-colors ${
+                  workspaceStep === 'learn' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
+                }`}
+              >
+                1. Data Structure & Concept
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setWorkspaceStep('code')}
@@ -332,6 +351,13 @@ export default function QuestionPage() {
       {!content ? (
         <div className="p-8">
           <ErrorNote message="This question's content is not yet available." />
+        </div>
+      ) : workspaceStep === 'journey' ? (
+        <div className="flex-1 min-h-0 w-full overflow-y-auto bg-void">
+          <JourneyPlayer
+            question={question}
+            onProceedToCode={() => setWorkspaceStep('code')}
+          />
         </div>
       ) : workspaceStep === 'learn' ? (
         <div className="flex-1 min-h-0 w-full overflow-y-auto bg-void">

@@ -123,6 +123,47 @@ class Twist(Strict):
     why: str  # what changes and how the template adapts
 
 
+class PredictionChoice(Strict):
+    id: str
+    label: str
+    explanation: str
+    is_correct: bool = False
+
+
+class PoePrediction(Strict):
+    prompt: str
+    choices: list[PredictionChoice] = Field(min_length=2)
+    revealed_explanation: str
+
+
+class ControlDefinition(Strict):
+    id: str
+    label: str
+    type: Literal["slider", "select", "toggle", "button"]
+    default: Any
+    options: list[str] | list[int] | None = None
+    min: float | int | None = None
+    max: float | int | None = None
+    step: float | int | None = None
+    description: str = ""
+
+
+class JourneyStage(Strict):
+    id: str
+    title: str
+    subtitle: str = ""
+    scenario: str  # Markdown scenario anchor
+    mechanism: str  # Markdown causal explanation
+    prediction: PoePrediction | None = None
+    controls: list[ControlDefinition] = Field(default_factory=list)
+    visualizer_type: str = "system_blueprint"
+    visualizer_config: dict[str, Any] = Field(default_factory=dict)
+    default_trace: list[dict[str, Any]] = Field(default_factory=list)
+    lab_starter_code: str | None = None
+    lab_solution: str | None = None
+    lab_tests: list[TestCase] = Field(default_factory=list)
+
+
 class VizComplexity(BaseModel):
     time: str | None = None
     space: str | None = None
@@ -161,6 +202,7 @@ class QuestionContent(Strict):
     seed_sql: str | None = None
     concept_trace: dict[str, Any] | None = None
     visual_demo: dict[str, Any] | None = None
+    journey: list[JourneyStage] | None = None
 
     @model_validator(mode="after")
     def _visualize_test_in_range(self):

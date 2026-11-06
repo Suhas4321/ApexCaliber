@@ -73,6 +73,13 @@ export default function VisualizerHost({
         return <NetworkPacketFlowVisualizer {...visualizerProps} />
       case 'memory_view':
         return <VirtualMemoryPagingVisualizer {...visualizerProps} />
+      case 'auth_flow':
+      case 'queue_flow':
+      case 'token_flow':
+      case 'vector_space':
+      case 'rag_pipeline':
+      case 'agent_state_graph':
+        return <SystemBlueprintVisualizer {...visualizerProps} />
       case 'array_pointer':
       default:
         return <ArrayPointerVisualizer {...visualizerProps} />

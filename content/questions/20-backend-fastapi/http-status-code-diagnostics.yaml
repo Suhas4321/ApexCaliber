@@ -3,274 +3,614 @@ lc: 9501
 citadel_id: backend_apis
 brick_layer: 1
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    "When an API call fails in production, how do clients know whether to retry immediately, retry with backoff, or abort?"
-    Standardizing error responses using RFC 9110 status codes allows client SDKs and upstream API gateways (Envoy, Kong)
-    to automatically distinguish transient network/rate-limiting faults (429, 502, 504) from permanent client bugs (400, 401, 403, 422).
-  brute_force: >-
-    Catching all Python exceptions in a top-level `except Exception:` block and returning `HTTP 500 Internal Server Error`
-    with a generic JSON payload. This blinds downstream microservices and breaks automated retry pipelines.
+  problem_it_solves: '"When an API call fails in production, how do clients know whether
+    to retry immediately, retry with backoff, or abort?" Standardizing error responses
+    using RFC 9110 status codes allows client SDKs and upstream API gateways (Envoy,
+    Kong) to automatically distinguish transient network/rate-limiting faults (429,
+    502, 504) from permanent client bugs (400, 401, 403, 422).'
+  brute_force: Catching all Python exceptions in a top-level `except Exception:` block
+    and returning `HTTP 500 Internal Server Error` with a generic JSON payload. This
+    blinds downstream microservices and breaks automated retry pipelines.
   brute_force_complexity: O(1) error classification that destroys system observability.
-  key_insight: >-
-    HTTP status codes fall into deterministic semantic tiers:
-    - 401 Unauthorized: Client did not provide valid authentication credentials (e.g., missing or expired JWT Bearer token).
-    - 403 Forbidden: Client is authenticated, but lacks the RBAC permission scope for the requested resource.
-    - 422 Unprocessable Entity: Request format is valid JSON, but payload violates Pydantic schema constraints.
-    - 429 Too Many Requests: Rate limit exceeded (transient, retryable with exponential backoff).
-    - 502 Bad Gateway: Upstream dependency crashed or dropped socket connection.
-    - 504 Gateway Timeout: Upstream worker exceeded reverse-proxy timeout window.
-  real_world: >-
-    FastAPI global exception handlers, AWS API Gateway response mapping, and Drizz automated test runner retry engines.
-
+  key_insight: 'HTTP status codes fall into deterministic semantic tiers: - 401 Unauthorized:
+    Client did not provide valid authentication credentials (e.g., missing or expired
+    JWT Bearer token). - 403 Forbidden: Client is authenticated, but lacks the RBAC
+    permission scope for the requested resource. - 422 Unprocessable Entity: Request
+    format is valid JSON, but payload violates Pydantic schema constraints. - 429
+    Too Many Requests: Rate limit exceeded (transient, retryable with exponential
+    backoff). - 502 Bad Gateway: Upstream dependency crashed or dropped socket connection.
+    - 504 Gateway Timeout: Upstream worker exceeded reverse-proxy timeout window.'
+  real_world: FastAPI global exception handlers, AWS API Gateway response mapping,
+    and Drizz automated test runner retry engines.
 statement:
-  clean: |
-    Implement an HTTP status diagnostics classifier for API failures:
-    `def classify_http_error(self, scenario: dict) -> dict`.
-    
-    Given a `scenario` dictionary describing an API failure scenario:
-    1. If `scenario.get("rate_limit_exceeded")` is True:
-       return `{"status_code": 429, "reason": "Too Many Requests", "retryable": True}`
-    2. If `scenario.get("upstream_timeout")` is True:
-       return `{"status_code": 504, "reason": "Gateway Timeout", "retryable": True}`
-    3. If `scenario.get("downstream_offline")` is True:
-       return `{"status_code": 502, "reason": "Bad Gateway", "retryable": True}`
-    4. If `scenario.get("validation_errors")`:
-       return `{"status_code": 422, "reason": "Unprocessable Entity", "retryable": False}`
-    5. If `scenario.get("error_type") == "auth"`:
-       - If not `scenario.get("authenticated", False)`:
-         return `{"status_code": 401, "reason": "Unauthorized", "retryable": False}`
-       - If `scenario.get("authenticated", False)` and not `scenario.get("has_role", False)`:
-         return `{"status_code": 403, "reason": "Forbidden", "retryable": False}`
-    6. If `scenario.get("error_type") == "conflict"`:
-       return `{"status_code": 409, "reason": "Conflict", "retryable": False}`
-    7. If `scenario.get("error_type") == "not_found"`:
-       return `{"status_code": 404, "reason": "Not Found", "retryable": False}`
-    8. Otherwise (unhandled runtime crash):
-       return `{"status_code": 500, "reason": "Internal Server Error", "retryable": False}`
-  oa_story: |
-    **Drizz Egress Gateway Diagnostics — Automated Test Runner**
-    
-    During automated mobile app test execution, microservice calls intermittently failed.
-    Without proper status classification, our test harness failed builds on transient 504 gateway timeouts
+  clean: "Implement an HTTP status diagnostics classifier for API failures:\n`def\
+    \ classify_http_error(self, scenario: dict) -> dict`.\n\nGiven a `scenario` dictionary\
+    \ describing an API failure scenario:\n1. If `scenario.get(\"rate_limit_exceeded\"\
+    )` is True:\n   return `{\"status_code\": 429, \"reason\": \"Too Many Requests\"\
+    , \"retryable\": True}`\n2. If `scenario.get(\"upstream_timeout\")` is True:\n\
+    \   return `{\"status_code\": 504, \"reason\": \"Gateway Timeout\", \"retryable\"\
+    : True}`\n3. If `scenario.get(\"downstream_offline\")` is True:\n   return `{\"\
+    status_code\": 502, \"reason\": \"Bad Gateway\", \"retryable\": True}`\n4. If\
+    \ `scenario.get(\"validation_errors\")`:\n   return `{\"status_code\": 422, \"\
+    reason\": \"Unprocessable Entity\", \"retryable\": False}`\n5. If `scenario.get(\"\
+    error_type\") == \"auth\"`:\n   - If not `scenario.get(\"authenticated\", False)`:\n\
+    \     return `{\"status_code\": 401, \"reason\": \"Unauthorized\", \"retryable\"\
+    : False}`\n   - If `scenario.get(\"authenticated\", False)` and not `scenario.get(\"\
+    has_role\", False)`:\n     return `{\"status_code\": 403, \"reason\": \"Forbidden\"\
+    , \"retryable\": False}`\n6. If `scenario.get(\"error_type\") == \"conflict\"\
+    `:\n   return `{\"status_code\": 409, \"reason\": \"Conflict\", \"retryable\"\
+    : False}`\n7. If `scenario.get(\"error_type\") == \"not_found\"`:\n   return `{\"\
+    status_code\": 404, \"reason\": \"Not Found\", \"retryable\": False}`\n8. Otherwise\
+    \ (unhandled runtime crash):\n   return `{\"status_code\": 500, \"reason\": \"\
+    Internal Server Error\", \"retryable\": False}`\n"
+  oa_story: '**Drizz Egress Gateway Diagnostics — Automated Test Runner**
+
+
+    During automated mobile app test execution, microservice calls intermittently
+    failed.
+
+    Without proper status classification, our test harness failed builds on transient
+    504 gateway timeouts
+
     while endlessly retrying 401 unauthorized errors.
-    
-    Implement this diagnostic classifier to establish clear retry vs. abort semantics across all backend services.
-  trigger_keywords: ["http status diagnostics", "classify_http_error", "scenario"]
+
+
+    Implement this diagnostic classifier to establish clear retry vs. abort semantics
+    across all backend services.
+
+    '
+  trigger_keywords:
+  - http status diagnostics
+  - classify_http_error
+  - scenario
   examples:
-    - input: 'scenario = {"rate_limit_exceeded": True}'
-      output: '{"status_code": 429, "reason": "Too Many Requests", "retryable": True}'
-      explanation: "Rate limits are transient: client can retry after backoff."
-    - input: 'scenario = {"error_type": "auth", "authenticated": True, "has_role": False}'
-      output: '{"status_code": 403, "reason": "Forbidden", "retryable": False}'
-      explanation: "Caller has valid token but lacks role permissions (Forbidden)."
-    - input: 'scenario = {"validation_errors": ["missing email field"]}'
-      output: '{"status_code": 422, "reason": "Unprocessable Entity", "retryable": False}'
-      explanation: "Pydantic validation failure returns HTTP 422."
+  - input: 'scenario = {"rate_limit_exceeded": True}'
+    output: '{"status_code": 429, "reason": "Too Many Requests", "retryable": True}'
+    explanation: 'Rate limits are transient: client can retry after backoff.'
+  - input: 'scenario = {"error_type": "auth", "authenticated": True, "has_role": False}'
+    output: '{"status_code": 403, "reason": "Forbidden", "retryable": False}'
+    explanation: Caller has valid token but lacks role permissions (Forbidden).
+  - input: 'scenario = {"validation_errors": ["missing email field"]}'
+    output: '{"status_code": 422, "reason": "Unprocessable Entity", "retryable": False}'
+    explanation: Pydantic validation failure returns HTTP 422.
   constraints:
-    - "scenario is a valid dictionary"
-    - "Keys in scenario may be missing or None"
-
+  - scenario is a valid dictionary
+  - Keys in scenario may be missing or None
 constraint_quiz:
-  prompt: "What is the key technical difference between HTTP 401 and HTTP 403?"
+  prompt: What is the key technical difference between HTTP 401 and HTTP 403?
   options:
-    - "401 means unauthenticated (who are you?), while 403 means unauthorized/forbidden (I know who you are, but you do not have permission)"
-    - "401 is for GET requests, 403 is for POST requests"
-    - "401 is returned by the client, 403 is returned by the server"
-    - "401 is retryable, 403 is never retryable"
+  - 401 means unauthenticated (who are you?), while 403 means unauthorized/forbidden
+    (I know who you are, but you do not have permission)
+  - 401 is for GET requests, 403 is for POST requests
+  - 401 is returned by the client, 403 is returned by the server
+  - 401 is retryable, 403 is never retryable
   answer: 0
-  explanation: "401 Unauthorized indicates missing or invalid credentials (authentication failure). 403 Forbidden indicates the caller is recognized, but lacks sufficient permissions (authorization failure)."
-
+  explanation: 401 Unauthorized indicates missing or invalid credentials (authentication
+    failure). 403 Forbidden indicates the caller is recognized, but lacks sufficient
+    permissions (authorization failure).
 pattern_quiz:
-  prompt: "Why should upstream reverse proxy timeouts return 504 Gateway Timeout instead of 500 Internal Server Error?"
+  prompt: Why should upstream reverse proxy timeouts return 504 Gateway Timeout instead
+    of 500 Internal Server Error?
   options:
-    - "Because 504 informs client SDKs that the failure is upstream and transient, making safe exponential-backoff retries possible"
-    - "Because 504 compresses HTTP response headers better than 500"
-    - "Because HTTP 500 is deprecated in HTTP/2"
-    - "Because 504 automatically restarts the backend container"
+  - Because 504 informs client SDKs that the failure is upstream and transient, making
+    safe exponential-backoff retries possible
+  - Because 504 compresses HTTP response headers better than 500
+  - Because HTTP 500 is deprecated in HTTP/2
+  - Because 504 automatically restarts the backend container
   answer: 0
-  explanation: "504 indicates an upstream worker deadline exceeded. Automated client SDKs safely retry idempotent 504 requests, whereas a generic 500 may indicate a permanent database mutation bug."
-
+  explanation: 504 indicates an upstream worker deadline exceeded. Automated client
+    SDKs safely retry idempotent 504 requests, whereas a generic 500 may indicate
+    a permanent database mutation bug.
 function:
   name: classify_http_error
   params:
-    - name: scenario
-      type: any
+  - name: scenario
+    type: any
   returns: any
-
-starter_code: |
-  class Solution:
-      def classify_http_error(self, scenario: dict) -> dict:
-          pass
-
+starter_code: "class Solution:\n    def classify_http_error(self, scenario: dict)\
+  \ -> dict:\n        pass\n"
 tests:
-  - args: [{"rate_limit_exceeded": true}]
-    expected:
-      status_code: 429
-      reason: "Too Many Requests"
-      retryable: true
-    note: "Transient rate limit returns 429"
-
-  - args: [{"upstream_timeout": true}]
-    expected:
-      status_code: 504
-      reason: "Gateway Timeout"
-      retryable: true
-    note: "Timeout returns 504"
-
-  - args: [{"error_type": "auth", "authenticated": true, "has_role": false}]
-    expected:
-      status_code: 403
-      reason: "Forbidden"
-      retryable: false
-    note: "Role forbidden returns 403"
-
-  - args: [{"error_type": "auth", "authenticated": false}]
-    expected:
-      status_code: 401
-      reason: "Unauthorized"
-      retryable: false
-    note: "Unauthenticated returns 401"
-
-  - args: [{"validation_errors": ["field missing"]}]
-    expected:
-      status_code: 422
-      reason: "Unprocessable Entity"
-      retryable: false
-    note: "Pydantic validation returns 422"
-
-  - args: [{}]
-    expected:
-      status_code: 500
-      reason: "Internal Server Error"
-      retryable: false
-    note: "Unknown crash defaults to 500"
-
+- args:
+  - rate_limit_exceeded: true
+  expected:
+    status_code: 429
+    reason: Too Many Requests
+    retryable: true
+  note: Transient rate limit returns 429
+- args:
+  - upstream_timeout: true
+  expected:
+    status_code: 504
+    reason: Gateway Timeout
+    retryable: true
+  note: Timeout returns 504
+- args:
+  - error_type: auth
+    authenticated: true
+    has_role: false
+  expected:
+    status_code: 403
+    reason: Forbidden
+    retryable: false
+  note: Role forbidden returns 403
+- args:
+  - error_type: auth
+    authenticated: false
+  expected:
+    status_code: 401
+    reason: Unauthorized
+    retryable: false
+  note: Unauthenticated returns 401
+- args:
+  - validation_errors:
+    - field missing
+  expected:
+    status_code: 422
+    reason: Unprocessable Entity
+    retryable: false
+  note: Pydantic validation returns 422
+- args:
+  - {}
+  expected:
+    status_code: 500
+    reason: Internal Server Error
+    retryable: false
+  note: Unknown crash defaults to 500
 visualize_test: 0
-
 drills:
-  - title: Detect retryable status
-    skill: setup
-    goal: Check if an HTTP code is retryable.
-    instructions: |
-      Return `code in (429, 502, 503, 504)`.
-    function:
-      name: is_retryable_code
-      params: [{name: code}]
-    starter_code: |
-      class Solution:
-          def is_retryable_code(self, code: int) -> bool:
-              pass
-    tests:
-      - {args: [429], expected: true}
-      - {args: [404], expected: false}
-    solution: |
-      class Solution:
-          def is_retryable_code(self, code: int) -> bool:
-              return code in (429, 502, 503, 504)
-    hint: "Use `return code in (429, 502, 503, 504)`."
+- title: Detect retryable status
+  skill: setup
+  goal: Check if an HTTP code is retryable.
+  instructions: 'Return `code in (429, 502, 503, 504)`.
 
-  - title: Auth vs Forbidden distinction
-    skill: core
-    goal: Return 401 if not authed, else 403 if no role.
-    instructions: |
-      Implement `auth_code(authed: bool, has_role: bool) -> int`.
-    function:
-      name: auth_code
-      params: [{name: authed}, {name: has_role}]
-    starter_code: |
-      class Solution:
-          def auth_code(self, authed: bool, has_role: bool) -> int:
-              pass
-    tests:
-      - {args: [false, false], expected: 401}
-      - {args: [true, false], expected: 403}
-    solution: |
-      class Solution:
-          def auth_code(self, authed: bool, has_role: bool) -> int:
-              return 401 if not authed else (403 if not has_role else 200)
-    hint: "If not authed return 401, else if not has_role return 403."
+    '
+  function:
+    name: is_retryable_code
+    params:
+    - name: code
+  starter_code: "class Solution:\n    def is_retryable_code(self, code: int) -> bool:\n\
+    \        pass\n"
+  tests:
+  - args:
+    - 429
+    expected: true
+  - args:
+    - 404
+    expected: false
+  solution: "class Solution:\n    def is_retryable_code(self, code: int) -> bool:\n\
+    \        return code in (429, 502, 503, 504)\n"
+  hint: Use `return code in (429, 502, 503, 504)`.
+- title: Auth vs Forbidden distinction
+  skill: core
+  goal: Return 401 if not authed, else 403 if no role.
+  instructions: 'Implement `auth_code(authed: bool, has_role: bool) -> int`.
 
-  - title: Safe dictionary lookup
-    skill: edge
-    goal: Safely get boolean key with default False.
-    instructions: |
-      Return `bool(d.get(k, False))`.
-    function:
-      name: safe_bool
-      params: [{name: d}, {name: k}]
-    starter_code: |
-      class Solution:
-          def safe_bool(self, d: dict, k: str) -> bool:
-              pass
-    tests:
-      - {args: [{"ok": true}, "ok"], expected: true}
-      - {args: [{}, "missing"], expected: false}
-    solution: |
-      class Solution:
-          def safe_bool(self, d: dict, k: str) -> bool:
-              return bool(d.get(k, False))
-    hint: "Return bool(d.get(k, False))."
+    '
+  function:
+    name: auth_code
+    params:
+    - name: authed
+    - name: has_role
+  starter_code: "class Solution:\n    def auth_code(self, authed: bool, has_role:\
+    \ bool) -> int:\n        pass\n"
+  tests:
+  - args:
+    - false
+    - false
+    expected: 401
+  - args:
+    - true
+    - false
+    expected: 403
+  solution: "class Solution:\n    def auth_code(self, authed: bool, has_role: bool)\
+    \ -> int:\n        return 401 if not authed else (403 if not has_role else 200)\n"
+  hint: If not authed return 401, else if not has_role return 403.
+- title: Safe dictionary lookup
+  skill: edge
+  goal: Safely get boolean key with default False.
+  instructions: 'Return `bool(d.get(k, False))`.
 
+    '
+  function:
+    name: safe_bool
+    params:
+    - name: d
+    - name: k
+  starter_code: "class Solution:\n    def safe_bool(self, d: dict, k: str) -> bool:\n\
+    \        pass\n"
+  tests:
+  - args:
+    - ok: true
+    - ok
+    expected: true
+  - args:
+    - {}
+    - missing
+    expected: false
+  solution: "class Solution:\n    def safe_bool(self, d: dict, k: str) -> bool:\n\
+    \        return bool(d.get(k, False))\n"
+  hint: Return bool(d.get(k, False)).
 hints:
-  - "Check transient network and rate limit flags first: `rate_limit_exceeded` (429), `upstream_timeout` (504), and `downstream_offline` (502) all set `retryable: True`."
-  - "Check client payload errors: `validation_errors` returns 422, `conflict` returns 409, `not_found` returns 404, all with `retryable: False`."
-  - "For auth errors, check `authenticated`: if False return 401 Unauthorized; if True but `has_role` is False return 403 Forbidden. Default to 500."
-
+- 'Check transient network and rate limit flags first: `rate_limit_exceeded` (429),
+  `upstream_timeout` (504), and `downstream_offline` (502) all set `retryable: True`.'
+- 'Check client payload errors: `validation_errors` returns 422, `conflict` returns
+  409, `not_found` returns 404, all with `retryable: False`.'
+- 'For auth errors, check `authenticated`: if False return 401 Unauthorized; if True
+  but `has_role` is False return 403 Forbidden. Default to 500.'
 solution:
-  code: |
-    class Solution:
-        def classify_http_error(self, scenario: dict) -> dict:
-            if scenario.get("rate_limit_exceeded"):
-                return {"status_code": 429, "reason": "Too Many Requests", "retryable": True}
+  code: "class Solution:\n    def classify_http_error(self, scenario: dict) -> dict:\n\
+    \        if scenario.get(\"rate_limit_exceeded\"):\n            return {\"status_code\"\
+    : 429, \"reason\": \"Too Many Requests\", \"retryable\": True}\n\n        if scenario.get(\"\
+    upstream_timeout\"):\n            return {\"status_code\": 504, \"reason\": \"\
+    Gateway Timeout\", \"retryable\": True}\n\n        if scenario.get(\"downstream_offline\"\
+    ):\n            return {\"status_code\": 502, \"reason\": \"Bad Gateway\", \"\
+    retryable\": True}\n\n        if scenario.get(\"validation_errors\"):\n      \
+    \      return {\"status_code\": 422, \"reason\": \"Unprocessable Entity\", \"\
+    retryable\": False}\n\n        err_type = scenario.get(\"error_type\")\n     \
+    \   if err_type == \"auth\":\n            if not scenario.get(\"authenticated\"\
+    , False):\n                return {\"status_code\": 401, \"reason\": \"Unauthorized\"\
+    , \"retryable\": False}\n            if not scenario.get(\"has_role\", False):\n\
+    \                return {\"status_code\": 403, \"reason\": \"Forbidden\", \"retryable\"\
+    : False}\n\n        if err_type == \"conflict\":\n            return {\"status_code\"\
+    : 409, \"reason\": \"Conflict\", \"retryable\": False}\n\n        if err_type\
+    \ == \"not_found\":\n            return {\"status_code\": 404, \"reason\": \"\
+    Not Found\", \"retryable\": False}\n\n        return {\"status_code\": 500, \"\
+    reason\": \"Internal Server Error\", \"retryable\": False}\n"
+  explanation: 'Evaluating error scenarios in priority order guarantees accurate RFC
+    status codes.
 
-            if scenario.get("upstream_timeout"):
-                return {"status_code": 504, "reason": "Gateway Timeout", "retryable": True}
+    Transient rate-limiting and gateway connection timeouts are tagged `retryable:
+    True`, allowing
 
-            if scenario.get("downstream_offline"):
-                return {"status_code": 502, "reason": "Bad Gateway", "retryable": True}
-
-            if scenario.get("validation_errors"):
-                return {"status_code": 422, "reason": "Unprocessable Entity", "retryable": False}
-
-            err_type = scenario.get("error_type")
-            if err_type == "auth":
-                if not scenario.get("authenticated", False):
-                    return {"status_code": 401, "reason": "Unauthorized", "retryable": False}
-                if not scenario.get("has_role", False):
-                    return {"status_code": 403, "reason": "Forbidden", "retryable": False}
-
-            if err_type == "conflict":
-                return {"status_code": 409, "reason": "Conflict", "retryable": False}
-
-            if err_type == "not_found":
-                return {"status_code": 404, "reason": "Not Found", "retryable": False}
-
-            return {"status_code": 500, "reason": "Internal Server Error", "retryable": False}
-  explanation: |
-    Evaluating error scenarios in priority order guarantees accurate RFC status codes.
-    Transient rate-limiting and gateway connection timeouts are tagged `retryable: True`, allowing
     downstream proxies or clients to execute exponential-backoff retries.
-    Client-side syntax, validation, and authorization errors are strictly `retryable: False`.
+
+    Client-side syntax, validation, and authorization errors are strictly `retryable:
+    False`.
+
+    '
   time: O(1) dictionary key lookups
   space: O(1) returned dictionary
+pitch_script: '**(Clarify)** "We need to classify API execution scenarios into exact
+  HTTP status codes and determine whether the error is retryable."
 
-pitch_script: |
-  **(Clarify)** "We need to classify API execution scenarios into exact HTTP status codes and determine whether the error is retryable."
 
-  **(Basement Insight)** "Conflating client-side bugs with upstream timeouts by throwing generic HTTP 500s prevents client SDKs from executing automated retries and pollutes production alerts. 4xx codes mean client must fix their payload; 5xx codes mean the server or downstream gateway failed."
+  **(Basement Insight)** "Conflating client-side bugs with upstream timeouts by throwing
+  generic HTTP 500s prevents client SDKs from executing automated retries and pollutes
+  production alerts. 4xx codes mean client must fix their payload; 5xx codes mean
+  the server or downstream gateway failed."
 
-  **(Solution)** "We check transient gateway flags (429, 504, 502) first and mark them retryable. Next, we validate client payload errors (422 validation, 401 missing credentials, 403 insufficient permissions, 404 not found, 409 conflict). Any unmatched exception safely falls back to 500."
+
+  **(Solution)** "We check transient gateway flags (429, 504, 502) first and mark
+  them retryable. Next, we validate client payload errors (422 validation, 401 missing
+  credentials, 403 insufficient permissions, 404 not found, 409 conflict). Any unmatched
+  exception safely falls back to 500."
+
 
   **(Complexity)** "Executes in O(1) time and space."
 
+  '
 twist:
   lc: 9502
   title: Problem Details RFC 7807 Payload Standardization
-  why: >-
-    In enterprise APIs, instead of a plain error message, format responses into the RFC 7807 schema
-    containing `type`, `title`, `status`, `detail`, and `instance` URIs for standardized error tracking.
-
+  why: In enterprise APIs, instead of a plain error message, format responses into
+    the RFC 7807 schema containing `type`, `title`, `status`, `detail`, and `instance`
+    URIs for standardized error tracking.
 viz:
-  title: "HTTP Status Code & Lifecycle Classifier"
+  title: HTTP Status Code & Lifecycle Classifier
+journey:
+- id: w17_s1_why_http
+  title: Why Does HTTP Exist?
+  subtitle: Contrast raw TCP streams with application protocol framing
+  scenario: In 1989, networks could deliver bytes across TCP streams, but servers
+    had no uniform way to know where one file ended, what format it was in, or if
+    authentication was required.
+  mechanism: 'TCP is a continuous byte stream with zero message boundaries. Two send()
+    calls can arrive as one recv(). HTTP introduces text-based framing: Method + Path
+    + Version, CRLF-delimited headers, and explicit Content-Length or Chunked Transfer
+    encoding.'
+  prediction:
+    prompt: If a client sends two back-to-back JSON payloads over an open TCP connection
+      without HTTP headers or length prefixes, what happens on the server?
+    choices:
+    - id: opt_a
+      label: TCP packet fragmentation concatenates the payloads into an unparseable
+        stream, causing JSONDecodeError.
+      explanation: Correct! TCP provides stream delivery, not message framing.
+      is_correct: true
+    - id: opt_b
+      label: The TCP socket automatically splits each payload into a separate isolated
+        string.
+      explanation: Misconception! TCP has no concept of application boundaries.
+      is_correct: false
+    - id: opt_c
+      label: The operating system drops the second payload as duplicate traffic.
+      explanation: Incorrect! The OS delivers all valid TCP sequence bytes in order.
+      is_correct: false
+    revealed_explanation: TCP provides ordered byte delivery, NOT message framing.
+      HTTP headers tell the parser where one request ends and the next begins.
+  controls:
+  - id: payload_size_bytes
+    label: Payload Size (Bytes)
+    type: slider
+    default: 256
+    min: 64
+    max: 4096
+    step: 64
+    description: Adjust inbound payload size to inspect packet fragmentation
+  - id: use_http_framing
+    label: Enable HTTP Length Framing
+    type: toggle
+    default: true
+    description: Include Content-Length header to prevent stream coalescing
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: HTTP Stream Framing Inspector
+- id: w17_s2_request_anatomy
+  title: The Anatomy of an HTTP Request
+  subtitle: Headers, methods, query strings, and body boundaries
+  scenario: A client submits a payment via POST /v1/charges. If the network proxy
+    drops the Content-Length header, how does the upstream server know when to stop
+    reading from the socket?
+  mechanism: 'The HTTP Request Line (METHOD /path HTTP/1.1) defines the action. Headers
+    provide critical metadata: Host (for virtual hosting), Content-Type (MIME parsing),
+    and Content-Length or Transfer-Encoding: chunked (payload boundary).'
+  prediction:
+    prompt: Why is the Host header mandatory in HTTP/1.1 even though the client already
+      resolved the server IP via DNS?
+    choices:
+    - id: opt_a
+      label: Modern cloud servers host thousands of domains on a single IP address
+        (Virtual Hosting); the server uses Host to route to the correct tenant.
+      explanation: Correct! Virtual hosting depends completely on the HTTP Host header.
+      is_correct: true
+    - id: opt_b
+      label: The Host header is used by BGP routers to calculate physical geographical
+        routing.
+      explanation: Misconception! BGP operates at Layer 3 (IP), not Layer 7 (HTTP).
+      is_correct: false
+    - id: opt_c
+      label: It is an obsolete legacy field that modern reverse proxies ignore.
+      explanation: Incorrect! Nginx, Envoy, and Cloudflare reject requests lacking
+        the Host header with HTTP 400.
+      is_correct: false
+    revealed_explanation: Without the Host header, a cloud reverse proxy hosting multiple
+      applications on one IP address cannot route inbound sockets.
+  controls:
+  - id: include_host_header
+    label: Include Host Header
+    type: toggle
+    default: true
+    description: Toggle mandatory HTTP/1.1 Host header
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: Request Line & Header Inspector
+- id: w17_s3_response_semantics
+  title: HTTP Response Semantics & Status Codes
+  subtitle: 'The 5 categorical families: 1xx, 2xx, 3xx, 4xx, and 5xx'
+  scenario: Your frontend makes an API call. An error returns. Should your frontend
+    automated retry loop trigger, or should the app halt and show a validation prompt?
+  mechanism: 'Status codes dictate client contract behavior: 2xx (Success), 3xx (Redirection),
+    4xx (Client fault: bad credentials, schema violation, invalid resource), and 5xx
+    (Server/Gateway failure).'
+  prediction:
+    prompt: If an API client receives HTTP 403 Forbidden, should an automated exponential
+      backoff retry be scheduled?
+    choices:
+    - id: opt_a
+      label: No. 403 means the server understood credentials but refuses permission;
+        retrying the exact same request will always fail.
+      explanation: Correct! 4xx errors represent client bugs or authorization deficits.
+      is_correct: true
+    - id: opt_b
+      label: Yes. 403 is a transient network hiccup that clears after 500ms.
+      explanation: Misconception! 403 is non-transient. Retrying wastes server compute.
+      is_correct: false
+    - id: opt_c
+      label: Yes, but only if the user is authenticated as an administrator.
+      explanation: Incorrect! The server already evaluated permissions and returned
+        Forbidden.
+      is_correct: false
+    revealed_explanation: 4xx codes mean the client must change the request. Only
+      429 (rate-limited) or transient 5xx codes should ever trigger automated client
+      retries.
+  controls:
+  - id: status_code_selected
+    label: Inspect Status Code
+    type: slider
+    default: 403
+    min: 200
+    max: 504
+    step: 1
+    description: Select HTTP response code to evaluate client retry semantics
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: RFC 9110 Status Code Matrix
+- id: w17_s4_failure_isolation
+  title: Where Did the Request Fail? (4xx vs 502 vs 504)
+  subtitle: Isolate client bugs from proxy crashes and worker pool starvation
+  scenario: High-traffic flash sale. A customer clicks Checkout. After 60 seconds
+    of spinning, Nginx returns 504 Gateway Timeout. Did the payment execute?
+  mechanism: Requests pass through Client -> Ingress Gateway (Nginx/Envoy) -> App
+    Worker -> Database. A 502 Bad Gateway means the upstream worker crashed or refused
+    socket connection. A 504 Gateway Timeout means the upstream worker took longer
+    than the reverse proxy timeout.
+  prediction:
+    prompt: When Nginx returns HTTP 504 Gateway Timeout, does that guarantee the database
+      transaction did not execute?
+    choices:
+    - id: opt_a
+      label: No! The backend worker might have committed the database transaction,
+        but the HTTP response failed to reach Nginx before the timeout window.
+      explanation: Correct! This is the fundamental uncertainty of distributed systems.
+      is_correct: true
+    - id: opt_b
+      label: Yes, 504 guarantees the database transaction automatically rolled back.
+      explanation: Misconception! Nginx has no control over the database transaction
+        lifecycle.
+      is_correct: false
+    - id: opt_c
+      label: Yes, 504 occurs before any packets leave Nginx towards the app worker.
+      explanation: Incorrect! Nginx sent the request and waited until proxy_read_timeout
+        expired.
+      is_correct: false
+    revealed_explanation: A 504 timeout only means the proxy stopped waiting; the
+      downstream database may have successfully charged the card!
+  controls:
+  - id: proxy_timeout_ms
+    label: Proxy Timeout (ms)
+    type: slider
+    default: 500
+    min: 100
+    max: 2000
+    step: 50
+    description: Adjust reverse proxy read timeout limit
+  - id: app_processing_ms
+    label: App Worker Latency (ms)
+    type: slider
+    default: 800
+    min: 50
+    max: 2500
+    step: 50
+    description: Simulate database query or worker delay
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: Distributed Gateway & Timeout Inspector
+- id: w17_s5_double_billing_idempotency
+  title: Retry Uncertainty & The Double-Billing Trap
+  subtitle: Safe vs unsafe HTTP methods and Idempotency-Key headers
+  scenario: A mobile app submits a $100 payment via POST. The WiFi drops before receiving
+    the response. The app retries. The customer is billed $200.
+  mechanism: 'RFC 9110 defines GET, PUT, and DELETE as idempotent (f(f(x)) = f(x)).
+    POST is explicitly non-idempotent. To make POST retryable without duplicate mutations,
+    APIs require an Idempotency-Key: <UUID> header stored in Redis with an atomic
+    lock.'
+  prediction:
+    prompt: Why is DELETE /users/42 considered idempotent even if the second call
+      returns HTTP 404 Not Found?
+    choices:
+    - id: opt_a
+      label: Because the end state of the server (user 42 does not exist) is identical
+        whether called once or ten times.
+      explanation: Correct! Idempotence refers to server side-effects, not identical
+        status codes.
+      is_correct: true
+    - id: opt_b
+      label: Because DELETE always returns 200 OK by RFC standard.
+      explanation: Misconception! Returning 404 on subsequent DELETE calls is valid
+        RFC behavior.
+      is_correct: false
+    - id: opt_c
+      label: DELETE is not idempotent; only GET is idempotent.
+      explanation: Incorrect! GET, HEAD, PUT, and DELETE are all idempotent.
+      is_correct: false
+    revealed_explanation: Idempotence means multiple identical requests have the same
+      side-effect as a single request.
+  controls:
+  - id: idempotency_key_active
+    label: Idempotency Key Active
+    type: toggle
+    default: true
+    description: Pass unique UUID in Idempotency-Key header
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: Idempotency & Deduplication Engine
+- id: w17_s6_observability_incident
+  title: Incident Diagnosis Through Partial Observability
+  subtitle: Triaging production alerts using status code distributions and correlation
+    IDs
+  scenario: Payment API error rate spikes to 18%. Ingress logs reveal 90% of the failures
+    are HTTP 429 and 10% are HTTP 500.
+  mechanism: Structured access logs correlate requests via X-Request-ID. A spike in
+    429 indicates rate-limit exhaustion from a rogue client or bot, while 500 indicates
+    unhandled exceptions.
+  prediction:
+    prompt: When a client receives HTTP 429 Too Many Requests, which standard header
+      tells the client how long to back off?
+    choices:
+    - id: opt_a
+      label: Retry-After (specifies seconds or an HTTP-date to wait before next attempt).
+      explanation: Correct! Standardized in RFC 6585 and RFC 9110.
+      is_correct: true
+    - id: opt_b
+      label: X-RateLimit-Reset-Epoch.
+      explanation: Non-standard vendor header. RFC standard is Retry-After.
+      is_correct: false
+    - id: opt_c
+      label: 'Cache-Control: max-age=0.'
+      explanation: Incorrect! Cache-Control governs response caching, not rate limits.
+      is_correct: false
+    revealed_explanation: The Retry-After header provides coordinated backpressure
+      between servers and client SDKs.
+  controls:
+  - id: client_rps
+    label: Client Request Rate (req/sec)
+    type: slider
+    default: 350
+    min: 50
+    max: 1000
+    step: 25
+    description: Simulate incoming client request volume against token bucket
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: Observability & Rate Limiting Timeline
+- id: w17_s7_transfer_challenge
+  title: 'Transfer Challenge: HTTP Error & Retry Classifier'
+  subtitle: Implement production-grade HTTP error and retry classification in Python
+  scenario: Build the production HTTP status classifier that bridges client network
+    exceptions with exact RFC status codes and retry flags.
+  mechanism: 'The classifier maps scenario parameters: transient socket drop / timeout
+    -> 504 / 502 with retryable=True; auth permission failure -> 401/403 with retryable=False.'
+  prediction:
+    prompt: Which error classification guarantees zero duplicate payments while ensuring
+      transient network drops recover automatically?
+    choices:
+    - id: opt_a
+      label: Mark 429, 502, and 504 as retryable (with Idempotency-Key), while marking
+        400, 401, 403, and 422 as non-retryable.
+      explanation: Correct! This exact logic powers production payment SDKs.
+      is_correct: true
+    - id: opt_b
+      label: Mark all 4xx and 5xx errors as retryable with immediate retry.
+      explanation: Catastrophic misconception! Retrying 4xx errors creates thundering
+        herd crashes.
+      is_correct: false
+    - id: opt_c
+      label: Never retry any request over HTTP.
+      explanation: Incorrect! Transient network drops require automated retries.
+      is_correct: false
+    revealed_explanation: Distinguishing transient transport errors from deterministic
+      client bugs is the cornerstone of distributed system resilience.
+  controls:
+  - id: test_scenario_id
+    label: Test Scenario
+    type: slider
+    default: 1
+    min: 1
+    max: 5
+    step: 1
+    description: Select scenario index to run through your classifier
+  visualizer_type: http_lifecycle
+  visualizer_config:
+    title: Production Diagnostic Runner
+  lab_starter_code: "class Solution:\n    def classify_http_error(self, scenario:\
+    \ dict) -> dict:\n        # Implement RFC 9110 status code classifier\n      \
+    \  pass\n"
+  lab_solution: "class Solution:\n    def classify_http_error(self, scenario: dict)\
+    \ -> dict:\n        if scenario.get(\"rate_limit_exceeded\"):\n            return\
+    \ {\"status_code\": 429, \"reason\": \"Too Many Requests\", \"retryable\": True}\n\
+    \        if scenario.get(\"upstream_timeout\"):\n            return {\"status_code\"\
+    : 504, \"reason\": \"Gateway Timeout\", \"retryable\": True}\n        if scenario.get(\"\
+    downstream_offline\"):\n            return {\"status_code\": 502, \"reason\":\
+    \ \"Bad Gateway\", \"retryable\": True}\n        if scenario.get(\"validation_errors\"\
+    ):\n            return {\"status_code\": 422, \"reason\": \"Unprocessable Entity\"\
+    , \"retryable\": False}\n        err_type = scenario.get(\"error_type\")\n   \
+    \     if err_type == \"auth\":\n            if not scenario.get(\"authenticated\"\
+    , False):\n                return {\"status_code\": 401, \"reason\": \"Unauthorized\"\
+    , \"retryable\": False}\n            if not scenario.get(\"has_role\", False):\n\
+    \                return {\"status_code\": 403, \"reason\": \"Forbidden\", \"retryable\"\
+    : False}\n        if err_type == \"conflict\":\n            return {\"status_code\"\
+    : 409, \"reason\": \"Conflict\", \"retryable\": False}\n        if err_type ==\
+    \ \"not_found\":\n            return {\"status_code\": 404, \"reason\": \"Not\
+    \ Found\", \"retryable\": False}\n        return {\"status_code\": 500, \"reason\"\
+    : \"Internal Server Error\", \"retryable\": False}\n"
