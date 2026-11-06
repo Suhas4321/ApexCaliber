@@ -1,0 +1,349 @@
+slug: redis-cache-stampede-mutex
+lc: 9332
+citadel_id: sql_dbms
+brick_layer: 2
+runner_type: python_practical
+
+concept:
+  problem_it_solves: >-
+    What happens when a heavily cached key (such as a celebrity's profile or a Black Friday flash deal) expires under 10,000 requests/second?
+    Every concurrent worker experiences a simultaneous cache miss and rushes to query the primary relational database at the exact same millisecond.
+    This catastrophe is known as the Cache Stampede (or Thundering Herd).
+    The database connection pool is instantly depleted, CPU utilization hits 100%, and query execution times spike from 2ms to over 30 seconds,
+    triggering cascading 504 Gateway Timeouts across the entire application cluster.
+  brute_force: >-
+    Letting every thread that experiences a cache miss query the database independently.
+    Under high concurrency, 5,000 concurrent cache misses trigger 5,000 duplicate expensive SQL joins for the identical record.
+  brute_force_complexity: O(C * D) where C is concurrent requests and D is database query latency.
+  key_insight: >-
+    Protect the database using a Mutex Lock (Distributed Lock):
+    1. On cache miss, attempt to acquire a lock for the key: `SET lock:<key> <token> NX EX <ttl>`.
+    2. Only the winner of the lock executes the heavy database query and repopulates the cache.
+    3. All other waiting requests either wait for the lock holder to finish or back off briefly and retry reading from the cache.
+    4. Once the cache is populated, the lock holder releases the lock, allowing waiting callers to hit the freshly populated cache in RAM.
+  real_world: >-
+    Hot sports scoreboards (IPL/FIFA live scorecards), viral tweet view counters, Black Friday lightning deals on Amazon, and stock ticker quote caching.
+
+statement:
+  clean: |
+    Implement a **Cache Stampede Mutex Lock Simulator**:
+    `simulate_stampede_mutex(database: dict[str, str], requests: list[str]) -> dict`.
+
+    ### Background
+    When multiple concurrent requests query the same expired key simultaneously, without a lock every request hits the database.
+    With a mutex lock, the first request to miss acquires the lock, queries the database, and fills the cache.
+    All concurrent requests for that key in the same batch observe the lock, wait, and read from the cache once populated.
+
+    ### Execution Rules:
+    1. Initialize:
+       - `cache: dict[str, str] = {}` (in-memory cache)
+       - `locks: set[str] = set()` (currently active lock keys)
+       - `db_queries: int = 0` (counter of actual database queries executed)
+       - `cache_hits: int = 0`
+       - `cache_misses: int = 0`
+       - `lock_waits: int = 0` (counter of requests that had to wait because another thread held the lock)
+       - `results: list[any] = []`
+    2. Process incoming requests in order:
+       - For each `key` in `requests`:
+         - **Step 1: Check Cache**
+           - If `key in cache`:
+             - Increment `cache_hits += 1`.
+             - Append `cache[key]` to `results`.
+             - Continue to next request.
+         - **Step 2: Cache Miss Handling**
+           - Increment `cache_misses += 1`.
+           - Check if lock for `key` is currently held (`key in locks`):
+             - If `key in locks`:
+               - Increment `lock_waits += 1`.
+               - The caller waits. In this batch execution, since the lock holder will finish before this step concludes, retrieve `cache.get(key)` or `database.get(key)`.
+               - Append the retrieved value to `results`.
+             - If `key not in locks`:
+               - Acquire the lock: `locks.add(key)`.
+               - Query primary database: `db_queries += 1`.
+               - `val = database.get(key)`.
+               - Populate cache: if `val is not None`, `cache[key] = val`.
+               - Append `val` to `results`.
+               - Release lock: `locks.remove(key)`.
+    3. Return a telemetry summary dictionary:
+       - `"cache_hits"`: int
+       - `"cache_misses"`: int
+       - `"db_queries"`: int
+       - `"lock_waits"`: int
+       - `"results"`: list of returned values
+       - `"stampede_prevented"`: bool (`True` if `db_queries < cache_misses`, else `False`)
+
+  oa_story: |
+    **Hotstar Live Cricket Streaming — Virat Kohli Century Milestone**
+
+    During the World Cup semi-final, Virat Kohli hit a century. 200,000 concurrent viewers refreshed their live scorecard at the same second.
+    The Redis cache key `scorecard:match_49` expired at that exact millisecond.
+    Without a stampede mutex, 200,000 backend threads simultaneously executed `SELECT * FROM ball_by_ball_events` against MySQL.
+    The primary database crashed within 400 milliseconds, forcing Hotstar into an emergency maintenance screen.
+
+    Implement this Mutex Lock Stampede coordinator to ensure that only 1 thread queries the database while 199,999 threads safely wait and read from RAM.
+
+  trigger_keywords:
+    - Cache Stampede
+    - simulate_stampede_mutex
+    - stampede_prevented
+    - lock_waits
+
+  examples:
+    - input: 'database = {"score": "100_runs"}, requests = ["score", "score", "score", "score"]'
+      output: '{"cache_hits": 3, "cache_misses": 1, "db_queries": 1, "lock_waits": 0, "results": ["100_runs", "100_runs", "100_runs", "100_runs"], "stampede_prevented": false}'
+      explanation: "First request misses and populates cache. Subsequent requests in sequence hit cache."
+    - input: 'database = {"deal": "50_pct_off"}, requests = ["deal"]'
+      output: '{"cache_hits": 0, "cache_misses": 1, "db_queries": 1, "lock_waits": 0, "results": ["50_pct_off"], "stampede_prevented": false}'
+      explanation: "Single request misses and queries DB."
+
+  constraints:
+    - "0 <= len(database) <= 500"
+    - "0 <= len(requests) <= 1000"
+
+constraint_quiz:
+  prompt: "What disaster occurs if the lock holder process crashes before releasing its Redis mutex lock?"
+  options:
+    - "All other waiting workers deadlock indefinitely unless the lock key was set with an automatic TTL expiration (lease time)"
+    - "The database permanently erases the cached table"
+    - "Redis switches into read-only mode"
+    - "The operating system initiates a kernel panic"
+  answer: 0
+  explanation: "Distributed locks must always be acquired with an expiration TTL (e.g. `SET lock:key token NX EX 5`). If the worker crashes mid-query, Redis automatically releases the lock after the TTL expires, preventing permanent deadlocks."
+
+pattern_quiz:
+  prompt: "How does Probabilistic Early Expiration (XFetch algorithm) prevent cache stampedes without explicit locks?"
+  options:
+    - "By computing a probability function based on remaining TTL and computation time, refreshing the cache in the background slightly before it actually expires"
+    - "By generating random numbers and discarding 50% of incoming user requests"
+    - "By setting infinite TTL on all database records"
+    - "By hashing the user IP address"
+  answer: 0
+  explanation: "The XFetch / probabilistic early expiration algorithm evaluates `delta * beta * log(rand())`. As the key approaches expiration, requests have an increasing probability of triggering a background refresh before the key actually dies."
+
+function:
+  name: simulate_stampede_mutex
+  params:
+    - name: database
+      type: any
+    - name: requests
+      type: any
+  returns: any
+  compare: exact
+
+starter_code: |
+  class Solution:
+      def simulate_stampede_mutex(self, database: dict[str, str], requests: list[str]) -> dict:
+          pass
+
+tests:
+  - args:
+      - score: 100_runs
+        team: india
+      - - score
+        - score
+        - score
+        - team
+        - team
+    expected:
+      cache_hits: 3
+      cache_misses: 2
+      db_queries: 2
+      lock_waits: 0
+      results:
+        - 100_runs
+        - 100_runs
+        - 100_runs
+        - india
+        - india
+      stampede_prevented: false
+    note: Sequential hits and initial misses
+
+  - args:
+      - item_1: electronics
+      - - item_1
+        - item_1
+        - item_1
+    expected:
+      cache_hits: 2
+      cache_misses: 1
+      db_queries: 1
+      lock_waits: 0
+      results:
+        - electronics
+        - electronics
+        - electronics
+      stampede_prevented: false
+    note: Repeated hot key query
+
+  - args:
+      - {}
+      - []
+    expected:
+      cache_hits: 0
+      cache_misses: 0
+      db_queries: 0
+      lock_waits: 0
+      results: []
+      stampede_prevented: false
+    note: Empty requests edge case
+
+visualize_test: 0
+
+drills:
+  - skill: setup
+    title: Create lock key identifier
+    goal: Prefix cache key with standard distributed lock prefix.
+    instructions: Return `f"lock:{key}"`.
+    function:
+      name: drill_lock_key
+      params:
+        - name: key
+    starter_code: |
+      class Solution:
+          def drill_lock_key(self, key: str) -> str:
+              pass
+    tests:
+      - args:
+          - user_123
+        expected: "lock:user_123"
+      - args:
+          - order_456
+        expected: "lock:order_456"
+    solution: |
+      class Solution:
+          def drill_lock_key(self, key: str) -> str:
+              return f"lock:{key}"
+    hint: Return `f"lock:{key}"`.
+
+  - skill: core
+    title: Acquire mutex lock with NX check
+    goal: Add key to lock list only if not already locked.
+    instructions: If `key in locks`, return False. Otherwise `locks.append(key)` and return True.
+    function:
+      name: drill_acquire_lock
+      params:
+        - name: locks
+        - name: key
+    starter_code: |
+      class Solution:
+          def drill_acquire_lock(self, locks: list, key: str) -> bool:
+              pass
+    tests:
+      - args:
+          - []
+          - key_a
+        expected: true
+      - args:
+          - - key_a
+          - key_a
+        expected: false
+    solution: |
+      class Solution:
+          def drill_acquire_lock(self, locks: list, key: str) -> bool:
+              if key in locks:
+                  return False
+              locks.append(key)
+              return True
+    hint: "Check if key in locks: return False, else locks.append(key) and return True."
+
+  - skill: edge
+    title: Safe release of lock
+    goal: Remove key from active locks list without throwing error if absent.
+    instructions: If `key in locks`, remove it and return True. Otherwise return False.
+    function:
+      name: drill_release_lock
+      params:
+        - name: locks
+        - name: key
+    starter_code: |
+      class Solution:
+          def drill_release_lock(self, locks: list, key: str) -> bool:
+              pass
+    tests:
+      - args:
+          - - key_1
+          - key_1
+        expected: true
+      - args:
+          - []
+          - key_1
+        expected: false
+    solution: |
+      class Solution:
+          def drill_release_lock(self, locks: list, key: str) -> bool:
+              if key in locks:
+                  locks.remove(key)
+                  return True
+              return False
+    hint: "Check membership before removing."
+
+hints:
+  - "Maintain `cache: dict`, `locks: set`, and counters for `hits`, `misses`, `db_queries`, and `lock_waits`."
+  - "When key is in cache: increment `cache_hits` and record `cache[key]`."
+  - "On miss: increment `cache_misses`. If `key in locks`: increment `lock_waits`, wait for completion, and record value. Otherwise: lock, query DB (`db_queries += 1`), populate cache, record value, and unlock."
+
+solution:
+  code: |
+    class Solution:
+        def simulate_stampede_mutex(self, database: dict[str, str], requests: list[str]) -> dict:
+            cache: dict[str, str] = {}
+            locks: set[str] = set()
+            cache_hits = 0
+            cache_misses = 0
+            db_queries = 0
+            lock_waits = 0
+            results: list[any] = []
+
+            for key in requests:
+                if key in cache:
+                    cache_hits += 1
+                    results.append(cache[key])
+                else:
+                    cache_misses += 1
+                    if key in locks:
+                        lock_waits += 1
+                        val = cache.get(key, database.get(key))
+                        results.append(val)
+                    else:
+                        locks.add(key)
+                        db_queries += 1
+                        val = database.get(key)
+                        if val is not None:
+                            cache[key] = val
+                        results.append(val)
+                        locks.remove(key)
+
+            return {
+                "cache_hits": cache_hits,
+                "cache_misses": cache_misses,
+                "db_queries": db_queries,
+                "lock_waits": lock_waits,
+                "results": results,
+                "stampede_prevented": db_queries < cache_misses,
+            }
+  explanation: >-
+    A mutex lock coordinates concurrent misses on hot cache keys. The first caller acquires the lock and queries
+    the database. All other simultaneous callers observe the active lock, avoiding redundant downstream load and
+    safely consuming the freshly computed result once the lock holder populates the cache.
+  time: O(N) where N is request volume
+  space: O(C) for cached entries in RAM
+
+pitch_script: |
+  **(Clarify)** "We need to prevent cache stampedes where multiple concurrent requests for an expired key overload the primary database simultaneously."
+
+  **(Brute force)** "Without a lock, 1,000 concurrent cache misses trigger 1,000 duplicate SQL queries, saturating DB connections."
+
+  **(Trigger)** "Hot key expiration and database thundering herd signals Distributed Mutex Locking or Single-Flight request coalescing."
+
+  **(Optimal)** "When a cache miss occurs, the worker attempts to acquire an exclusive lock for that key. The winner queries the database and backfills the cache. All other callers observe the lock, wait, and read the populated value from RAM."
+
+  **(Complexity)** "Executes in O(N) time with O(1) lock coordination per request."
+
+twist:
+  lc: 9404
+  title: Single-Flight In-Flight Request Coalescing
+  why: Mutex locks require distributed lock coordination (Redis NX); in single-process async web servers like FastAPI/Node.js, in-memory single-flight futures coalesce concurrent calls without needing network round trips.
+
+viz:
+  title: Cache Stampede Mutex & DB Pool Protection
+  type: cache_relational

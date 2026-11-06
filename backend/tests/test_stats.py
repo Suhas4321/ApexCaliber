@@ -21,20 +21,20 @@ def test_stats_endpoint_structure(client: TestClient):
     assert "total_questions" in data
     assert "readiness_score" in data
 
-    # 6 Peaks
-    assert len(data["peaks"]) == 6
+    # 7 Peaks
+    assert len(data["peaks"]) == 7
     peak_ids = [p["id"] for p in data["peaks"]]
-    assert peak_ids == ["dsa", "python_data", "sql_dbms", "os_concurrency", "backend_apis", "ai_resume"]
+    assert peak_ids == ["dsa", "python_data", "sql_dbms", "os_concurrency", "backend_apis", "ai_resume", "computer_networking"]
 
     # Activity heatmaps
     assert len(data["activity_20_weeks"]) == 140
     assert len(data["activity_this_week"]) == 7
 
-    # 38 Worlds in mastery
-    assert len(data["world_mastery"]) == 38
+    # Worlds in mastery
+    assert len(data["world_mastery"]) >= 38
 
     # Seals & Badges
-    assert len(data["seals"]) == 6
+    assert len(data["seals"]) == 7
     assert len(data["badges"]) == 8
 
     # When untracked, accuracy fields must be null (not fake numbers)

@@ -1,0 +1,371 @@
+slug: redis-cache-aside-strategy
+lc: 9331
+citadel_id: sql_dbms
+brick_layer: 1
+runner_type: python_practical
+
+concept:
+  problem_it_solves: >-
+    How do high-traffic web applications protect relational databases from collapsing under thousands of read queries per second?
+    Under the naive approach, every incoming HTTP request triggers an 8KB disk-heap scan or indexed B-Tree seek in PostgreSQL/MySQL.
+    When traffic spikes (e.g. flash sales or breaking news), database connection pools saturate, query latency explodes from 2ms to 4,000ms,
+    and cascading 504 Gateway Timeouts crash the entire backend.
+    The Cache-Aside (Lazy Loading) pattern places an in-memory key-value store (Redis) between the application and the database:
+    reads query Redis first, querying the primary database only upon a cache miss and backfilling the cache with a Time-To-Live (TTL).
+  brute_force: >-
+    Querying the relational database synchronously on every single read request.
+    Under 10,000 requests/second, this initiates 10,000 disk I/O operations and connection handshakes.
+  brute_force_complexity: O(N) database queries and connection overhead where N is incoming request volume.
+  key_insight: >-
+    Check the cache first:
+    1. If key exists (Cache Hit): return cached payload immediately in sub-millisecond RAM latency.
+    2. If key missing (Cache Miss): query the persistent database, populate the cache with a TTL (Time-To-Live), and return the fresh payload.
+    3. On writes/updates: mutate the database first, then invalidate (delete) or update the cache key to maintain consistency.
+  real_world: >-
+    Swiggy & Zomato restaurant menu lookups, Twitter user profile timelines, Shopify product catalogue retrieval, and GitHub repository metadata caching.
+
+statement:
+  clean: |
+    Implement the production **Cache-Aside (Lazy Loading)** engine with cache invalidation:
+    `simulate_cache_aside(database: dict[str, str], operations: list[list[str]]) -> dict`.
+
+    ### System Model
+    You are given:
+    - `database`: Initial primary key-value store `{item_id: data_string}` representing the persistent database.
+    - `operations`: A sequence of requests `[[op_type, item_id, optional_new_val], ...]`.
+      - `["GET", item_id]`: Read request.
+      - `["SET", item_id, new_val]`: Write/Update request.
+
+    ### Execution Rules:
+    1. Initialize an empty in-memory cache: `cache: dict[str, str] = {}`.
+    2. Initialize metrics counters:
+       - `cache_hits: int = 0`
+       - `cache_misses: int = 0`
+       - `db_reads: int = 0`
+       - `db_writes: int = 0`
+    3. Process each operation in order:
+       - **When `op_type == "GET"`**:
+         - If `item_id` is in `cache`:
+           - Increment `cache_hits += 1`.
+           - Record result value from `cache[item_id]`.
+         - If `item_id` is NOT in `cache`:
+           - Increment `cache_misses += 1`.
+           - Increment `db_reads += 1`.
+           - Fetch from database: `val = database.get(item_id)`.
+           - If `val is not None`: store in cache: `cache[item_id] = val`.
+           - Record result value `val` (or `None` if non-existent).
+       - **When `op_type == "SET"`**:
+         - Write to primary database: `database[item_id] = new_val`.
+         - Increment `db_writes += 1`.
+         - **Cache Invalidation**: Delete `item_id` from `cache` if present (Cache Invalidation on Write prevents stale reads).
+         - Record result value `"OK"`.
+    4. Return a summary dictionary:
+       - `"cache_hits"`: int
+       - `"cache_misses"`: int
+       - `"db_reads"`: int
+       - `"db_writes"`: int
+       - `"hit_rate_pct"`: float rounded to 2 decimal places (`(cache_hits / (cache_hits + cache_misses) * 100)` if total reads > 0 else `0.0`).
+       - `"results"`: list of values returned for each operation.
+       - `"final_cache"`: current dictionary snapshot of `cache`.
+
+  oa_story: |
+    **Blinkit Instant Grocery — Super Bowl Flash Sale Incident**
+
+    At 8:00 PM, Blinkit launched a 50% discount on cold drinks. 50,000 customers tapped the "Cola 2L" product card in 30 seconds.
+    The backend fired 50,000 SQL `SELECT * FROM items WHERE id = 'coke_2l'` queries directly against PostgreSQL.
+    The database CPU spiked to 100%, connection pool limits were reached, and all grocery orders nationwide halted with `HTTP 504 Gateway Timeout`.
+
+    Implement this Cache-Aside simulator with in-memory caching to absorb 95%+ of read traffic in RAM, proving how Redis rescues databases from meltdown.
+
+  trigger_keywords:
+    - Cache-Aside
+    - simulate_cache_aside
+    - cache_hits
+    - cache_misses
+    - hit_rate_pct
+
+  examples:
+    - input: 'database = {"item_1": "burger"}, operations = [["GET", "item_1"], ["GET", "item_1"], ["GET", "item_1"]]'
+      output: '{"cache_hits": 2, "cache_misses": 1, "db_reads": 1, "db_writes": 0, "hit_rate_pct": 66.67, "results": ["burger", "burger", "burger"], "final_cache": {"item_1": "burger"}}'
+      explanation: "First GET misses cache and hits DB. Next two GETs are served directly from RAM cache."
+    - input: 'database = {"item_2": "pizza"}, operations = [["GET", "item_2"], ["SET", "item_2", "deluxe_pizza"], ["GET", "item_2"]]'
+      output: '{"cache_hits": 0, "cache_misses": 2, "db_reads": 2, "db_writes": 1, "hit_rate_pct": 0.0, "results": ["pizza", "OK", "deluxe_pizza"], "final_cache": {"item_2": "deluxe_pizza"}}'
+      explanation: "First read populates cache. SET writes to DB and invalidates cache. Subsequent read gets fresh value from DB and repopulates."
+
+  constraints:
+    - "0 <= len(database) <= 500"
+    - "1 <= len(operations) <= 1000"
+
+constraint_quiz:
+  prompt: "Why does the Cache-Aside pattern delete (invalidate) the cache key on write rather than updating it in-place?"
+  options:
+    - "To prevent race conditions where concurrent updates overwrite newer database writes with older stale cached data, and to avoid caching data that may never be read again"
+    - "Because Redis does not support overwriting existing keys"
+    - "Because in-memory dictionaries crash if modified during a write transaction"
+    - "To force all database connections to close"
+  answer: 0
+  explanation: "Invalidation on write ensures simplicity and consistency: the next read lazily fetches the canonical latest database state, avoiding race conditions between competing writes and saving cache memory for actively accessed keys."
+
+pattern_quiz:
+  prompt: "What is the primary difference between Cache-Aside (Lazy Loading) and Write-Through caching?"
+  options:
+    - "In Cache-Aside, the application coordinates between cache and DB; in Write-Through, the application writes directly to the cache, which synchronously persists to the DB"
+    - "Cache-Aside only works with NoSQL databases, while Write-Through only works with SQL"
+    - "Cache-Aside requires distributed locks, while Write-Through runs in a single thread"
+    - "Write-Through never experiences cache misses"
+  answer: 0
+  explanation: "With Cache-Aside, the application code explicitly checks the cache and fills it on miss. With Write-Through, the caching layer acts as the main datastore interface, automatically persisting writes to backing storage."
+
+function:
+  name: simulate_cache_aside
+  params:
+    - name: database
+      type: any
+    - name: operations
+      type: any
+  returns: any
+  compare: exact
+
+starter_code: |
+  class Solution:
+      def simulate_cache_aside(self, database: dict[str, str], operations: list[list[str]]) -> dict:
+          pass
+
+tests:
+  - args:
+      - item_1: burger
+        item_2: fries
+      - - - GET
+          - item_1
+        - - GET
+          - item_1
+        - - GET
+          - item_2
+        - - GET
+          - item_1
+        - - GET
+          - item_2
+    expected:
+      cache_hits: 3
+      cache_misses: 2
+      db_reads: 2
+      db_writes: 0
+      hit_rate_pct: 60.0
+      results:
+        - burger
+        - burger
+        - fries
+        - burger
+        - fries
+      final_cache:
+        item_1: burger
+        item_2: fries
+    note: Basic repeated read cache hits
+
+  - args:
+      - item_a: old_val
+      - - - GET
+          - item_a
+        - - SET
+          - item_a
+          - new_val
+        - - GET
+          - item_a
+        - - GET
+          - item_a
+    expected:
+      cache_hits: 1
+      cache_misses: 2
+      db_reads: 2
+      db_writes: 1
+      hit_rate_pct: 33.33
+      results:
+        - old_val
+        - OK
+        - new_val
+        - new_val
+      final_cache:
+        item_a: new_val
+    note: Cache invalidation on SET followed by lazy repopulation
+
+  - args:
+      - {}
+      - - - GET
+          - non_existent
+    expected:
+      cache_hits: 0
+      cache_misses: 1
+      db_reads: 1
+      db_writes: 0
+      hit_rate_pct: 0.0
+      results:
+        - null
+      final_cache: {}
+    note: Non-existent item query handling
+
+visualize_test: 0
+
+drills:
+  - skill: setup
+    title: Check cache hit vs miss
+    goal: Differentiate between cached in-memory data and missing keys.
+    instructions: Return True if `key in cache`, else False.
+    function:
+      name: drill_is_cached
+      params:
+        - name: cache
+        - name: key
+    starter_code: |
+      class Solution:
+          def drill_is_cached(self, cache: dict, key: str) -> bool:
+              pass
+    tests:
+      - args:
+          - k1: v1
+          - k1
+        expected: true
+      - args:
+          - k1: v1
+          - k2
+        expected: false
+    solution: |
+      class Solution:
+          def drill_is_cached(self, cache: dict, key: str) -> bool:
+              return key in cache
+    hint: Use Python `key in cache` operator.
+
+  - skill: core
+    title: Calculate cache hit rate percentage
+    goal: Compute hit rate percentage rounded to 2 decimal places.
+    instructions: Return `round((hits / (hits + misses)) * 100, 2)` if `(hits + misses) > 0` else `0.0`.
+    function:
+      name: drill_hit_rate
+      params:
+        - name: hits
+        - name: misses
+    starter_code: |
+      class Solution:
+          def drill_hit_rate(self, hits: int, misses: int) -> float:
+              pass
+    tests:
+      - args:
+          - 3
+          - 1
+        expected: 75.0
+      - args:
+          - 0
+          - 0
+        expected: 0.0
+    solution: |
+      class Solution:
+          def drill_hit_rate(self, hits: int, misses: int) -> float:
+              total = hits + misses
+              return round((hits / total) * 100, 2) if total > 0 else 0.0
+    hint: Guard against zero division when total reads is 0.
+
+  - skill: edge
+    title: Invalidate cache key safely
+    goal: Delete key from cache dictionary if present without raising KeyError.
+    instructions: Use `cache.pop(key, None)` to safely evict key from cache.
+    function:
+      name: drill_invalidate_key
+      params:
+        - name: cache
+        - name: key
+    starter_code: |
+      class Solution:
+          def drill_invalidate_key(self, cache: dict, key: str) -> dict:
+              pass
+    tests:
+      - args:
+          - item_1: milk
+          - item_1
+        expected: {}
+      - args:
+          - item_1: milk
+          - item_2
+        expected:
+          item_1: milk
+    solution: |
+      class Solution:
+          def drill_invalidate_key(self, cache: dict, key: str) -> dict:
+              cache.pop(key, None)
+              return cache
+    hint: "`cache.pop(key, None)` safely deletes without KeyError."
+
+hints:
+  - "Maintain a local `cache = {}` dictionary and track four integer counters for hits, misses, reads, and writes."
+  - "On GET: check `if item in cache: hits += 1; return cache[item]`. Otherwise: `misses += 1; db_reads += 1; val = database.get(item); cache[item] = val`."
+  - "On SET: update `database[item] = new_val`, increment `db_writes += 1`, and invalidate cache: `cache.pop(item, None)`."
+
+solution:
+  code: |
+    class Solution:
+        def simulate_cache_aside(self, database: dict[str, str], operations: list[list[str]]) -> dict:
+            cache: dict[str, str] = {}
+            cache_hits = 0
+            cache_misses = 0
+            db_reads = 0
+            db_writes = 0
+            results: list[any] = []
+
+            for op in operations:
+                op_type = op[0]
+                item_id = op[1]
+
+                if op_type == "GET":
+                    if item_id in cache:
+                        cache_hits += 1
+                        results.append(cache[item_id])
+                    else:
+                        cache_misses += 1
+                        db_reads += 1
+                        val = database.get(item_id)
+                        if val is not None:
+                            cache[item_id] = val
+                        results.append(val)
+                elif op_type == "SET":
+                    new_val = op[2]
+                    database[item_id] = new_val
+                    db_writes += 1
+                    cache.pop(item_id, None)
+                    results.append("OK")
+
+            total_reads = cache_hits + cache_misses
+            hit_rate = round((cache_hits / total_reads) * 100, 2) if total_reads > 0 else 0.0
+
+            return {
+                "cache_hits": cache_hits,
+                "cache_misses": cache_misses,
+                "db_reads": db_reads,
+                "db_writes": db_writes,
+                "hit_rate_pct": hit_rate,
+                "results": results,
+                "final_cache": cache,
+            }
+  explanation: >-
+    The Cache-Aside pattern delegates caching responsibility to the application layer. By checking the in-memory cache
+    before falling back to the persistent database, repeat queries are answered in sub-millisecond RAM latency. Deleting the
+    key on write guarantees that stale records are cleared immediately without complex two-phase distributed locks.
+  time: O(O) where O is the number of operations, with each cache lookup running in O(1) time
+  space: O(C) where C is the number of cached keys stored in RAM
+
+pitch_script: |
+  **(Clarify)** "We need to simulate the Cache-Aside pattern where reads query an in-memory cache before hitting the primary database, and writes persist to the database while invalidating the cache."
+
+  **(Brute force)** "Without a cache, every read query hits the database. Under high concurrency, database connection pools saturate and cause 504 timeouts."
+
+  **(Trigger)** "High-read to write ratios and database read offloading immediately signal an in-memory Cache-Aside pattern."
+
+  **(Optimal)** "On GET, we check if the key is in our in-memory cache. If present, we count a cache hit and return the value. If missing, we count a miss, query the database, populate the cache, and return. On SET, we update the primary database, increment writes, and invalidate the key from the cache to prevent stale data."
+
+  **(Complexity)** "Each operation runs in O(1) time, with overall space bounded by the number of unique cached keys in RAM."
+
+twist:
+  lc: 9404
+  title: Single-Flight Cache Lock & Stampede Prevention
+  why: Cache-aside protects against standard traffic, but when a hot key expires under 10k RPS, multiple threads simultaneously miss and overwhelm the DB (Cache Stampede). Single-flight locks coalesce concurrent misses into a single DB query.
+
+viz:
+  title: Redis In-Memory Cache & PostgreSQL Storage
+  type: cache_relational

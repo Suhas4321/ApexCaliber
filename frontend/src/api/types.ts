@@ -13,6 +13,9 @@ export type VisualizerKind =
   | 'concurrency_timeline'
   | 'http_lifecycle'
   | 'system_blueprint'
+  | 'cache_relational'
+  | 'network_flow'
+  | 'memory_view'
 
 export interface Progress {
   concept_done: boolean

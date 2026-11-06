@@ -23,4 +23,5 @@ backend/*.db-*
 screenshots/
 *.jpeg
 frontend/public/test-overlap.png
+.zwork/
 

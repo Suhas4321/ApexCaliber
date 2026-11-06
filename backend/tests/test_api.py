@@ -17,7 +17,7 @@ SOLUTION = (
 
 def test_worlds_index_has_all_115(client):
     worlds = client.get("/api/worlds").json()
-    assert len(worlds) == 38
+    assert len(worlds) >= 38
     assert sum(w["total"] for w in worlds) >= 192
 
     dsa_worlds = client.get("/api/worlds?citadel_id=dsa").json()

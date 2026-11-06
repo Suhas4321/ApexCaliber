@@ -1,0 +1,318 @@
+slug: dns-recursive-resolver
+lc: 9701
+citadel_id: computer_networking
+brick_layer: 1
+runner_type: python_practical
+
+concept:
+  problem_it_solves: >-
+    How do web browsers and mobile apps locate backend servers on the internet?
+    Computers communicate using 32-bit (IPv4) or 128-bit (IPv6) addresses, but human software engineers connect to domain names like "api.netflix.com".
+    Hardcoding IP addresses in client applications is fatal: when cloud servers rotate, scale up, or fail over during blue-green deployments,
+    hardcoded clients break permanently.
+    The Domain Name System (DNS) solves this by acting as the internet's distributed, hierarchical phonebook.
+    A recursive resolver queries the hierarchy (Root Servers → TLD Servers → Authoritative Nameservers) and caches records with a Time-To-Live (TTL).
+  brute_force: >-
+    Sending every DNS query across the global internet to the 13 Root Name Server clusters.
+    Under billions of global requests, root servers collapse under query volume and latency exceeds 800ms per website load.
+  brute_force_complexity: O(N * H) where N is requests and H is global network round-trip hops.
+  key_insight: >-
+    1. Hierarchical Delegation: Split domain into labels (e.g. `api.netflix.com` -> `.com` TLD -> `netflix.com` Authoritative -> `api` host).
+    2. Recursive Caching with TTL: The recursive resolver caches the resolved `(domain, IP, TTL)` in local RAM.
+    3. High-traffic requests hit the local resolver cache in <1ms, shielding root and authoritative nameservers from 99%+ of global traffic.
+  real_world: >-
+    Cloudflare 1.1.1.1, Google Public DNS 8.8.8.8, AWS Route 53 latency routing, and blue-green zero-downtime deployment DNS cutovers.
+
+statement:
+  clean: |
+    Implement a **Hierarchical Recursive DNS Resolver with TTL Caching**:
+    `simulate_dns_resolver(root_zone: dict[str, str], queries: list[str]) -> dict`.
+
+    ### System Model
+    You are given:
+    - `root_zone`: Authoritative record mapping `{domain: ip_address}` (e.g. `{"api.netflix.com": "198.51.100.1", "auth.netflix.com": "198.51.100.2"}`).
+    - `queries`: A list of domain strings requested in sequence (e.g. `["api.netflix.com", "api.netflix.com", "unknown.org"]`).
+
+    ### Resolver Rules:
+    1. Maintain an in-memory resolver cache: `resolver_cache: dict[str, str] = {}`.
+    2. Track metrics:
+       - `cache_hits: int = 0` (queries answered directly from `resolver_cache`)
+       - `root_queries: int = 0` (queries that required traversing the authoritative `root_zone`)
+       - `resolved_ips: list[str | None] = []` (resolved IP address for each query, or `None` if non-existent)
+    3. For each `domain` in `queries`:
+       - If `domain in resolver_cache`:
+         - Increment `cache_hits += 1`.
+         - Append `resolver_cache[domain]` to `resolved_ips`.
+       - If `domain not in resolver_cache`:
+         - Increment `root_queries += 1`.
+         - Lookup from authoritative `root_zone`: `ip = root_zone.get(domain)`.
+         - If `ip is not None`:
+           - Store in cache: `resolver_cache[domain] = ip`.
+         - Append `ip` to `resolved_ips`.
+    4. Return summary dictionary:
+       - `"cache_hits"`: int
+       - `"root_queries"`: int
+       - `"resolved_ips"`: list[str | None]
+       - `"cache_hit_rate"`: float rounded to 2 decimal places (`(cache_hits / len(queries) * 100)` if len(queries) > 0 else 0.0)
+       - `"final_cache"`: dictionary snapshot of `resolver_cache`
+
+  oa_story: |
+    **Swiggy Delivery App — Blue-Green Cutover Latency Incident**
+
+    During a major backend migration, Swiggy cut over its order-tracking API cluster to a new Kubernetes IP.
+    Because DNS resolver caching was misconfigured on mobile clients, 100,000 active delivery drivers repeatedly queried
+    the upstream DNS root servers for `track.swiggy.in` on every GPS ping.
+    The DNS server hit its rate-limit, returning empty responses, causing delivery locations to freeze nationwide.
+
+    Implement this Recursive DNS Resolver with caching to prove how local TTL caches reduce upstream DNS traffic by 98%+.
+
+  trigger_keywords:
+    - Recursive DNS
+    - simulate_dns_resolver
+    - cache_hit_rate
+    - root_queries
+
+  examples:
+    - input: 'root_zone = {"api.swiggy.com": "104.18.2.1"}, queries = ["api.swiggy.com", "api.swiggy.com", "api.swiggy.com"]'
+      output: '{"cache_hits": 2, "root_queries": 1, "resolved_ips": ["104.18.2.1", "104.18.2.1", "104.18.2.1"], "cache_hit_rate": 66.67, "final_cache": {"api.swiggy.com": "104.18.2.1"}}'
+      explanation: "First query fetches from authoritative root zone and populates cache. Next two queries are instant cache hits."
+    - input: 'root_zone = {"login.bank.com": "172.16.0.1"}, queries = ["missing.bank.com"]'
+      output: '{"cache_hits": 0, "root_queries": 1, "resolved_ips": [null], "cache_hit_rate": 0.0, "final_cache": {}}'
+      explanation: "Domain missing in root zone returns None."
+
+  constraints:
+    - "0 <= len(root_zone) <= 1000"
+    - "0 <= len(queries) <= 1000"
+
+constraint_quiz:
+  prompt: "What is the consequence of setting an extremely long DNS TTL (e.g., 7 days) on a production API domain?"
+  options:
+    - "If an emergency server migration or disaster recovery failover occurs, client resolvers will continue routing to dead IP addresses for up to 7 days"
+    - "The browser's SSL certificate will expire in 7 days"
+    - "DNS queries will consume 100% of client CPU"
+    - "TCP handshakes will fail after 60 seconds"
+  answer: 0
+  explanation: "High DNS TTL reduces query overhead but severely delays disaster recovery and traffic shifting, because client resolvers cache the old IP address until the TTL expires."
+
+pattern_quiz:
+  prompt: "In the DNS hierarchy, which nameserver holds the final authoritative IP mapping for a domain like `sub.example.com`?"
+  options:
+    - "The Authoritative Nameserver for `example.com`"
+    - "The Root Nameserver (`.`)"
+    - "The Top-Level Domain (TLD) Nameserver (`.com`)"
+    - "The local Wi-Fi router"
+  answer: 0
+  explanation: "Root servers delegate to TLD servers (`.com`), which delegate to the domain's Authoritative Nameserver (e.g. AWS Route 53 or Cloudflare), which holds the authoritative A/AAAA records."
+
+function:
+  name: simulate_dns_resolver
+  params:
+    - name: root_zone
+      type: any
+    - name: queries
+      type: any
+  returns: any
+  compare: exact
+
+starter_code: |
+  class Solution:
+      def simulate_dns_resolver(self, root_zone: dict[str, str], queries: list[str]) -> dict:
+          pass
+
+tests:
+  - args:
+      - api.swiggy.com: 104.18.2.1
+        cdn.swiggy.com: 104.18.2.2
+      - - api.swiggy.com
+        - api.swiggy.com
+        - cdn.swiggy.com
+        - api.swiggy.com
+        - cdn.swiggy.com
+    expected:
+      cache_hits: 3
+      cache_misses: 2
+      root_queries: 2
+      resolved_ips:
+        - 104.18.2.1
+        - 104.18.2.1
+        - 104.18.2.2
+        - 104.18.2.1
+        - 104.18.2.2
+      cache_hit_rate: 60.0
+      final_cache:
+        api.swiggy.com: 104.18.2.1
+        cdn.swiggy.com: 104.18.2.2
+    note: Multi-domain resolution with repeated lookups
+
+  - args:
+      - portal.internal: 192.168.1.100
+      - - portal.internal
+    expected:
+      cache_hits: 0
+      cache_misses: 1
+      root_queries: 1
+      resolved_ips:
+        - 192.168.1.100
+      cache_hit_rate: 0.0
+      final_cache:
+        portal.internal: 192.168.1.100
+    note: Single lookup
+
+  - args:
+      - {}
+      - []
+    expected:
+      cache_hits: 0
+      cache_misses: 0
+      root_queries: 0
+      resolved_ips: []
+      cache_hit_rate: 0.0
+      final_cache: {}
+    note: Empty queries list
+
+visualize_test: 0
+
+drills:
+  - skill: setup
+    title: Normalize domain string
+    goal: Lowercase and strip whitespace from domain query.
+    instructions: Return `domain.strip().lower()`.
+    function:
+      name: drill_normalize_domain
+      params:
+        - name: domain
+    starter_code: |
+      class Solution:
+          def drill_normalize_domain(self, domain: str) -> str:
+              pass
+    tests:
+      - args:
+          - "  API.SWIGGY.COM  "
+        expected: "api.swiggy.com"
+      - args:
+          - "Google.com"
+        expected: "google.com"
+    solution: |
+      class Solution:
+          def drill_normalize_domain(self, domain: str) -> str:
+              return domain.strip().lower()
+    hint: "Use `domain.strip().lower()`."
+
+  - skill: core
+    title: Compute DNS cache hit rate
+    goal: Compute percentage of queries answered from cache.
+    instructions: Return `round((hits / total) * 100, 2)` if `total > 0` else 0.0.
+    function:
+      name: drill_cache_hit_rate
+      params:
+        - name: hits
+        - name: total
+    starter_code: |
+      class Solution:
+          def drill_cache_hit_rate(self, hits: int, total: int) -> float:
+              pass
+    tests:
+      - args:
+          - 3
+          - 5
+        expected: 60.0
+      - args:
+          - 0
+          - 0
+        expected: 0.0
+    solution: |
+      class Solution:
+          def drill_cache_hit_rate(self, hits: int, total: int) -> float:
+              return round((hits / total) * 100, 2) if total > 0 else 0.0
+    hint: Guard against zero division when total is 0.
+
+  - skill: edge
+    title: Extract top-level domain
+    goal: Parse the TLD from a standard domain name.
+    instructions: Split by `.` and return the last element in lowercase.
+    function:
+      name: drill_extract_tld
+      params:
+        - name: domain
+    starter_code: |
+      class Solution:
+          def drill_extract_tld(self, domain: str) -> str:
+              pass
+    tests:
+      - args:
+          - "api.netflix.com"
+        expected: "com"
+      - args:
+          - "gov.in"
+        expected: "in"
+    solution: |
+      class Solution:
+          def drill_extract_tld(self, domain: str) -> str:
+              parts = domain.strip().split(".")
+              return parts[-1].lower() if parts else ""
+    hint: "Split by `.` and return `parts[-1]`."
+
+hints:
+  - "Maintain `cache: dict = {}`, `hits = 0`, `root_queries = 0`, and `results: list = []`."
+  - "For each query in queries: if in cache, hits += 1 and append cached value."
+  - "If not in cache: root_queries += 1, lookup in root_zone, store in cache if found, and append."
+
+solution:
+  code: |
+    class Solution:
+        def simulate_dns_resolver(self, root_zone: dict[str, str], queries: list[str]) -> dict:
+            resolver_cache: dict[str, str] = {}
+            cache_hits = 0
+            cache_misses = 0
+            root_queries = 0
+            resolved_ips: list[any] = []
+
+            for domain in queries:
+                if domain in resolver_cache:
+                    cache_hits += 1
+                    resolved_ips.append(resolver_cache[domain])
+                else:
+                    cache_misses += 1
+                    root_queries += 1
+                    ip = root_zone.get(domain)
+                    if ip is not None:
+                        resolver_cache[domain] = ip
+                    resolved_ips.append(ip)
+
+            total = len(queries)
+            hit_rate = round((cache_hits / total) * 100, 2) if total > 0 else 0.0
+
+            return {
+                "cache_hits": cache_hits,
+                "cache_misses": cache_misses,
+                "root_queries": root_queries,
+                "resolved_ips": resolved_ips,
+                "cache_hit_rate": hit_rate,
+                "final_cache": resolver_cache,
+            }
+  explanation: >-
+    Recursive DNS resolvers traverse the delegation tree to discover IP addresses. Caching answers locally
+    satisfies repeat lookups in sub-millisecond RAM time, reducing load on global root and authoritative nameservers
+    by over 98%.
+  time: O(Q) where Q is the number of domain queries
+  space: O(D) for cached unique domain records in resolver RAM
+
+pitch_script: |
+  **(Clarify)** "We need to simulate a recursive DNS resolver that resolves domain names to IP addresses, caching lookups locally to eliminate redundant authoritative root queries."
+
+  **(Brute force)** "Sending every lookup over the wide area network to authoritative root servers introduces 200ms+ latency per web request and causes root server congestion."
+
+  **(Trigger)** "Domain name to IP resolution and hierarchical caching signals the DNS recursive resolution pattern."
+
+  **(Optimal)** "We check our in-memory resolver cache first. On hit, we return the cached IP in O(1) time. On miss, we perform an authoritative lookup, populate the resolver cache with the result, and record the IP."
+
+  **(Complexity)** "Executes in O(Q) time and O(D) space where D is unique domains stored."
+
+twist:
+  lc: 9702
+  title: TCP 3-Way Handshake Connection Lifecycle
+  why: Once DNS resolves the server IP address, the client initiates a transport-layer TCP 3-way handshake (SYN -> SYN-ACK -> ACK) before any HTTP data can be exchanged.
+
+viz:
+  title: DNS Hierarchical Lookup & Cache
+  type: network_flow

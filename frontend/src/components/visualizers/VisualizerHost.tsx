@@ -9,6 +9,9 @@ import SQLPipelineVisualizer from './SQLPipelineVisualizer'
 import StackQueueVisualizer from './StackQueueVisualizer'
 import SystemBlueprintVisualizer from './SystemBlueprintVisualizer'
 import TreeRecursionVisualizer from './TreeRecursionVisualizer'
+import CacheRelationalVisualizer from './CacheRelationalVisualizer'
+import NetworkPacketFlowVisualizer from './NetworkPacketFlowVisualizer'
+import VirtualMemoryPagingVisualizer from './VirtualMemoryPagingVisualizer'
 import type { VisualizerHostProps } from './types'
 import { StageShell } from './stage/StageShell'
 import { formatValue } from '../../lib/trace'
@@ -64,6 +67,12 @@ export default function VisualizerHost({
         return <GraphGridVisualizer {...visualizerProps} />
       case 'dp_table':
         return <DPTableVisualizer {...visualizerProps} />
+      case 'cache_relational':
+        return <CacheRelationalVisualizer {...visualizerProps} />
+      case 'network_flow':
+        return <NetworkPacketFlowVisualizer {...visualizerProps} />
+      case 'memory_view':
+        return <VirtualMemoryPagingVisualizer {...visualizerProps} />
       case 'array_pointer':
       default:
         return <ArrayPointerVisualizer {...visualizerProps} />

@@ -171,7 +171,27 @@ export default function StageConcept({
     return () => window.clearTimeout(id)
   }, [demoPlaying, demoIndex, demoSteps.length, demoSpeed])
 
-  const showConceptVisualizer = Boolean(content.concept_trace || content.visual_demo || demoSteps.length > 0)
+  const SYSTEM_VISUALIZERS = useMemo(
+    () =>
+      new Set<string>([
+        'cache_relational',
+        'network_flow',
+        'system_blueprint',
+        'concurrency_timeline',
+        'http_lifecycle',
+        'memory_view',
+        'sql_pipeline',
+        'dataframe_pipeline',
+      ]),
+    [],
+  )
+
+  const showConceptVisualizer = Boolean(
+    content.concept_trace ||
+    content.visual_demo ||
+    demoSteps.length > 0 ||
+    SYSTEM_VISUALIZERS.has(vizKind)
+  )
 
   // Save progress when both quizzes are solved
   useEffect(() => {

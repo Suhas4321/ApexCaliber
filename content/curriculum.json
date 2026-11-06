@@ -139,11 +139,11 @@
     {
       "id": "sql_dbms",
       "numeral": "III",
-      "name": "SQL Mastery & Database Internals",
-      "short_name": "SQL & DBMS",
+      "name": "Database Systems & In-Memory Caching",
+      "short_name": "DBMS & Caching",
       "accent": "var(--color-indigo)",
-      "tagline": "8KB Pages \u00b7 B-Trees \u00b7 ACID \u00b7 20 Live Queries",
-      "description": "Relational storage engines, B-Tree index traversal, ACID anomalies, and live SQL execution.",
+      "tagline": "8KB Pages \u00b7 B-Trees \u00b7 ACID \u00b7 Redis Caching \u00b7 Eviction",
+      "description": "Relational storage engines, B-Tree index traversal, ACID anomalies, and Redis caching patterns with eviction strategies.",
       "tiers": [
         [
           17
@@ -158,6 +158,9 @@
         ],
         [
           25
+        ],
+        [
+          39
         ]
       ],
       "edges": [
@@ -192,6 +195,10 @@
         [
           24,
           25
+        ],
+        [
+          25,
+          39
         ]
       ]
     },
@@ -217,6 +224,9 @@
         ],
         [
           30
+        ],
+        [
+          42
         ]
       ],
       "edges": [
@@ -251,6 +261,10 @@
         [
           29,
           30
+        ],
+        [
+          30,
+          42
         ]
       ]
     },
@@ -343,6 +357,29 @@
         [
           37,
           38
+        ]
+      ]
+    },
+    {
+      "id": "computer_networking",
+      "numeral": "VII",
+      "name": "Computer Networking & Protocols",
+      "short_name": "Networking",
+      "accent": "var(--color-sky)",
+      "tagline": "DNS \u00b7 TCP/UDP \u00b7 HTTP/2 & HTTP/3 \u00b7 WebSockets \u00b7 TLS",
+      "description": "Packet traversal, socket programming, HTTP evolution, secure handshakes, and full-duplex real-time communication.",
+      "tiers": [
+        [
+          40
+        ],
+        [
+          41
+        ]
+      ],
+      "edges": [
+        [
+          40,
+          41
         ]
       ]
     }
@@ -3449,6 +3486,158 @@
           "world_id": 38
         }
       ]
+    },
+    {
+      "id": 39,
+      "slug": "redis-caching",
+      "name": "Redis & In-Memory Caching",
+      "citadel_id": "sql_dbms",
+      "status": "live",
+      "tagline": "Cache-aside lazy loading, write policies, and TTL expiration.",
+      "core_idea": "In-memory key-value caches like Redis decouple high-read velocity from relational disk queries. The Cache-Aside pattern serves 99% of requests from RAM, falling back to disk only on misses.",
+      "triggers": [
+        "redis cache aside",
+        "cache invalidation",
+        "ttl expiry",
+        "cache miss"
+      ],
+      "questions": [
+        {
+          "slug": "redis-cache-aside-strategy",
+          "lc": 9331,
+          "title": "Redis In-Memory Cache-Aside Pattern",
+          "difficulty": "Medium",
+          "visualizer": "cache_relational",
+          "patterns": [
+            "cache-aside",
+            "redis",
+            "lazy-loading",
+            "cache-invalidation"
+          ],
+          "runner_type": "python_practical",
+          "brick_layer": 1,
+          "world_id": 39
+        },
+        {
+          "slug": "redis-cache-stampede-mutex",
+          "lc": 9332,
+          "title": "Cache Stampede Mutex & Thundering Herd Prevention",
+          "difficulty": "Medium",
+          "visualizer": "cache_relational",
+          "patterns": [
+            "cache-stampede",
+            "thundering-herd",
+            "mutex-lock",
+            "distributed-locking"
+          ],
+          "runner_type": "python_practical",
+          "brick_layer": 2,
+          "world_id": 39
+        }
+      ],
+      "visualizer": "cache_relational"
+    },
+    {
+      "id": 40,
+      "slug": "dns-resolution",
+      "name": "DNS & Domain Resolution",
+      "citadel_id": "computer_networking",
+      "status": "live",
+      "tagline": "Hierarchical delegation, root name servers, and TTL caching.",
+      "core_idea": "The Domain Name System translates human hostnames into machine IP addresses. Recursive resolvers traverse Root -> TLD -> Authoritative tiers and cache records with a Time-To-Live.",
+      "triggers": [
+        "Recursive DNS",
+        "dns resolver",
+        "ttl caching",
+        "authoritative nameserver"
+      ],
+      "questions": [
+        {
+          "slug": "dns-recursive-resolver",
+          "lc": 9701,
+          "title": "Recursive DNS Resolver with Hierarchical TTL Caching",
+          "difficulty": "Medium",
+          "visualizer": "network_flow",
+          "patterns": [
+            "dns-resolution",
+            "hierarchical-delegation",
+            "ttl-caching",
+            "networking"
+          ],
+          "runner_type": "python_practical",
+          "brick_layer": 1,
+          "world_id": 40
+        }
+      ],
+      "visualizer": "network_flow"
+    },
+    {
+      "id": 41,
+      "slug": "tcp-handshake",
+      "name": "TCP 3-Way Handshake & Sockets",
+      "citadel_id": "computer_networking",
+      "status": "live",
+      "tagline": "SYN, SYN-ACK, ACK sequence synchronization and packet loss resilience.",
+      "core_idea": "TCP guarantees in-order, lossless byte streams over an unreliable network. The 3-way handshake prevents duplicate delayed packets from creating zombie sessions.",
+      "triggers": [
+        "TCP 3-Way Handshake",
+        "simulate_tcp_handshake",
+        "SYN_SENT",
+        "ESTABLISHED"
+      ],
+      "questions": [
+        {
+          "slug": "tcp-three-way-handshake",
+          "lc": 9702,
+          "title": "TCP 3-Way Handshake Connection State Machine",
+          "difficulty": "Medium",
+          "visualizer": "network_flow",
+          "patterns": [
+            "tcp-handshake",
+            "connection-lifecycle",
+            "socket-programming",
+            "networking"
+          ],
+          "runner_type": "python_practical",
+          "brick_layer": 1,
+          "world_id": 41
+        }
+      ],
+      "visualizer": "network_flow"
+    },
+    {
+      "id": 42,
+      "slug": "virtual-memory-paging",
+      "name": "Virtual Memory & Paging",
+      "citadel_id": "os_concurrency",
+      "status": "live",
+      "tagline": "Page tables, page faults, thrashing, and LRU vs FIFO eviction.",
+      "core_idea": "Virtual memory decouples logical address spaces from physical RAM using 4KB pages. The MMU and page replacement policies prevent thrashing and maximize temporal locality.",
+      "triggers": [
+        "Page Replacement",
+        "simulate_page_replacement",
+        "page_faults",
+        "final_frames"
+      ],
+      "questions": [
+        {
+          "slug": "virtual-memory-page-replacement",
+          "lc": 9431,
+          "title": "Virtual Memory Page Replacement & Thrashing Prevention",
+          "difficulty": "Medium",
+          "visualizer": "memory_view",
+          "patterns": [
+            "virtual-memory",
+            "page-replacement",
+            "lru-cache",
+            "operating-systems"
+          ],
+          "runner_type": "python_practical",
+          "brick_layer": 1,
+          "world_id": 42
+        }
+      ],
+      "visualizer": "memory_view"
     }
   ]
 }
