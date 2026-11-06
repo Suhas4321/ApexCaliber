@@ -32,12 +32,12 @@ export default function AscensionBar({ stages, current, onSelect, justUnlocked }
               <span className="relative mx-1 h-px w-6 sm:w-8" aria-hidden="true">
                 <span
                   className={`absolute inset-0 ${
-                    s.done ? 'bg-emerald' : s.unlocked ? 'bg-cyan/70' : 'bg-line-strong'
+                    s.done ? 'bg-emerald' : s.unlocked ? 'bg-action/70' : 'bg-line-strong'
                   }`}
                 />
                 {justUnlocked === s.id && (
                   <motion.span
-                    className="absolute inset-y-[-3px] left-0 w-full rounded-full bg-cyan/70 blur-[3px]"
+                    className="absolute inset-y-[-3px] left-0 w-full rounded-full bg-action/70 blur-[3px]"
                     initial={{ scaleX: 0, opacity: 1, originX: 0 }}
                     animate={{ scaleX: [0, 1, 1], opacity: [1, 1, 0] }}
                     transition={{ duration: 1.4, repeat: 2 }}
@@ -45,7 +45,7 @@ export default function AscensionBar({ stages, current, onSelect, justUnlocked }
                 )}
                 <span
                   className={`absolute top-1/2 -right-1 -translate-y-1/2 text-caption ${
-                    s.done ? 'text-emerald' : s.unlocked ? 'text-cyan' : 'text-line-strong'
+                    s.done ? 'text-emerald' : s.unlocked ? 'text-action' : 'text-line-strong'
                   }`}
                 >
                   ▶

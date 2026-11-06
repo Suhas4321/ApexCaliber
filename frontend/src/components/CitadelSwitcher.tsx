@@ -34,7 +34,7 @@ export default function CitadelSwitcher() {
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-label="Switch Citadel Realm"
-        className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 text-xs font-medium text-chalk transition-all hover:border-cyan hover:bg-panel shadow-sm"
+        className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 text-xs font-medium text-chalk transition-all hover:border-action hover:bg-panel shadow-sm"
       >
         <span className="text-sm">{isSystemDesign ? '🏛️' : activeCitadel.icon}</span>
         <span className="font-plate font-semibold tracking-wide text-xs">
@@ -76,7 +76,7 @@ export default function CitadelSwitcher() {
                     }}
                     className={`flex items-start gap-3 rounded-xl p-2.5 text-left transition-all ${
                       isActive
-                        ? 'border border-cyan/40 bg-cyan/[0.08] shadow-sm'
+                        ? 'border border-action/40 bg-action/[0.08] shadow-sm'
                         : 'border border-transparent hover:border-line hover:bg-panel-2'
                     }`}
                   >
@@ -97,7 +97,7 @@ export default function CitadelSwitcher() {
                       </p>
                     </div>
                     {isActive && (
-                      <span className="h-2 w-2 rounded-full bg-cyan shadow-[0_0_8px_var(--color-cyan)] mt-2 mr-1" />
+                      <span className="h-2 w-2 rounded-full bg-action shadow-[0_0_8px_var(--color-action)] mt-2 mr-1" />
                     )}
                   </button>
                 )

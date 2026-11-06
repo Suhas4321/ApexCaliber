@@ -36,7 +36,7 @@ interface RawCitadel {
 }
 
 export const PEAK_ACCENTS_DARK: Record<string, string> = {
-  dsa: '#6EE7B7',
+  dsa: '#8B5CF6',
   python_data: '#F2B866',
   sql_dbms: '#67E8F9',
   os_concurrency: '#FB923C',
@@ -45,7 +45,7 @@ export const PEAK_ACCENTS_DARK: Record<string, string> = {
 }
 
 export const PEAK_ACCENTS_LIGHT: Record<string, string> = {
-  dsa: '#047857',
+  dsa: '#7C3AED',
   python_data: '#B45309',
   sql_dbms: '#0E7490',
   os_concurrency: '#C2410C',

@@ -90,7 +90,7 @@ export function NumberTicker({ value, className = '' }: { value: number; classNa
 }
 
 /** Card with a spotlight that follows the cursor. */
-export function MagicCard({ children, className = '', spotlight = 'rgb(0 240 255 / 0.14)', style }: {
+export function MagicCard({ children, className = '', spotlight = 'rgb(139 92 246 / 0.14)', style }: {
   children: ReactNode
   className?: string
   spotlight?: string
@@ -279,8 +279,8 @@ export function ThemeToggle() {
         </>
       ) : (
         <>
-          <Moon size={14} className="text-cyan shrink-0" />
-          <span className="hidden lg:inline font-mono text-[11px] font-semibold tracking-tight uppercase text-cyan">
+          <Moon size={14} className="text-action shrink-0" />
+          <span className="hidden lg:inline font-mono text-[11px] font-semibold tracking-tight uppercase text-action">
             Dark
           </span>
         </>

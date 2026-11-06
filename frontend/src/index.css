@@ -135,31 +135,31 @@ html[data-theme='carbon-dark'] {
   --measure-max: 68ch;
 
   /* Per-peak accent colours (bright, saturated neon/aurora variants) */
-  --accent-dsa:            #6EE7B7;
+  --accent-dsa:            #8B5CF6;
   --accent-python-data:    #F2B866;
   --accent-sql-dbms:       #67E8F9;
   --accent-os-concurrency: #FB923C;
   --accent-backend-apis:   #FB7185;
   --accent-ai-resume:      #38BDF8;
-  --peak-accent:           var(--accent-dsa, #6EE7B7);
+  --peak-accent:           var(--accent-dsa, #8B5CF6);
 
-  --color-cyan: #38BDF8;
-  --color-indigo: #38BDF8;
-  --color-forge: #6EE7B7;
+  --color-cyan: #A78BFA;
+  --color-indigo: #A78BFA;
+  --color-forge: #8B5CF6;
   --color-emerald: #10B981;
   --color-emerald-hi: #6EE7B7;
-  --color-verdigris: #6EE7B7;
+  --color-verdigris: #8B5CF6;
   --color-amber: #F2B866;
   --color-ochre: #F2B866;
   --color-rust: #FB923C;
   --color-crimson: #FB7185;
   --color-oxide: #FB7185;
-  --color-sky: #38BDF8;
+  --color-sky: #A78BFA;
   --color-orchid: #A89FC0;
   --color-gold: #F5C451;
 
-  --color-action: var(--peak-accent, #6EE7B7);
-  --color-action-hi: color-mix(in srgb, var(--peak-accent, #6EE7B7) 88%, white);
+  --color-action: var(--peak-accent, #8B5CF6);
+  --color-action-hi: color-mix(in srgb, var(--peak-accent, #8B5CF6) 88%, white);
   --color-success: #10B981;
 
   /* Card elevation: deep cosmic navy-black tint, soft 24px blur + 1px light-catcher border */
@@ -231,32 +231,32 @@ html[data-theme='studio-contrast'] {
   --color-reward: #B45309;
 
   /* Accents (Deep & accessible jewel-toned variants >= 4.5:1 against white/surface-1) */
-  --color-cyan: #0E7490;
-  --color-indigo: #0284C7;
-  --color-forge: #047857;
+  --color-cyan: #6D28D9;
+  --color-indigo: #7C3AED;
+  --color-forge: #7C3AED;
   --color-emerald: #047857;
   --color-emerald-hi: #047857;
-  --color-verdigris: #047857;
+  --color-verdigris: #7C3AED;
   --color-amber: #B45309;
   --color-ochre: #B45309;
   --color-rust: #C2410C;
   --color-crimson: #BE123C;
   --color-oxide: #BE123C;
-  --color-sky: #0284C7;
+  --color-sky: #6D28D9;
   --color-orchid: #5B5670;
   --color-gold: #B45309;
 
   /* Per-peak accent colours calibrated for light background */
-  --accent-dsa:            #047857;
+  --accent-dsa:            #7C3AED;
   --accent-python-data:    #B45309;
   --accent-sql-dbms:       #0E7490;
   --accent-os-concurrency: #C2410C;
   --accent-backend-apis:   #BE123C;
   --accent-ai-resume:      #0284C7;
-  --peak-accent:           var(--accent-dsa, #047857);
+  --peak-accent:           var(--accent-dsa, #7C3AED);
 
-  --color-action: var(--peak-accent, #047857);
-  --color-action-hi: color-mix(in srgb, var(--peak-accent, #047857) 88%, black);
+  --color-action: var(--peak-accent, #7C3AED);
+  --color-action-hi: color-mix(in srgb, var(--peak-accent, #7C3AED) 88%, black);
   --color-success: #047857;
 
   /* Card elevation: diffuse, warm-tinted (0 8px 24px rgba(30,27,46,.08)) */
@@ -317,12 +317,12 @@ html[data-theme='studio-contrast'] {
   --color-muted: #CBD5E1;
   --color-faint: #94A3B8;
   --color-code: #F8FAFC;
-  --color-cyan: #38BDF8;
+  --color-cyan: #A78BFA;
   --color-emerald: #34D399;
   --color-emerald-hi: #34D399;
   --color-amber: #FBBF24;
   --color-crimson: #FB7185;
-  --color-sky: #38BDF8;
+  --color-sky: #A78BFA;
 }
 
 .stage {
