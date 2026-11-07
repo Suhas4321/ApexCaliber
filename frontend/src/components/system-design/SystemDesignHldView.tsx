@@ -2,6 +2,7 @@ import { ExternalLink, Film, Sliders } from 'lucide-react'
 import { useState } from 'react'
 import ArchitectureFlowSimulator from './ArchitectureFlowSimulator'
 import CodeExecutionMotionGraphic from '../../features/system-design/motion/CodeExecutionMotionGraphic'
+import RateLimiterMotionGraphic from '../../features/system-design/motion/RateLimiterMotionGraphic'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { HLD_PROBLEMS } from '../../lib/systemDesignData'
@@ -114,7 +115,7 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
             <span>Architecture Simulation & Motion Graphic</span>
           </h2>
 
-          {index === 0 && (
+          {(index === 0 || index === 1) && (
             <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
               <button
                 type="button"
@@ -144,8 +145,10 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
           )}
         </div>
 
-        {index === 0 && simViewMode === 'motion' ? (
+        {simViewMode === 'motion' && index === 0 ? (
           <CodeExecutionMotionGraphic />
+        ) : simViewMode === 'motion' && index === 1 ? (
+          <RateLimiterMotionGraphic />
         ) : (
           <ArchitectureFlowSimulator
             systemTitle={hld.title}
