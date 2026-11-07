@@ -282,7 +282,7 @@ function QuestionWorkspace() {
               {question.next_slug && <Link to={`/q/${question.next_slug}`}>Next question <ChevronRight size={13} /></Link>}
             </div>
           </details>
-          <ThemeToggle />
+          <ThemeToggle compact />
         </div>
       </header>
       {!content ? (

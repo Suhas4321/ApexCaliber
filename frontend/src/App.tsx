@@ -179,19 +179,19 @@ function TopBar() {
             <button
               onClick={openCommandPalette}
               aria-label="Search (Ctrl+K)"
-              className="flex h-8 items-center gap-2 rounded-lg border border-line bg-panel-2 px-2.5 text-xs text-muted transition-colors hover:border-line-strong hover:text-chalk"
+              className="flex h-8 w-8 items-center justify-center gap-2 rounded-lg border border-line bg-panel-2 text-xs text-muted transition-colors hover:border-line-strong hover:text-chalk sm:w-auto sm:px-2.5"
             >
               <Search size={14} />
               <span className="hidden sm:inline">Search</span>
               <kbd className="keycap hidden sm:inline-flex">Ctrl K</kbd>
             </button>
-            <ThemeToggle />
+            <ThemeToggle compact />
             <MoreMenu onOpenGrimoire={() => openGrimoire(worldMatch ? Number(worldMatch[1]) : undefined)} />
             <Link
               to="/stats"
               aria-label="View profile stats"
               title="Suhas · Engineer Profile"
-              className="size-8 rounded-full bg-gradient-to-br from-violet-400 to-cyan-400 p-[2px] transition-transform hover:scale-105 active:scale-95"
+              className="hidden size-8 rounded-full bg-gradient-to-br from-violet-400 to-cyan-400 p-[2px] transition-transform hover:scale-105 active:scale-95 sm:block"
             >
               <div className="grid size-full place-items-center rounded-full bg-panel text-[11px] font-bold text-chalk">
                 SD

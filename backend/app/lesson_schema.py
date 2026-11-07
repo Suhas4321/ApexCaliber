@@ -1,6 +1,7 @@
 """Validates the small, authored concept graph in content/learning_paths.yaml."""
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing import Literal
 
 
 class Strict(BaseModel):
@@ -27,12 +28,32 @@ class CueCard(Strict):
     candidate_trap: str
 
 
+class VisualStep(Strict):
+    label: str
+    explanation: str
+    state: dict[str, str] = Field(min_length=1)
+
+
+class VisualTrack(Strict):
+    id: str
+    title: str
+    steps: list[VisualStep] = Field(min_length=2)
+
+
+class LessonVisual(Strict):
+    kind: Literal["race", "join"]
+    title: str
+    tracks: list[VisualTrack] = Field(min_length=2)
+
+
 class LessonBody(Strict):
     situation: str
     explanation: str
     terms: list[dict[str, str]] = Field(min_length=1)
     worked_example: str
     second_example: str
+    misconception: str
+    visual: LessonVisual | None = None
     checks: list[Check] = Field(min_length=2)
     sources: list[str] = Field(default_factory=list)
 

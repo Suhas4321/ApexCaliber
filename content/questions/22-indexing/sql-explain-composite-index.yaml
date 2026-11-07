@@ -4,15 +4,15 @@ citadel_id: sql_dbms
 brick_layer: 2
 runner_type: sql_sqlite
 concept:
-  problem_it_solves: 'How do database administrators prove whether the query optimizer actually uses an index or falls back
-    to an expensive full table scan? The `EXPLAIN QUERY PLAN` prefix reveals the execution engine''s physical strategy: `SCAN
-    TABLE` (O(N) sequential page scan) vs `SEARCH TABLE USING INDEX` (O(log N) B-Tree binary search). For composite indexes,
-    the optimizer requires predicates matching the index''s leading left-prefix columns.'
+  problem_it_solves: 'How do database administrators inspect whether a query uses an index or visits all rows?
+    SQLite EXPLAIN QUERY PLAN reports an access strategy such as SCAN or SEARCH and names an index when one is used.
+    SEARCH means only a subset of table rows is visited; SCAN can also use an index when traversing all rows.
+    Composite index usefulness depends on the leading columns and the query shape.'
   brute_force: Guessing index usage and blindly adding single-column indexes, multiplying write overhead without improving
     query speed.
   brute_force_complexity: Unnecessary index write amplification and slow query execution.
   key_insight: Running `EXPLAIN QUERY PLAN` outputs the exact access path. A composite index `(user_id, status, created_at)`
-    enables logarithmic index lookup when equality filters match `user_id` and `status`.
+    supports an efficient indexed search when equality filters match `user_id` and `status`.
   real_world: PostgreSQL `EXPLAIN ANALYZE`, MySQL `EXPLAIN`, and SQLite query performance tuning.
 statement:
   clean: "Write a SQL query using `EXPLAIN QUERY PLAN` to determine which composite index the SQLite optimizer selects for\
@@ -38,22 +38,21 @@ statement:
   - Transactions
   examples:
   - input: 'Target query: SELECT * FROM Transactions WHERE user_id = 42 AND status = ''COMPLETED'' ORDER BY created_at'
-    output: '[(4, 0, 0, ''SEARCH Transactions USING INDEX idx_user_status_date (user_id=? AND status=?)'')]'
+    output: 'Plan detail includes SEARCH Transactions USING INDEX idx_user_status_date (user_id=? AND status=?); numeric planner fields may vary.'
     explanation: Optimizer uses idx_user_status_date using equality filters on leading columns.
   constraints:
   - Index idx_user_status_date is present on (user_id, status, created_at)
   - Index idx_date_amount is present on (created_at, amount)
 constraint_quiz:
-  prompt: What does `SEARCH TABLE ... USING INDEX` signify in an `EXPLAIN QUERY PLAN` output compared to `SCAN TABLE`?
+  prompt: What does `SEARCH ... USING INDEX` signify in an `EXPLAIN QUERY PLAN` output compared to `SCAN`?
   options:
-  - '`SEARCH` uses a B-Tree index to jump directly to matching rows in O(log N) time, whereas `SCAN` reads every page in the
-    table in O(N) time'
+  - '`SEARCH` visits a subset of rows; `SCAN` visits all rows, possibly in index order. Read the plan detail to see which index is used.'
   - '`SEARCH` is used only for text columns'
   - '`SCAN` is faster than `SEARCH`'
   - '`SEARCH` deletes rows after reading them'
   answer: 0
-  explanation: In SQLite, `SEARCH TABLE` indicates an indexed B-Tree point lookup or range seek, whereas `SCAN TABLE` indicates
-    an unindexed full table scan.
+  explanation: In SQLite, `SEARCH` indicates a subset of rows is visited. `SCAN` visits all rows and may still use an index.
+    The plan detail reports the chosen index and filter terms. Plan wording and numeric fields can change between SQLite versions.
 pattern_quiz:
   prompt: Why did the optimizer pick `idx_user_status_date (user_id, status, created_at)` instead of `idx_date_amount (created_at,
     amount)`?
@@ -89,11 +88,7 @@ starter_code: '-- Write your EXPLAIN QUERY PLAN statement below
   '
 tests:
 - args: []
-  expected:
-  - - 4
-    - 0
-    - 0
-    - SEARCH Transactions USING INDEX idx_user_status_date (user_id=? AND status=?)
+  expected: null
   note: Optimizer selects idx_user_status_date
 - args: []
   expected: null
@@ -196,7 +191,7 @@ pitch_script: '**(Clarify)** "We need to run `EXPLAIN QUERY PLAN` on a filtered 
 
 
   **(Optimal)** "We prepend `EXPLAIN QUERY PLAN` to the query. The output confirms that SQLite selects `idx_user_status_date
-  (user_id=? AND status=?)`, proving that the B-Tree handles both filtering and sorting in logarithmic time."
+  (user_id=? AND status=?)`. Its column order also supports the requested date ordering without a separate sort."
 
 
   **(Complexity)** "Executes in O(1) plan inspection time and space." '

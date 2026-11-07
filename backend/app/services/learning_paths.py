@@ -21,6 +21,8 @@ def read_learning_paths(path: Path) -> LearningPaths:
     graph = {}
     for module in data.modules:
         for lesson in module.lessons:
+            if len(lesson.prerequisites) != len(set(lesson.prerequisites)):
+                raise ValueError(f"{lesson.id}: duplicate lesson prerequisite")
             missing = set(lesson.prerequisites) - lessons
             if missing:
                 raise ValueError(f"{lesson.id}: unknown prerequisites {sorted(missing)}")
@@ -41,7 +43,12 @@ def read_learning_paths(path: Path) -> LearningPaths:
 
     for node in graph:
         visit(node)
+    mapped_slugs = [mapping.slug for mapping in data.challenges]
+    if len(mapped_slugs) != len(set(mapped_slugs)):
+        raise ValueError("duplicate challenge mapping in learning paths")
     for mapping in data.challenges:
+        if len(mapping.requires) != len(set(mapping.requires)):
+            raise ValueError(f"{mapping.slug}: duplicate required lesson")
         missing = set(mapping.requires) - lessons
         if missing:
             raise ValueError(f"{mapping.slug}: unknown lesson prerequisites {sorted(missing)}")

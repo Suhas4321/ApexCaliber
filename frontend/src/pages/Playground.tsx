@@ -353,7 +353,7 @@ export default function Playground() {
             <Play size={13} />
             <span>{running ? 'Running…' : 'Run & Visualize'}</span>
           </Button>
-          <ThemeToggle />
+          <ThemeToggle compact />
         </div>
       </header>
       <div className="flex-1 min-h-0 w-full overflow-hidden">

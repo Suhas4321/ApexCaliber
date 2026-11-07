@@ -1,4 +1,4 @@
-import { BookMarked, Compass, FlaskConical, HardDriveDownload, MoreHorizontal, ShieldCheck, Sparkles } from 'lucide-react'
+import { BarChart3, BookMarked, Compass, FlaskConical, HardDriveDownload, MoreHorizontal, ShieldCheck, Sparkles } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -131,6 +131,14 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
               >
                 <FlaskConical size={14} />
                 <span>Playground</span>
+              </Link>
+              <Link
+                to="/stats"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-panel-2 hover:text-chalk sm:hidden"
+              >
+                <BarChart3 size={14} />
+                <span>Progress and profile</span>
               </Link>
             </div>
 

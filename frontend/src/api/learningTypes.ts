@@ -45,6 +45,8 @@ export type LessonDetail = LessonStep & {
     terms: Array<{ name: string; meaning: string }>
     worked_example: string
     second_example: string
+    misconception: string
+    visual: LessonVisual | null
     checks: Array<{ prompt: string; choices: string[] }>
     sources: string[]
   }
@@ -55,4 +57,14 @@ export type CheckResult = {
   explanation: string
   passed_checks: number[]
   mastered: boolean
+}
+
+export type LessonVisual = {
+  kind: 'race' | 'join'
+  title: string
+  tracks: Array<{
+    id: string
+    title: string
+    steps: Array<{ label: string; explanation: string; state: Record<string, string> }>
+  }>
 }

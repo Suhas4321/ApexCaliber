@@ -1,6 +1,13 @@
 """The authored pilot should teach and gate practice without changing challenge progress."""
 
 import json
+from copy import deepcopy
+from pathlib import Path
+
+import pytest
+import yaml
+
+from app.services.learning_paths import read_learning_paths
 
 
 def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
@@ -39,3 +46,21 @@ def test_db_path_starts_with_tables_not_joins(client):
     assert [item["id"] for item in lessons] == ["db-table", "db-key", "db-join", "db-transaction"]
     assert lessons[0]["ready"] and not lessons[2]["ready"]
     assert client.get("/api/lessons/db-table").json()["content"]["worked_example"]
+
+
+def test_authoring_graph_rejects_cycles_and_duplicate_challenge_mappings(tmp_path):
+    source = Path(__file__).resolve().parents[2] / "content" / "learning_paths.yaml"
+    valid = yaml.safe_load(source.read_text())
+    path = tmp_path / "learning_paths.yaml"
+
+    cyclic = deepcopy(valid)
+    cyclic["modules"][0]["lessons"][0]["prerequisites"] = ["os-mutex"]
+    path.write_text(yaml.safe_dump(cyclic))
+    with pytest.raises(ValueError, match="cycle"):
+        read_learning_paths(path)
+
+    duplicate = deepcopy(valid)
+    duplicate["challenges"].append(deepcopy(duplicate["challenges"][0]))
+    path.write_text(yaml.safe_dump(duplicate))
+    with pytest.raises(ValueError, match="duplicate challenge mapping"):
+        read_learning_paths(path)

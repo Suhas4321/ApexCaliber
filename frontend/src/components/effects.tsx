@@ -226,7 +226,7 @@ export function useTheme(): [ResolvedTheme, (t: ThemePreference | Theme) => void
 }
 
 /** Clean 2-way toggle (Dark 🌙 <-> Light ☀️) with circular reveal view transition (no confusing Auto step) */
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [resolved, setTheme] = useTheme()
   const ref = useRef<HTMLButtonElement>(null)
   const reduce = useReducedMotion()
@@ -268,19 +268,19 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 text-xs text-muted transition-colors hover:border-line-strong hover:text-chalk"
+      className={`flex h-8 items-center justify-center border border-line bg-panel-2 text-xs text-muted transition-colors hover:border-line-strong hover:text-chalk ${compact ? 'w-8 rounded-lg' : 'gap-1.5 rounded-full px-2.5'}`}
     >
       {resolved === 'light' ? (
         <>
           <Sun size={14} className="text-amber shrink-0" />
-          <span className="hidden lg:inline font-mono text-[11px] font-semibold tracking-tight uppercase text-amber">
+          <span className={`${compact ? 'hidden' : 'hidden lg:inline'} font-mono text-[11px] font-semibold tracking-tight uppercase text-amber`}>
             Light
           </span>
         </>
       ) : (
         <>
           <Moon size={14} className="text-action shrink-0" />
-          <span className="hidden lg:inline font-mono text-[11px] font-semibold tracking-tight uppercase text-action">
+          <span className={`${compact ? 'hidden' : 'hidden lg:inline'} font-mono text-[11px] font-semibold tracking-tight uppercase text-action`}>
             Dark
           </span>
         </>
