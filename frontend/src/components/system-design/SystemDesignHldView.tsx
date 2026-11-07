@@ -4,7 +4,10 @@ import ArchitectureFlowSimulator from './ArchitectureFlowSimulator'
 import CodeExecutionMotionGraphic from '../../features/system-design/motion/CodeExecutionMotionGraphic'
 import RateLimiterMotionGraphic from '../../features/system-design/motion/RateLimiterMotionGraphic'
 import TinyUrlMotionGraphic from '../../features/system-design/motion/TinyUrlMotionGraphic'
+import CollabDocMotionGraphic from '../../features/system-design/motion/CollabDocMotionGraphic'
+import NotificationEngineMotionGraphic from '../../features/system-design/motion/NotificationEngineMotionGraphic'
 import ConsistentHashingMotionGraphic from '../../features/system-design/motion/ConsistentHashingMotionGraphic'
+import RealtimeChatMotionGraphic from '../../features/system-design/motion/RealtimeChatMotionGraphic'
 import VideoStreamingMotionGraphic from '../../features/system-design/motion/VideoStreamingMotionGraphic'
 import GeospatialMatchingMotionGraphic from '../../features/system-design/motion/GeospatialMatchingMotionGraphic'
 import PaymentLedgerMotionGraphic from '../../features/system-design/motion/PaymentLedgerMotionGraphic'
@@ -120,7 +123,7 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
             <span>Architecture Simulation & Motion Graphic</span>
           </h2>
 
-          {[0, 1, 2, 5, 7, 8, 9].includes(index) && (
+          {index >= 0 && index < 10 && (
             <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
               <button
                 type="button"
@@ -156,8 +159,14 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
           <RateLimiterMotionGraphic />
         ) : simViewMode === 'motion' && index === 2 ? (
           <TinyUrlMotionGraphic />
+        ) : simViewMode === 'motion' && index === 3 ? (
+          <CollabDocMotionGraphic />
+        ) : simViewMode === 'motion' && index === 4 ? (
+          <NotificationEngineMotionGraphic />
         ) : simViewMode === 'motion' && index === 5 ? (
           <ConsistentHashingMotionGraphic />
+        ) : simViewMode === 'motion' && index === 6 ? (
+          <RealtimeChatMotionGraphic />
         ) : simViewMode === 'motion' && index === 7 ? (
           <VideoStreamingMotionGraphic />
         ) : simViewMode === 'motion' && index === 8 ? (
