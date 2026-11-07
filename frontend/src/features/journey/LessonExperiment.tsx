@@ -12,6 +12,7 @@ import RedisCacheMotionGraphic from './experiments/RedisCacheMotionGraphic'
 import RefreshTokenRotationMotionGraphic from './experiments/RefreshTokenRotationMotionGraphic'
 import GilConcurrencyMotionGraphic from './experiments/GilConcurrencyMotionGraphic'
 import AsyncJobPollingMotionGraphic from './experiments/AsyncJobPollingMotionGraphic'
+import VectorRagMotionGraphic from './experiments/VectorRagMotionGraphic'
 
 /** Only show controls when a lesson-specific model consumes their values. */
 export default function LessonExperiment({ stage, question }: { stage: JourneyStage; question: QuestionDetail }) {
@@ -29,7 +30,8 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
   const isTokenRotation = question.slug === 'refresh-token-rotation-reuse' || question.slug === 'hmac-signed-jwt-engine' || stage.id.startsWith('w31_')
   const isGilConcurrency = question.slug === 'thread-vs-process-pool-advisor' || stage.id.startsWith('w28_') || question.citadel_id === 'gil_concurrency'
   const isAsyncJobPolling = question.slug === 'http-202-polling-backoff' || stage.id.startsWith('w33_')
-  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling
+  const isVectorRag = question.slug === 'rag-cross-encoder-reranker' || question.slug === 'rag-text-chunker-with-overlap' || stage.id.startsWith('w35_')
+  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling || isVectorRag
   const topicSandboxes = new Set(['http_lifecycle', 'network_flow', 'concurrency_timeline', 'cache_relational'])
   const hasTopicSandbox = topicSandboxes.has(stage.visualizer_type || '') || (stage.visualizer_type === 'system_blueprint' && question.citadel_id === 'ai_resume')
   const rows = Math.max(1, Number(values.table_rows) || 1000)
@@ -55,7 +57,7 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
     </div>
   }
 
-  if (isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling) {
+  if (isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling || isVectorRag) {
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
@@ -104,8 +106,10 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
             <RefreshTokenRotationMotionGraphic />
           ) : isGilConcurrency ? (
             <GilConcurrencyMotionGraphic />
-          ) : (
+          ) : isAsyncJobPolling ? (
             <AsyncJobPollingMotionGraphic />
+          ) : (
+            <VectorRagMotionGraphic />
           )
         ) : (
           <div className="lesson-worked-example">
