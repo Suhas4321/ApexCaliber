@@ -5,6 +5,7 @@ import { Markdown } from '../../components/ui'
 import VisualizerHost from '../../components/visualizers/VisualizerHost'
 import DeadlockMotionGraphic from './experiments/DeadlockMotionGraphic'
 import VirtualMemoryMotionGraphic from './experiments/VirtualMemoryMotionGraphic'
+import TcpHandshakeMotionGraphic from './experiments/TcpHandshakeMotionGraphic'
 
 /** Only show controls when a lesson-specific model consumes their values. */
 export default function LessonExperiment({ stage, question }: { stage: JourneyStage; question: QuestionDetail }) {
@@ -15,7 +16,8 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
   const http = stage.id === 'w17_s1_why_http'
   const isDeadlock = question.slug === 'deadlock-cycle-detector' || stage.id.startsWith('w27_')
   const isVirtualMemory = question.slug === 'virtual-memory-page-replacement' || stage.id.startsWith('w42_')
-  const modeled = heap || http || isDeadlock || isVirtualMemory
+  const isTcpHandshake = question.slug === 'tcp-three-way-handshake' || stage.id.startsWith('w41_')
+  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake
   const topicSandboxes = new Set(['http_lifecycle', 'network_flow', 'concurrency_timeline', 'cache_relational'])
   const hasTopicSandbox = topicSandboxes.has(stage.visualizer_type || '') || (stage.visualizer_type === 'system_blueprint' && question.citadel_id === 'ai_resume')
   const rows = Math.max(1, Number(values.table_rows) || 1000)
@@ -41,7 +43,7 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
     </div>
   }
 
-  if (isDeadlock || isVirtualMemory) {
+  if (isDeadlock || isVirtualMemory || isTcpHandshake) {
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
@@ -74,7 +76,13 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
         </div>
 
         {motionViewMode === 'motion' ? (
-          isDeadlock ? <DeadlockMotionGraphic /> : <VirtualMemoryMotionGraphic />
+          isDeadlock ? (
+            <DeadlockMotionGraphic />
+          ) : isVirtualMemory ? (
+            <VirtualMemoryMotionGraphic />
+          ) : (
+            <TcpHandshakeMotionGraphic />
+          )
         ) : (
           <div className="lesson-worked-example">
             <span className="lesson-eyebrow">Worked example</span>
