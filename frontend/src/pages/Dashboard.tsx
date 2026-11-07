@@ -228,7 +228,7 @@ function PeakSwitcherRibbon({
           )
         })}
 
-        {/* Citadel VII: Interactive System Design (OOP/SOLID -> LLD -> 10 HLD) */}
+        {/* Citadel VIII: Interactive System Design (OOP/SOLID -> LLD -> 10 HLD) */}
         <button
           type="button"
           onClick={() => navigate('/system-design')}
@@ -237,7 +237,7 @@ function PeakSwitcherRibbon({
           <div className="flex items-start justify-between gap-1">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-plate text-xs font-bold text-violet-400">VII</span>
+                <span className="font-plate text-xs font-bold text-violet-400">VIII</span>
                 <span className="font-plate text-xs font-semibold text-chalk truncate">
                   System Design
                 </span>
@@ -302,7 +302,7 @@ function CommandHud({ worlds, review, citadel }: { worlds: World[]; review: Revi
                 {quest.question.title}
               </h1>
               <div className="flex flex-wrap items-center gap-2 mt-1">
-                <LeetCodeLink lc={quest.question.lc} url={quest.question.leetcode_url} />
+                {quest.question.citadel_id === 'dsa' && <LeetCodeLink lc={quest.question.lc} url={quest.question.leetcode_url} />}
                 <DifficultyBadge difficulty={quest.question.difficulty} />
                 <span className="text-2xs text-muted truncate">
                   World {quest.question.world_id}

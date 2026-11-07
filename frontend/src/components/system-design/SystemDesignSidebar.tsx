@@ -45,7 +45,7 @@ export default function SystemDesignSidebar({
   return (
     <aside
       style={width ? { width: `${width}px` } : undefined}
-      className="w-72 shrink-0 border-r border-line bg-panel flex flex-col h-screen sticky top-0 select-none overflow-hidden transition-[width] duration-75"
+      className="w-72 max-w-[85vw] md:max-w-none shrink-0 border-r border-line bg-panel flex flex-col h-screen sticky top-0 select-none overflow-hidden transition-[width] duration-75"
     >
       <div className="p-4 border-b border-line bg-panel-2 space-y-2.5">
         <div className="flex items-center justify-between">
@@ -67,7 +67,7 @@ export default function SystemDesignSidebar({
         </div>
         <div>
           <div className="flex items-center justify-between text-2xs">
-            <span className="font-plate font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Citadel VII</span>
+            <span className="font-plate font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Citadel VIII</span>
             <span className="font-mono text-muted">{solvedCount}/{totalCount} Done ({pct}%)</span>
           </div>
           <h2 className="font-plate text-sm font-bold text-chalk mt-0.5">System Design & Architecture</h2>

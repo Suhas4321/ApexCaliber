@@ -1,6 +1,7 @@
 import StudyGuideLayout from './StudyGuideLayout'
 import type { QuestionDetail, TraceStep } from '../../api/types'
 import type { NarratorResult } from '../../lib/narrator/types'
+import { useState } from 'react'
 import { Markdown } from '../ui'
 import VisualizerHost from '../visualizers/VisualizerHost'
 
@@ -133,6 +134,7 @@ export default function DataStructurePrimer({
 }: Props) {
   const content = question.content!
   const primer = WORLD_DS_PRIMERS[question.world_id] ?? DEFAULT_PRIMER
+  const [showSolutionTrace, setShowSolutionTrace] = useState(false)
 
   return (
     <StudyGuideLayout
@@ -247,7 +249,10 @@ export default function DataStructurePrimer({
           </span>
         </div>
 
-        <div className="stage overflow-x-auto rounded-md border border-line">
+        {!showSolutionTrace ? <div className="rounded-xl border border-line bg-panel p-5 space-y-3">
+          <p className="text-sm leading-relaxed text-muted">This trace uses the reference solution to the current challenge. Try the practice editor first if you want to solve it independently.</p>
+          <button type="button" className="rounded-lg border border-line-strong bg-panel-2 px-4 py-2 text-sm font-medium text-chalk hover:bg-panel-3" onClick={() => setShowSolutionTrace(true)}>Show reference solution trace</button>
+        </div> : <div className="stage overflow-x-auto rounded-md border border-line">
           <VisualizerHost
             kind={question.visualizer}
             title={content.viz?.title || `${question.title} · Step-by-Step Visual Demo`}
@@ -275,7 +280,7 @@ export default function DataStructurePrimer({
             speed={speed}
             onSpeedChange={onSpeedChange}
           />
-        </div>
+        </div>}
       </section>
         ) },
       ]}

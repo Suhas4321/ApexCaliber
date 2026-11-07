@@ -8,10 +8,10 @@ import SystemDesignSyllabusView from '../components/system-design/SystemDesignSy
 import { markSystemDesignCompleted, useSystemDesignProgress } from '../lib/systemDesignProgress'
 
 export default function SystemDesignPage() {
-  const [selected, setSelected] = useState<SelectedItem>({ kind: 'solid', index: 0 })
+  const [selected, setSelected] = useState<SelectedItem>(null)
   const { solved, total, completedIds } = useSystemDesignProgress()
 
-  const [leftOpen, setLeftOpen] = useState(true)
+  const [leftOpen, setLeftOpen] = useState(() => window.matchMedia('(min-width: 768px)').matches)
   const [leftWidth, setLeftWidth] = useState(280)
   const [draggingLeft, setDraggingLeft] = useState(false)
 
@@ -45,6 +45,7 @@ export default function SystemDesignPage() {
 
   const handleSelect = (next: SelectedItem) => {
     setSelected(next)
+    if (window.matchMedia('(max-width: 767px)').matches) setLeftOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -57,15 +58,23 @@ export default function SystemDesignPage() {
       {/* 1. Left Sticky Navigation Tree (Draggable & Closable) */}
       {leftOpen && (
         <>
-          <SystemDesignSidebar
-            selected={selected}
-            onSelect={handleSelect}
-            completedIds={completedIds}
-            solvedCount={solved}
-            totalCount={total}
-            width={leftWidth}
-            onClose={() => setLeftOpen(false)}
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/60 md:hidden"
+            aria-label="Close curriculum navigator"
+            onClick={() => setLeftOpen(false)}
           />
+          <div className="fixed inset-y-0 left-0 z-50 max-w-[85vw] md:static md:z-auto md:max-w-none">
+            <SystemDesignSidebar
+              selected={selected}
+              onSelect={handleSelect}
+              completedIds={completedIds}
+              solvedCount={solved}
+              totalCount={total}
+              width={leftWidth}
+              onClose={() => setLeftOpen(false)}
+            />
+          </div>
 
           {/* Left Draggable Resizer Gutter */}
           <div
@@ -74,7 +83,7 @@ export default function SystemDesignPage() {
             title="Drag to resize sidebar · Double-click to reset"
             onPointerDown={(e) => { e.preventDefault(); setDraggingLeft(true) }}
             onDoubleClick={() => setLeftWidth(280)}
-            className={`w-1 shrink-0 cursor-col-resize bg-line hover:bg-violet-400/60 active:bg-violet-500 transition-colors z-20 select-none ${
+            className={`hidden md:block w-1 shrink-0 cursor-col-resize bg-line hover:bg-violet-400/60 active:bg-violet-500 transition-colors z-20 select-none ${
               draggingLeft ? 'bg-violet-500 w-1.5' : ''
             }`}
           />
@@ -219,7 +228,7 @@ export default function SystemDesignPage() {
 
             <div className="mt-auto pt-4 border-t border-line text-2xs text-muted">
               <span className="block font-semibold text-chalk mb-1">Pass to Complete</span>
-              Solve the hands-on lab in each lesson to track completion in Citadel VII.
+              Solve the hands-on lab in each lesson to track completion in Citadel VIII.
             </div>
           </aside>
         </>
@@ -227,4 +236,3 @@ export default function SystemDesignPage() {
     </div>
   )
 }
-

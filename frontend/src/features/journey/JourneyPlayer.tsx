@@ -4,6 +4,7 @@ import type { QuestionDetail, JourneyStage } from '../../api/types'
 import { Markdown } from '../../components/ui'
 import { getCitadel } from '../../lib/citadels'
 import { initialStage, PHASES, restoreJourney, type JourneyProgress, type StageProgress } from './journeyState'
+import { BEGINNER_FOUNDATIONS, type BeginnerFoundation } from './beginnerFoundations'
 import LessonExperiment from './LessonExperiment'
 import './journey.css'
 
@@ -43,6 +44,7 @@ export default function JourneyPlayer({ question, onProceedToCode }: JourneyPlay
     catch { return restoreJourney(null, stages) }
   })
   const [outlineOpen, setOutlineOpen] = useState(false)
+  const [foundationsSeen, setFoundationsSeen] = useState<Record<string, boolean>>({})
   const [storageFailed, setStorageFailed] = useState(false)
   const mainRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -51,6 +53,8 @@ export default function JourneyPlayer({ question, onProceedToCode }: JourneyPlay
   const chosenAnswer = stage.prediction?.choices.find(choice => choice.id === state.prediction)
   const completed = stages.filter(s => progress.stages[s.id]?.complete).length
   const citadel = getCitadel(question.citadel_id)
+  const foundation: BeginnerFoundation | undefined = (stage as JourneyStage & { foundation?: BeginnerFoundation }).foundation ?? (progress.stageIndex === 0 ? BEGINNER_FOUNDATIONS[question.slug] : undefined)
+  const showFoundation = (Boolean(foundation) || progress.stageIndex === 0) && (state.phase === 'predict' || (!stage.prediction && state.phase === 'observe')) && !state.prediction && !foundationsSeen[stage.id]
 
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(progress)) }
@@ -110,18 +114,29 @@ export default function JourneyPlayer({ question, onProceedToCode }: JourneyPlay
           <div className="lesson-meta"><span className="lesson-eyebrow">Lesson {String(progress.stageIndex + 1).padStart(2, '0')} / {String(stages.length).padStart(2, '0')}</span><span>Concept journey</span></div>
           <h1 className="lesson-title" ref={headingRef} tabIndex={-1}>{stage.title.replace(/^Transfer Challenge: /, '')}</h1>
           {stage.subtitle && <p className="lesson-subtitle">{stage.subtitle}</p>}
-          <nav className="lesson-phases" aria-label="Learning sequence">
+          {showFoundation && <section className="lesson-foundation" aria-label="Start with the foundations">
+            <span className="lesson-eyebrow">Start here · no quiz yet</span>
+            <h2>{foundation?.goal || `First, understand ${stage.title.replace(/^Transfer Challenge: /, '').toLowerCase()}.`}</h2>
+            <div className="lesson-prose"><Markdown>{foundation?.plain_language || stage.scenario}</Markdown></div>
+            {foundation?.worked_example && <div className="lesson-foundation-example"><span className="lesson-eyebrow">One small example</span><Markdown>{foundation.worked_example}</Markdown></div>}
+            {!foundation?.worked_example && <div className="lesson-foundation-example"><span className="lesson-eyebrow">The key idea</span><Markdown>{stage.mechanism}</Markdown></div>}
+            <div className="lesson-actions"><button type="button" className="lesson-primary" onClick={() => setFoundationsSeen(seen => ({ ...seen, [stage.id]: true }))}>{stage.prediction ? 'Try a prediction' : 'Explore this idea'} <ArrowRight size={16} /></button></div>
+            {foundation?.terms && foundation.terms.length > 0 && <details className="lesson-foundation-glossary"><summary>Key words in this lesson</summary><div className="lesson-foundation-terms">
+              {foundation.terms.map(term => <div key={term.name}><strong>{term.name}</strong><p>{term.meaning}</p></div>)}
+            </div></details>}
+          </section>}
+          {!showFoundation && <nav className="lesson-phases" aria-label="Learning sequence">
             {PHASES.map((phase, i) => (
               <button key={phase} aria-current={state.phase === phase ? 'step' : undefined} disabled={i > state.reached || (phase === 'predict' && !stage.prediction)} onClick={() => updateStage({ phase })}>
                 <span>{i < state.reached ? <Check size={12} /> : i + 1}</span>
                 {['Make a prediction', 'Explore', 'Understand'][i]}
               </button>
             ))}
-          </nav>
-          {state.phase === 'predict' && stage.prediction && (
+          </nav>}
+          {!showFoundation && state.phase === 'predict' && stage.prediction && (
             <Prediction key={stage.id} stage={stage} committed={state.prediction} onCommit={prediction => updateStage({ prediction, phase: 'observe', reached: Math.max(1, state.reached) })} />
           )}
-          {state.phase === 'observe' && (
+          {!showFoundation && state.phase === 'observe' && (
             <section className="lesson-section" aria-label="Explore the concept">
               <div className="lesson-section-heading"><div><span className="lesson-eyebrow">02 / Explore</span><h2>See what changes.</h2></div><span className="lesson-status">{stage.prediction ? 'Prediction saved' : 'Guided exploration'}</span></div>
               <LessonExperiment key={stage.id} stage={stage} question={question} />

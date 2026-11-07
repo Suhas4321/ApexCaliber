@@ -36,16 +36,26 @@ export default function SystemDesignSyllabusView({ completedIds, onOpenItem }: P
     <div className="space-y-8 pb-16">
       <div className="border-b border-line pb-6 space-y-2">
         <span className="font-mono text-2xs uppercase tracking-wider text-violet-600 dark:text-violet-400 font-semibold">
-          Citadel VII · Architecture Master Syllabus
+          Citadel VIII · Architecture Master Syllabus
         </span>
         <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-chalk">
-          System Design Track: OOP/SOLID → LLD → Distributed HLD
+          Learn to design systems, one layer at a time
         </h1>
         <p className="text-sm sm:text-base leading-relaxed text-muted">
-          From first-principles OOP patterns to concurrent LLD and high-throughput distributed systems.
-          Pass each hands-on interactive assignment to complete the module.
+          Start with objects and responsibilities. Then design a small application. Finally, learn how that design changes when many people use it at once. Each lesson has a practical lab to check your understanding.
         </p>
       </div>
+
+      <section aria-label="How this track builds up" className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-5 sm:p-6">
+        <span className="font-mono text-2xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">Start with a familiar app</span>
+        <h2 className="mt-2 text-xl font-semibold text-chalk">Imagine building a food-ordering app.</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">First decide what an order, menu and payment each own. Next, make those parts work together in one app. When many customers order at once, ask how to keep it fast and reliable. That is the path from OOP to low-level design to distributed systems.</p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-line bg-panel p-3"><strong className="block text-sm text-chalk">1. Give each part a job</strong><span className="mt-1 block text-xs leading-5 text-muted">Objects, responsibilities, and SOLID.</span></div>
+          <div className="rounded-lg border border-line bg-panel p-3"><strong className="block text-sm text-chalk">2. Connect the parts</strong><span className="mt-1 block text-xs leading-5 text-muted">Classes, state, and common workflows.</span></div>
+          <div className="rounded-lg border border-line bg-panel p-3"><strong className="block text-sm text-chalk">3. Handle real scale</strong><span className="mt-1 block text-xs leading-5 text-muted">Traffic, failures, and trade-offs.</span></div>
+        </div>
+      </section>
 
       {groups.map((g) => {
         const Icon = g.icon

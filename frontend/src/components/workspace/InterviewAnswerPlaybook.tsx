@@ -49,6 +49,8 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
 
   const [timerSec, setTimerSec] = useState(60)
   const [timerRunning, setTimerRunning] = useState(false)
+  const [answerRevealed, setAnswerRevealed] = useState(() => progress.solved || progress.studied_solution)
+  const [revealError, setRevealError] = useState(false)
 
   useEffect(() => {
     if (!timerRunning) return
@@ -76,6 +78,25 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
   const triggerStep = steps.find((s) => /trigger/i.test(s.tag))
   const optimalStep = steps.find((s) => /optimal|solution/i.test(s.tag))
   const complexityStep = steps.find((s) => /complexity/i.test(s.tag))
+
+  if (!answerRevealed) return (
+    <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center gap-5 px-6 py-12 text-chalk">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted">Interview rehearsal</span>
+      <h2 className="text-3xl font-semibold">Explain your approach first.</h2>
+      <p className="max-w-2xl text-base leading-relaxed text-muted">Try describing the problem, your first solution, a better approach, and its trade-offs. The reference answer includes the solution code, so reveal it when you are ready to compare.</p>
+      <div className="flex flex-wrap gap-3">
+        {onOpenTerminal && <button type="button" className="rounded-lg border border-line-strong bg-panel px-4 py-2.5 text-sm font-medium hover:bg-panel-2" onClick={onOpenTerminal}>Practice in the editor</button>}
+        <button type="button" className="rounded-lg bg-action px-4 py-2.5 text-sm font-semibold text-void" onClick={async () => {
+          try {
+            const next = await api.patchProgress(question.slug, { studied_solution: true })
+            onProgress(next)
+            setAnswerRevealed(true)
+          } catch { setRevealError(true) }
+        }}>Reveal reference answer</button>
+      </div>
+      {revealError && <p role="alert" className="text-sm text-crimson">Could not save that you studied the answer. Please try again.</p>}
+    </main>
+  )
 
   return (
     <StudyGuideLayout
@@ -203,7 +224,7 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
             <span className="text-xs font-semibold uppercase tracking-wider text-muted">
               Common Interview Follow-Up Variation
             </span>
-            <LeetCodeLink lc={content.twist.lc} url={leetcodeUrl(content.twist.title)} showLabel />
+            {question.citadel_id === 'dsa' && <LeetCodeLink lc={content.twist.lc} url={leetcodeUrl(content.twist.title)} showLabel />}
           </div>
           <div className="text-sm font-semibold text-chalk">{content.twist.title}</div>
           <div className="text-sm leading-relaxed text-muted">

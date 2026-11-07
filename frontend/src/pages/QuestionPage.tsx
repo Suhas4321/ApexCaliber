@@ -14,7 +14,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Progress, QuestionDetail, RunResult, Trace } from '../api/types'
 import { ThemeToggle } from '../components/effects'
-import { Button, DifficultyBadge, ErrorNote, Spinner } from '../components/ui'
+import { Button, DifficultyBadge, ErrorNote, Skeleton } from '../components/ui'
 import VictoryModal from '../components/VictoryModal'
 import { usePlayback } from '../components/visualizers/stage/usePlayback'
 import DataStructurePrimer from '../components/workspace/DataStructurePrimer'
@@ -62,9 +62,11 @@ function QuestionWorkspace() {
   })
   const [workspaceStep, setWorkspaceStep] = useState<'journey' | 'learn' | 'code' | 'interview'>(() => {
     const st = Number(search.get('stage'))
+    if (blind) return 'code'
     if (st === 1) return 'learn'
+    if (st === 2 || st === 3) return 'code'
     if (st === 4) return 'interview'
-    return 'code'
+    return 'learn'
   })
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [mobilePane, setMobilePane] = useState<'problem' | 'editor'>('problem')
@@ -91,7 +93,7 @@ function QuestionWorkspace() {
         progressRef.current = q.progress
         setTracedCode(q.content?.solution?.code || q.content?.starter_code || '')
         if ((q.content?.journey && q.content.journey.length > 0) || (q.citadel_id && q.citadel_id !== 'dsa')) {
-          if (!requestedStage) {
+          if (!requestedStage && !blind) {
             setWorkspaceStep('journey')
           }
         }
@@ -108,7 +110,7 @@ function QuestionWorkspace() {
       })
       .catch(() => {})
     return () => { active = false }
-  }, [slug, requestedStage])
+  }, [slug, requestedStage, blind])
 
   const onProgress = useCallback(
     (p: Progress) => {
@@ -208,8 +210,26 @@ function QuestionWorkspace() {
   }
   if (!question || !progress) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-void">
-        <Spinner label="Loading workspace" />
+      <div className="h-dvh w-full overflow-hidden bg-void text-chalk" role="status" aria-label="Loading lesson">
+        <div className="flex h-14 items-center gap-4 border-b border-line px-5">
+          <Skeleton className="h-7 w-28 rounded-md" />
+          <Skeleton className="h-5 w-52 max-w-[35vw] rounded-md" />
+          <Skeleton className="ml-auto h-8 w-44 rounded-md" />
+        </div>
+        <div className="mx-auto grid h-[calc(100%-3.5rem)] max-w-7xl gap-6 px-4 py-6 md:grid-cols-[15rem_minmax(0,1fr)]">
+          <div className="hidden space-y-4 md:block">
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-10 rounded-lg" />
+            <Skeleton className="h-10 rounded-lg" />
+          </div>
+          <div className="space-y-5">
+            <Skeleton className="h-7 w-40 rounded-md" />
+            <Skeleton className="h-10 w-3/4 max-w-2xl rounded-md" />
+            <Skeleton className="h-36 w-full rounded-xl" />
+            <Skeleton className="h-48 w-full rounded-xl" />
+          </div>
+        </div>
+        <span className="sr-only">Loading lesson</span>
       </div>
     )
   }
@@ -230,7 +250,7 @@ function QuestionWorkspace() {
     <div className="question-workspace flex h-dvh w-full flex-col overflow-hidden bg-void text-chalk">
       <header className="question-header">
         <div className="question-identity">
-          <Link to={`/world/${question.world_id}`} className="question-back" aria-label={`Back to World ${question.world_id}`} title={question.world_name}><ArrowLeft size={16} /><span>World {question.world_id}</span></Link>
+          <Link to={`/world/${question.world_id}`} className="question-back" aria-label={`Back to ${question.world_name}`} title={`Back to ${question.world_name}`}><ArrowLeft size={16} /><span>{question.world_name}</span></Link>
           <h1 title={question.title}>{question.title}</h1>
           <span className="question-difficulty"><DifficultyBadge difficulty={question.difficulty} /></span>
         </div>
