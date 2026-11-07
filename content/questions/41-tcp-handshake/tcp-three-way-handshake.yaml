@@ -3,390 +3,642 @@ lc: 9702
 citadel_id: computer_networking
 brick_layer: 1
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    How do two computers establish a reliable, in-order byte stream over an unreliable internet that drops,
-    re-orders, and duplicates packets?
-    If computers simply started transmitting data without synchronization (like UDP), lost packets corrupt data files,
-    and out-of-order packets scramble financial transactions.
-    Why can't we use a simple 2-way handshake (Client says "Connect", Server says "OK")?
-    In distributed systems, network delays mean old, duplicated "Connect" packets from crashed past sessions can arrive minutes later.
-    A 2-way handshake would force the server to allocate socket memory for a ghost connection!
-    The TCP 3-Way Handshake (SYN → SYN-ACK → ACK) mathematically guarantees that BOTH sender and receiver agree on initial sequence numbers (ISNs)
-    and confirm that both transmission and reception directions are operational before allocating connection memory.
-  brute_force: >-
-    Transmitting raw payloads without handshakes (UDP).
-    Packets arrive jumbled, fragmented, or missing, requiring application code to manually invent retransmission and deduplication protocols.
+  problem_it_solves: How do two computers establish a reliable, in-order byte stream
+    over an unreliable internet that drops, re-orders, and duplicates packets? If
+    computers simply started transmitting data without synchronization (like UDP),
+    lost packets corrupt data files, and out-of-order packets scramble financial transactions.
+    Why can't we use a simple 2-way handshake (Client says "Connect", Server says
+    "OK")? In distributed systems, network delays mean old, duplicated "Connect" packets
+    from crashed past sessions can arrive minutes later. A 2-way handshake would force
+    the server to allocate socket memory for a ghost connection! The TCP 3-Way Handshake
+    (SYN → SYN-ACK → ACK) mathematically guarantees that BOTH sender and receiver
+    agree on initial sequence numbers (ISNs) and confirm that both transmission and
+    reception directions are operational before allocating connection memory.
+  brute_force: Transmitting raw payloads without handshakes (UDP). Packets arrive
+    jumbled, fragmented, or missing, requiring application code to manually invent
+    retransmission and deduplication protocols.
   brute_force_complexity: O(N) uncoordinated dropped packets with silent data corruption.
-  key_insight: >-
-    1. Client sends SYN with random sequence number `client_isn`. State transitions from CLOSED to SYN_SENT.
-    2. Server receives SYN, picks `server_isn`, and responds with SYN-ACK acknowledging `ack = client_isn + 1`. State transitions from LISTEN to SYN_RCVD.
-    3. Client receives SYN-ACK, confirms `ack == client_isn + 1`, and sends final ACK with `ack = server_isn + 1`. Client transitions to ESTABLISHED.
-    4. Server receives ACK, validates `ack == server_isn + 1`, and transitions to ESTABLISHED. The socket is now ready for HTTP/TLS data exchange.
-  real_world: >-
-    Stripe and PayPal payment webhooks, database connection pool initializations, Nginx reverse proxy upstream handshakes, and TCP SYN flood mitigation (SYN Cookies).
-
+  key_insight: 1. Client sends SYN with random sequence number `client_isn`. State
+    transitions from CLOSED to SYN_SENT. 2. Server receives SYN, picks `server_isn`,
+    and responds with SYN-ACK acknowledging `ack = client_isn + 1`. State transitions
+    from LISTEN to SYN_RCVD. 3. Client receives SYN-ACK, confirms `ack == client_isn
+    + 1`, and sends final ACK with `ack = server_isn + 1`. Client transitions to ESTABLISHED.
+    4. Server receives ACK, validates `ack == server_isn + 1`, and transitions to
+    ESTABLISHED. The socket is now ready for HTTP/TLS data exchange.
+  real_world: Stripe and PayPal payment webhooks, database connection pool initializations,
+    Nginx reverse proxy upstream handshakes, and TCP SYN flood mitigation (SYN Cookies).
 statement:
-  clean: |
-    Implement a **TCP 3-Way Handshake Connection State Machine**:
-    `simulate_tcp_handshake(client_isn: int, server_isn: int, packet_events: list[str]) -> dict`.
+  clean: "Implement a **TCP 3-Way Handshake Connection State Machine**:\n`simulate_tcp_handshake(client_isn:\
+    \ int, server_isn: int, packet_events: list[str]) -> dict`.\n\n### Connection\
+    \ States\n- Client states: `\"CLOSED\"` -> `\"SYN_SENT\"` -> `\"ESTABLISHED\"\
+    `\n- Server states: `\"LISTEN\"` -> `\"SYN_RCVD\"` -> `\"ESTABLISHED\"`\n\n###\
+    \ Handshake Rules:\n1. Initial State:\n   - `client_state = \"CLOSED\"`\n   -\
+    \ `server_state = \"LISTEN\"`\n   - `client_seq = client_isn`\n   - `server_seq\
+    \ = server_isn`\n   - `packets_transmitted: list[dict] = []`\n2. Step 1: Client\
+    \ initiates connection\n   - Client transmits `SYN`: `{\"type\": \"SYN\", \"seq\"\
+    : client_seq, \"ack\": 0}`.\n   - `client_state` becomes `\"SYN_SENT\"`.\n   -\
+    \ Append packet to `packets_transmitted`.\n3. Step 2: Server responds to SYN\n\
+    \   - If `\"DROP_SYN\"` is in `packet_events`: the SYN packet was lost in transit.\n\
+    \     Connection stalls: return immediately with current states.\n   - Server\
+    \ receives `SYN`: validates that `client_state == \"SYN_SENT\"`.\n   - Server\
+    \ prepares `SYN-ACK`: `{\"type\": \"SYN-ACK\", \"seq\": server_seq, \"ack\": client_seq\
+    \ + 1}`.\n   - `server_state` becomes `\"SYN_RCVD\"`.\n   - Append packet to `packets_transmitted`.\n\
+    4. Step 3: Client acknowledges SYN-ACK\n   - If `\"DROP_SYN_ACK\"` is in `packet_events`:\
+    \ the SYN-ACK packet was lost in transit.\n     Connection stalls: return immediately\
+    \ with current states.\n   - Client receives `SYN-ACK`: checks if packet `ack\
+    \ == client_seq + 1`.\n   - Client prepares final `ACK`: `{\"type\": \"ACK\",\
+    \ \"seq\": client_seq + 1, \"ack\": server_seq + 1}`.\n   - `client_state` becomes\
+    \ `\"ESTABLISHED\"`.\n   - Append packet to `packets_transmitted`.\n5. Step 4:\
+    \ Server processes final ACK\n   - If `\"DROP_ACK\"` is in `packet_events`: the\
+    \ final ACK was lost.\n     Return with current states.\n   - Server receives\
+    \ `ACK`: checks if packet `ack == server_seq + 1`.\n   - `server_state` becomes\
+    \ `\"ESTABLISHED\"`.\n6. Return summary dictionary:\n   - `\"client_state\"`:\
+    \ str\n   - `\"server_state\"`: str\n   - `\"is_connected\"`: bool (`True` if\
+    \ both client and server are `\"ESTABLISHED\"`, else `False`)\n   - `\"packets_transmitted\"\
+    `: list of packet dictionaries\n   - `\"syn_ack_number\"`: int (the ack number\
+    \ in SYN-ACK packet, or `0` if not reached)\n   - `\"final_ack_number\"`: int\
+    \ (the ack number in final ACK packet, or `0` if not reached)\n"
+  oa_story: '**Razorpay Payment Gateway — Zombie Connection Outage**
 
-    ### Connection States
-    - Client states: `"CLOSED"` -> `"SYN_SENT"` -> `"ESTABLISHED"`
-    - Server states: `"LISTEN"` -> `"SYN_RCVD"` -> `"ESTABLISHED"`
 
-    ### Handshake Rules:
-    1. Initial State:
-       - `client_state = "CLOSED"`
-       - `server_state = "LISTEN"`
-       - `client_seq = client_isn`
-       - `server_seq = server_isn`
-       - `packets_transmitted: list[dict] = []`
-    2. Step 1: Client initiates connection
-       - Client transmits `SYN`: `{"type": "SYN", "seq": client_seq, "ack": 0}`.
-       - `client_state` becomes `"SYN_SENT"`.
-       - Append packet to `packets_transmitted`.
-    3. Step 2: Server responds to SYN
-       - If `"DROP_SYN"` is in `packet_events`: the SYN packet was lost in transit.
-         Connection stalls: return immediately with current states.
-       - Server receives `SYN`: validates that `client_state == "SYN_SENT"`.
-       - Server prepares `SYN-ACK`: `{"type": "SYN-ACK", "seq": server_seq, "ack": client_seq + 1}`.
-       - `server_state` becomes `"SYN_RCVD"`.
-       - Append packet to `packets_transmitted`.
-    4. Step 3: Client acknowledges SYN-ACK
-       - If `"DROP_SYN_ACK"` is in `packet_events`: the SYN-ACK packet was lost in transit.
-         Connection stalls: return immediately with current states.
-       - Client receives `SYN-ACK`: checks if packet `ack == client_seq + 1`.
-       - Client prepares final `ACK`: `{"type": "ACK", "seq": client_seq + 1, "ack": server_seq + 1}`.
-       - `client_state` becomes `"ESTABLISHED"`.
-       - Append packet to `packets_transmitted`.
-    5. Step 4: Server processes final ACK
-       - If `"DROP_ACK"` is in `packet_events`: the final ACK was lost.
-         Return with current states.
-       - Server receives `ACK`: checks if packet `ack == server_seq + 1`.
-       - `server_state` becomes `"ESTABLISHED"`.
-    6. Return summary dictionary:
-       - `"client_state"`: str
-       - `"server_state"`: str
-       - `"is_connected"`: bool (`True` if both client and server are `"ESTABLISHED"`, else `False`)
-       - `"packets_transmitted"`: list of packet dictionaries
-       - `"syn_ack_number"`: int (the ack number in SYN-ACK packet, or `0` if not reached)
-       - `"final_ack_number"`: int (the ack number in final ACK packet, or `0` if not reached)
+    During Diwali flash sales, a legacy payment webhook service crashed because it
+    used a naive 2-way handshake.
 
-  oa_story: |
-    **Razorpay Payment Gateway — Zombie Connection Outage**
+    Delayed network packets from dropped cellular connections triggered the server
+    to allocate 50,000 idle TCP socket control blocks (TCBs).
 
-    During Diwali flash sales, a legacy payment webhook service crashed because it used a naive 2-way handshake.
-    Delayed network packets from dropped cellular connections triggered the server to allocate 50,000 idle TCP socket control blocks (TCBs).
     The server ran out of Linux file descriptors, preventing real payments from completing.
 
-    Implement this strict TCP 3-Way Handshake state machine with dropped-packet resilience to ensure sockets only enter ESTABLISHED when both endpoints acknowledge sequence numbers.
 
+    Implement this strict TCP 3-Way Handshake state machine with dropped-packet resilience
+    to ensure sockets only enter ESTABLISHED when both endpoints acknowledge sequence
+    numbers.
+
+    '
   trigger_keywords:
-    - TCP 3-Way Handshake
-    - simulate_tcp_handshake
-    - is_connected
-    - packets_transmitted
-    - SYN_SENT
-
+  - TCP 3-Way Handshake
+  - simulate_tcp_handshake
+  - is_connected
+  - packets_transmitted
+  - SYN_SENT
   examples:
-    - input: 'client_isn = 1000, server_isn = 5000, packet_events = []'
-      output: '{"client_state": "ESTABLISHED", "server_state": "ESTABLISHED", "is_connected": true, "packets_transmitted": [{"type": "SYN", "seq": 1000, "ack": 0}, {"type": "SYN-ACK", "seq": 5000, "ack": 1001}, {"type": "ACK", "seq": 1001, "ack": 5001}], "syn_ack_number": 1001, "final_ack_number": 5001}'
-      explanation: "Complete successful 3-way handshake with incremented acknowledgment numbers."
-    - input: 'client_isn = 200, server_isn = 800, packet_events = ["DROP_SYN_ACK"]'
-      output: '{"client_state": "SYN_SENT", "server_state": "SYN_RCVD", "is_connected": false, "packets_transmitted": [{"type": "SYN", "seq": 200, "ack": 0}, {"type": "SYN-ACK", "seq": 800, "ack": 201}], "syn_ack_number": 201, "final_ack_number": 0}'
-      explanation: "SYN-ACK was dropped; client remains in SYN_SENT and connection is not established."
-
+  - input: client_isn = 1000, server_isn = 5000, packet_events = []
+    output: '{"client_state": "ESTABLISHED", "server_state": "ESTABLISHED", "is_connected":
+      true, "packets_transmitted": [{"type": "SYN", "seq": 1000, "ack": 0}, {"type":
+      "SYN-ACK", "seq": 5000, "ack": 1001}, {"type": "ACK", "seq": 1001, "ack": 5001}],
+      "syn_ack_number": 1001, "final_ack_number": 5001}'
+    explanation: Complete successful 3-way handshake with incremented acknowledgment
+      numbers.
+  - input: client_isn = 200, server_isn = 800, packet_events = ["DROP_SYN_ACK"]
+    output: '{"client_state": "SYN_SENT", "server_state": "SYN_RCVD", "is_connected":
+      false, "packets_transmitted": [{"type": "SYN", "seq": 200, "ack": 0}, {"type":
+      "SYN-ACK", "seq": 800, "ack": 201}], "syn_ack_number": 201, "final_ack_number":
+      0}'
+    explanation: SYN-ACK was dropped; client remains in SYN_SENT and connection is
+      not established.
   constraints:
-    - "1 <= client_isn <= 1000000"
-    - "1 <= server_isn <= 1000000"
-    - "0 <= len(packet_events) <= 5"
-
+  - 1 <= client_isn <= 1000000
+  - 1 <= server_isn <= 1000000
+  - 0 <= len(packet_events) <= 5
 constraint_quiz:
-  prompt: "Why must both Client and Server increment the received Sequence Number by 1 in their ACK response?"
+  prompt: Why must both Client and Server increment the received Sequence Number by
+    1 in their ACK response?
   options:
-    - "The SYN flag consumes exactly 1 sequence number in the TCP stream, so acknowledging it confirms receipt of that specific control byte"
-    - "Because TCP only supports incrementing numbers by 1"
-    - "To signal to the router to upgrade from IPv4 to IPv6"
-    - "To allocate 1 MB of socket buffer in Linux kernel"
+  - The SYN flag consumes exactly 1 sequence number in the TCP stream, so acknowledging
+    it confirms receipt of that specific control byte
+  - Because TCP only supports incrementing numbers by 1
+  - To signal to the router to upgrade from IPv4 to IPv6
+  - To allocate 1 MB of socket buffer in Linux kernel
   answer: 0
-  explanation: "Control flags like SYN and FIN consume one sequence number in TCP stream counting. Setting ACK = SEQ + 1 explicitly informs the sender: 'I have received your SYN at sequence SEQ, and I expect byte SEQ + 1 next'."
-
+  explanation: 'Control flags like SYN and FIN consume one sequence number in TCP
+    stream counting. Setting ACK = SEQ + 1 explicitly informs the sender: ''I have
+    received your SYN at sequence SEQ, and I expect byte SEQ + 1 next''.'
 pattern_quiz:
-  prompt: "What is a TCP SYN Flood attack and how do SYN Cookies defend against it?"
+  prompt: What is a TCP SYN Flood attack and how do SYN Cookies defend against it?
   options:
-    - "An attacker sends millions of SYN packets with spoofed IPs without sending final ACKs to exhaust server memory; SYN Cookies encode connection state inside the server's ISN sequence number so zero memory is allocated until the final ACK arrives"
-    - "An attacker sends large HTTP POST bodies to fill server disk space"
-    - "An attacker overrides DNS cache records with malicious IP addresses"
-    - "An attacker requests all ephemeral ports simultaneously"
+  - An attacker sends millions of SYN packets with spoofed IPs without sending final
+    ACKs to exhaust server memory; SYN Cookies encode connection state inside the
+    server's ISN sequence number so zero memory is allocated until the final ACK arrives
+  - An attacker sends large HTTP POST bodies to fill server disk space
+  - An attacker overrides DNS cache records with malicious IP addresses
+  - An attacker requests all ephemeral ports simultaneously
   answer: 0
-  explanation: "In a SYN flood, half-open connections in SYN_RCVD state exhaust the server's SYN backlog queue. SYN Cookies eliminate the state table entirely by cryptographically hashing client IP, port, and timestamp into the server ISN."
-
+  explanation: In a SYN flood, half-open connections in SYN_RCVD state exhaust the
+    server's SYN backlog queue. SYN Cookies eliminate the state table entirely by
+    cryptographically hashing client IP, port, and timestamp into the server ISN.
 function:
   name: simulate_tcp_handshake
   params:
-    - name: client_isn
-      type: any
-    - name: server_isn
-      type: any
-    - name: packet_events
-      type: any
+  - name: client_isn
+    type: any
+  - name: server_isn
+    type: any
+  - name: packet_events
+    type: any
   returns: any
   compare: exact
-
-starter_code: |
-  class Solution:
-      def simulate_tcp_handshake(self, client_isn: int, server_isn: int, packet_events: list[str]) -> dict:
-          pass
-
+starter_code: "class Solution:\n    def simulate_tcp_handshake(self, client_isn: int,\
+  \ server_isn: int, packet_events: list[str]) -> dict:\n        pass\n"
 tests:
-  - args:
-      - 1000
-      - 5000
-      - []
-    expected:
-      client_state: ESTABLISHED
-      server_state: ESTABLISHED
-      is_connected: true
-      packets_transmitted:
-        - type: SYN
-          seq: 1000
-          ack: 0
-        - type: SYN-ACK
-          seq: 5000
-          ack: 1001
-        - type: ACK
-          seq: 1001
-          ack: 5001
-      syn_ack_number: 1001
-      final_ack_number: 5001
-    note: Standard healthy handshake
-
-  - args:
-      - 200
-      - 800
-      - - DROP_SYN_ACK
-    expected:
-      client_state: SYN_SENT
-      server_state: SYN_RCVD
-      is_connected: false
-      packets_transmitted:
-        - type: SYN
-          seq: 200
-          ack: 0
-        - type: SYN-ACK
-          seq: 800
-          ack: 201
-      syn_ack_number: 201
-      final_ack_number: 0
-    note: SYN-ACK dropped mid-flight
-
-  - args:
-      - 300
-      - 900
-      - - DROP_SYN
-    expected:
-      client_state: SYN_SENT
-      server_state: LISTEN
-      is_connected: false
-      packets_transmitted:
-        - type: SYN
-          seq: 300
-          ack: 0
-      syn_ack_number: 0
-      final_ack_number: 0
-    note: Initial SYN dropped
-
+- args:
+  - 1000
+  - 5000
+  - []
+  expected:
+    client_state: ESTABLISHED
+    server_state: ESTABLISHED
+    is_connected: true
+    packets_transmitted:
+    - type: SYN
+      seq: 1000
+      ack: 0
+    - type: SYN-ACK
+      seq: 5000
+      ack: 1001
+    - type: ACK
+      seq: 1001
+      ack: 5001
+    syn_ack_number: 1001
+    final_ack_number: 5001
+  note: Standard healthy handshake
+- args:
+  - 200
+  - 800
+  - - DROP_SYN_ACK
+  expected:
+    client_state: SYN_SENT
+    server_state: SYN_RCVD
+    is_connected: false
+    packets_transmitted:
+    - type: SYN
+      seq: 200
+      ack: 0
+    - type: SYN-ACK
+      seq: 800
+      ack: 201
+    syn_ack_number: 201
+    final_ack_number: 0
+  note: SYN-ACK dropped mid-flight
+- args:
+  - 300
+  - 900
+  - - DROP_SYN
+  expected:
+    client_state: SYN_SENT
+    server_state: LISTEN
+    is_connected: false
+    packets_transmitted:
+    - type: SYN
+      seq: 300
+      ack: 0
+    syn_ack_number: 0
+    final_ack_number: 0
+  note: Initial SYN dropped
 visualize_test: 0
-
 drills:
-  - skill: setup
-    title: Generate SYN packet payload
-    goal: Format client SYN packet dictionary with initial sequence number.
-    instructions: "Return {'type': 'SYN', 'seq': isn, 'ack': 0}."
-    function:
-      name: drill_make_syn
-      params:
-        - name: isn
-    starter_code: |
-      class Solution:
-          def drill_make_syn(self, isn: int) -> dict:
-              pass
-    tests:
-      - args:
-          - 100
-        expected:
-          type: SYN
-          seq: 100
-          ack: 0
-      - args:
-          - 5000
-        expected:
-          type: SYN
-          seq: 5000
-          ack: 0
-    solution: |
-      class Solution:
-          def drill_make_syn(self, isn: int) -> dict:
-              return {"type": "SYN", "seq": isn, "ack": 0}
-    hint: "Return `{'type': 'SYN', 'seq': isn, 'ack': 0}`."
-
-  - skill: core
-    title: Validate and respond with SYN-ACK
-    goal: Create SYN-ACK packet with server ISN acknowledging client ISN + 1.
-    instructions: "Return {'type': 'SYN-ACK', 'seq': server_isn, 'ack': client_isn + 1}."
-    function:
-      name: drill_make_syn_ack
-      params:
-        - name: server_isn
-        - name: client_isn
-    starter_code: |
-      class Solution:
-          def drill_make_syn_ack(self, server_isn: int, client_isn: int) -> dict:
-              pass
-    tests:
-      - args:
-          - 4000
-          - 1000
-        expected:
-          type: SYN-ACK
-          seq: 4000
-          ack: 1001
-      - args:
-          - 50
-          - 10
-        expected:
-          type: SYN-ACK
-          seq: 50
-          ack: 11
-    solution: |
-      class Solution:
-          def drill_make_syn_ack(self, server_isn: int, client_isn: int) -> dict:
-              return {"type": "SYN-ACK", "seq": server_isn, "ack": client_isn + 1}
-    hint: "Set ack to `client_isn + 1`."
-
-  - skill: edge
-    title: Compute final ACK number
-    goal: Acknowledge server sequence number in final handshake step.
-    instructions: Return `server_seq + 1`.
-    function:
-      name: drill_final_ack
-      params:
-        - name: server_seq
-    starter_code: |
-      class Solution:
-          def drill_final_ack(self, server_seq: int) -> int:
-              pass
-    tests:
-      - args:
-          - 5000
-        expected: 5001
-      - args:
-          - 12345
-        expected: 12346
-    solution: |
-      class Solution:
-          def drill_final_ack(self, server_seq: int) -> int:
-              return server_seq + 1
-    hint: Return `server_seq + 1`.
-
+- skill: setup
+  title: Generate SYN packet payload
+  goal: Format client SYN packet dictionary with initial sequence number.
+  instructions: 'Return {''type'': ''SYN'', ''seq'': isn, ''ack'': 0}.'
+  function:
+    name: drill_make_syn
+    params:
+    - name: isn
+  starter_code: "class Solution:\n    def drill_make_syn(self, isn: int) -> dict:\n\
+    \        pass\n"
+  tests:
+  - args:
+    - 100
+    expected:
+      type: SYN
+      seq: 100
+      ack: 0
+  - args:
+    - 5000
+    expected:
+      type: SYN
+      seq: 5000
+      ack: 0
+  solution: "class Solution:\n    def drill_make_syn(self, isn: int) -> dict:\n  \
+    \      return {\"type\": \"SYN\", \"seq\": isn, \"ack\": 0}\n"
+  hint: 'Return `{''type'': ''SYN'', ''seq'': isn, ''ack'': 0}`.'
+- skill: core
+  title: Validate and respond with SYN-ACK
+  goal: Create SYN-ACK packet with server ISN acknowledging client ISN + 1.
+  instructions: 'Return {''type'': ''SYN-ACK'', ''seq'': server_isn, ''ack'': client_isn
+    + 1}.'
+  function:
+    name: drill_make_syn_ack
+    params:
+    - name: server_isn
+    - name: client_isn
+  starter_code: "class Solution:\n    def drill_make_syn_ack(self, server_isn: int,\
+    \ client_isn: int) -> dict:\n        pass\n"
+  tests:
+  - args:
+    - 4000
+    - 1000
+    expected:
+      type: SYN-ACK
+      seq: 4000
+      ack: 1001
+  - args:
+    - 50
+    - 10
+    expected:
+      type: SYN-ACK
+      seq: 50
+      ack: 11
+  solution: "class Solution:\n    def drill_make_syn_ack(self, server_isn: int, client_isn:\
+    \ int) -> dict:\n        return {\"type\": \"SYN-ACK\", \"seq\": server_isn, \"\
+    ack\": client_isn + 1}\n"
+  hint: Set ack to `client_isn + 1`.
+- skill: edge
+  title: Compute final ACK number
+  goal: Acknowledge server sequence number in final handshake step.
+  instructions: Return `server_seq + 1`.
+  function:
+    name: drill_final_ack
+    params:
+    - name: server_seq
+  starter_code: "class Solution:\n    def drill_final_ack(self, server_seq: int) ->\
+    \ int:\n        pass\n"
+  tests:
+  - args:
+    - 5000
+    expected: 5001
+  - args:
+    - 12345
+    expected: 12346
+  solution: "class Solution:\n    def drill_final_ack(self, server_seq: int) -> int:\n\
+    \        return server_seq + 1\n"
+  hint: Return `server_seq + 1`.
 hints:
-  - "Step 1: client sends `{'type': 'SYN', 'seq': client_isn, 'ack': 0}`, state becomes 'SYN_SENT'."
-  - "If 'DROP_SYN' in packet_events, return immediately. Otherwise server state becomes 'SYN_RCVD', responds with SYN-ACK."
-  - "If 'DROP_SYN_ACK' in packet_events, return. Otherwise client transitions to 'ESTABLISHED', sends ACK. If 'DROP_ACK' in packet_events, return; otherwise server becomes 'ESTABLISHED'."
-
+- 'Step 1: client sends `{''type'': ''SYN'', ''seq'': client_isn, ''ack'': 0}`, state
+  becomes ''SYN_SENT''.'
+- If 'DROP_SYN' in packet_events, return immediately. Otherwise server state becomes
+  'SYN_RCVD', responds with SYN-ACK.
+- If 'DROP_SYN_ACK' in packet_events, return. Otherwise client transitions to 'ESTABLISHED',
+  sends ACK. If 'DROP_ACK' in packet_events, return; otherwise server becomes 'ESTABLISHED'.
 solution:
-  code: |
-    class Solution:
-        def simulate_tcp_handshake(self, client_isn: int, server_isn: int, packet_events: list[str]) -> dict:
-            client_state = "CLOSED"
-            server_state = "LISTEN"
-            packets: list[dict] = []
-            syn_ack_num = 0
-            final_ack_num = 0
-
-            # Step 1: Client sends SYN
-            syn_pkt = {"type": "SYN", "seq": client_isn, "ack": 0}
-            packets.append(syn_pkt)
-            client_state = "SYN_SENT"
-
-            if "DROP_SYN" in packet_events:
-                return {
-                    "client_state": client_state,
-                    "server_state": server_state,
-                    "is_connected": False,
-                    "packets_transmitted": packets,
-                    "syn_ack_number": syn_ack_num,
-                    "final_ack_number": final_ack_num,
-                }
-
-            # Step 2: Server receives SYN and responds with SYN-ACK
-            server_state = "SYN_RCVD"
-            syn_ack_num = client_isn + 1
-            syn_ack_pkt = {"type": "SYN-ACK", "seq": server_isn, "ack": syn_ack_num}
-            packets.append(syn_ack_pkt)
-
-            if "DROP_SYN_ACK" in packet_events:
-                return {
-                    "client_state": client_state,
-                    "server_state": server_state,
-                    "is_connected": False,
-                    "packets_transmitted": packets,
-                    "syn_ack_number": syn_ack_num,
-                    "final_ack_number": final_ack_num,
-                }
-
-            # Step 3: Client receives SYN-ACK and sends final ACK
-            client_state = "ESTABLISHED"
-            final_ack_num = server_isn + 1
-            ack_pkt = {"type": "ACK", "seq": client_isn + 1, "ack": final_ack_num}
-            packets.append(ack_pkt)
-
-            if "DROP_ACK" in packet_events:
-                return {
-                    "client_state": client_state,
-                    "server_state": server_state,
-                    "is_connected": False,
-                    "packets_transmitted": packets,
-                    "syn_ack_number": syn_ack_num,
-                    "final_ack_number": final_ack_num,
-                }
-
-            # Step 4: Server receives ACK
-            server_state = "ESTABLISHED"
-
-            return {
-                "client_state": client_state,
-                "server_state": server_state,
-                "is_connected": True,
-                "packets_transmitted": packets,
-                "syn_ack_number": syn_ack_num,
-                "final_ack_number": final_ack_num,
-            }
-  explanation: >-
-    The 3-way handshake prevents phantom half-open connections. Both sides exchange initial sequence numbers (ISNs)
-    and acknowledge each other with seq + 1 before any application data buffers are allocated, ensuring guaranteed
-    bidirectional ordering.
+  code: "class Solution:\n    def simulate_tcp_handshake(self, client_isn: int, server_isn:\
+    \ int, packet_events: list[str]) -> dict:\n        client_state = \"CLOSED\"\n\
+    \        server_state = \"LISTEN\"\n        packets: list[dict] = []\n       \
+    \ syn_ack_num = 0\n        final_ack_num = 0\n\n        # Step 1: Client sends\
+    \ SYN\n        syn_pkt = {\"type\": \"SYN\", \"seq\": client_isn, \"ack\": 0}\n\
+    \        packets.append(syn_pkt)\n        client_state = \"SYN_SENT\"\n\n    \
+    \    if \"DROP_SYN\" in packet_events:\n            return {\n               \
+    \ \"client_state\": client_state,\n                \"server_state\": server_state,\n\
+    \                \"is_connected\": False,\n                \"packets_transmitted\"\
+    : packets,\n                \"syn_ack_number\": syn_ack_num,\n               \
+    \ \"final_ack_number\": final_ack_num,\n            }\n\n        # Step 2: Server\
+    \ receives SYN and responds with SYN-ACK\n        server_state = \"SYN_RCVD\"\n\
+    \        syn_ack_num = client_isn + 1\n        syn_ack_pkt = {\"type\": \"SYN-ACK\"\
+    , \"seq\": server_isn, \"ack\": syn_ack_num}\n        packets.append(syn_ack_pkt)\n\
+    \n        if \"DROP_SYN_ACK\" in packet_events:\n            return {\n      \
+    \          \"client_state\": client_state,\n                \"server_state\":\
+    \ server_state,\n                \"is_connected\": False,\n                \"\
+    packets_transmitted\": packets,\n                \"syn_ack_number\": syn_ack_num,\n\
+    \                \"final_ack_number\": final_ack_num,\n            }\n\n     \
+    \   # Step 3: Client receives SYN-ACK and sends final ACK\n        client_state\
+    \ = \"ESTABLISHED\"\n        final_ack_num = server_isn + 1\n        ack_pkt =\
+    \ {\"type\": \"ACK\", \"seq\": client_isn + 1, \"ack\": final_ack_num}\n     \
+    \   packets.append(ack_pkt)\n\n        if \"DROP_ACK\" in packet_events:\n   \
+    \         return {\n                \"client_state\": client_state,\n        \
+    \        \"server_state\": server_state,\n                \"is_connected\": False,\n\
+    \                \"packets_transmitted\": packets,\n                \"syn_ack_number\"\
+    : syn_ack_num,\n                \"final_ack_number\": final_ack_num,\n       \
+    \     }\n\n        # Step 4: Server receives ACK\n        server_state = \"ESTABLISHED\"\
+    \n\n        return {\n            \"client_state\": client_state,\n          \
+    \  \"server_state\": server_state,\n            \"is_connected\": True,\n    \
+    \        \"packets_transmitted\": packets,\n            \"syn_ack_number\": syn_ack_num,\n\
+    \            \"final_ack_number\": final_ack_num,\n        }\n"
+  explanation: The 3-way handshake prevents phantom half-open connections. Both sides
+    exchange initial sequence numbers (ISNs) and acknowledge each other with seq +
+    1 before any application data buffers are allocated, ensuring guaranteed bidirectional
+    ordering.
   time: O(1) state transitions
   space: O(1) packet buffers
+pitch_script: '**(Clarify)** "We need to simulate the state transitions and packet
+  sequence numbers of a TCP 3-way handshake under normal and dropped-packet scenarios."
 
-pitch_script: |
-  **(Clarify)** "We need to simulate the state transitions and packet sequence numbers of a TCP 3-way handshake under normal and dropped-packet scenarios."
 
-  **(Brute force)** "A 2-way handshake allows duplicate delayed SYN packets to create phantom connections on the server, exhausting socket table memory."
+  **(Brute force)** "A 2-way handshake allows duplicate delayed SYN packets to create
+  phantom connections on the server, exhausting socket table memory."
 
-  **(Trigger)** "Reliable connection establishment and sequence number negotiation signals the TCP SYN -> SYN-ACK -> ACK state machine."
 
-  **(Optimal)** "Client sends SYN(seq=X) -> SYN_SENT. Server replies SYN-ACK(seq=Y, ack=X+1) -> SYN_RCVD. Client replies ACK(seq=X+1, ack=Y+1) -> ESTABLISHED. When server processes ACK, it enters ESTABLISHED."
+  **(Trigger)** "Reliable connection establishment and sequence number negotiation
+  signals the TCP SYN -> SYN-ACK -> ACK state machine."
+
+
+  **(Optimal)** "Client sends SYN(seq=X) -> SYN_SENT. Server replies SYN-ACK(seq=Y,
+  ack=X+1) -> SYN_RCVD. Client replies ACK(seq=X+1, ack=Y+1) -> ESTABLISHED. When
+  server processes ACK, it enters ESTABLISHED."
+
 
   **(Complexity)** "Executes in O(1) constant time and space."
 
+  '
 twist:
   lc: 9703
   title: HTTP/1.1 Head-of-Line Blocking vs HTTP/2 Binary Framing
-  why: While TCP guarantees in-order byte delivery, any single dropped packet stalls all higher-level streams sharing the connection (Head-of-Line Blocking), which HTTP/3 solves by moving to QUIC over UDP.
-
+  why: While TCP guarantees in-order byte delivery, any single dropped packet stalls
+    all higher-level streams sharing the connection (Head-of-Line Blocking), which
+    HTTP/3 solves by moving to QUIC over UDP.
 viz:
   title: TCP 3-Way Handshake Sequence Timeline
   type: network_flow
+journey:
+- id: w41_s1_unreliable_channel
+  title: The Unreliable Channel Paradox (UDP vs TCP)
+  subtitle: Why streaming raw packets over an unreliable internet corrupts data
+  scenario: The internet is a packet-switched network with no guaranteed delivery.
+    Routers drop packets during buffer congestion, reroute them along different physical
+    fiber lines, or duplicate them.
+  mechanism: UDP simply fires packets into the dark without tracking order, losses,
+    or duplicate delivery. TCP is a transport-layer abstraction that transforms an
+    unreliable, disordered packet channel into a guaranteed, lossless, in-order byte
+    stream.
+  prediction:
+    prompt: If a client streams payment instructions over raw UDP and 5% of packets
+      are dropped by congested routers, what happens on the server?
+    choices:
+    - id: opt_a
+      label: Missing payload fragments, scrambled JSON, and failed deserialization
+        because UDP provides zero retransmission.
+      explanation: Correct! UDP provides best-effort datagram delivery with zero recovery.
+      is_correct: true
+    - id: opt_b
+      label: The operating system kernel pauses and requests automatic retransmission.
+      explanation: Misconception! The OS kernel does not provide retransmission for
+        UDP.
+      is_correct: false
+    - id: opt_c
+      label: The router automatically buffers the lost packet until bandwidth is available.
+      explanation: Incorrect! Congested routers drop packets into the bit bucket immediately.
+      is_correct: false
+    revealed_explanation: TCP sequence numbers and acknowledgments are essential for
+      constructing reliable protocols over unreliable physical infrastructure.
+  controls:
+  - id: simulated_packet_loss_pct
+    label: Simulated Network Packet Loss (%)
+    type: slider
+    default: 10
+    min: 0
+    max: 50
+    step: 5
+    description: Adjust packet drop rate across virtual network hops
+  visualizer_type: network_flow
+  visualizer_config:
+    mode: tcp
+    title: UDP Stateless vs TCP Stream
+- id: w41_s2_two_army_2way_handshake
+  title: The Two-Army Paradox & Why a 2-Way Handshake Fails
+  subtitle: Why Client "Connect" + Server "OK" creates catastrophic phantom ghost
+    connections
+  scenario: Why does TCP require 3 steps? Why can't the client simply say "Connect"
+    and the server say "OK"?
+  mechanism: In distributed networks, packets can be delayed for seconds in routing
+    buffers. If a client sends a "Connect" packet, crashes, reboots, and the delayed
+    old packet arrives minutes later at the server, a 2-way handshake forces the server
+    to allocate socket memory and worker threads for a dead connection (a Phantom
+    Connection).
+  prediction:
+    prompt: In a 2-way handshake protocol, what happens when an old duplicate "Connect"
+      packet from a crashed past session arrives at the server?
+    choices:
+    - id: opt_a
+      label: The server opens a phantom connection, allocating memory and waiting
+        indefinitely for data that will never arrive.
+      explanation: Correct! The server has no way to verify if the client is still
+        alive without the 3rd step.
+      is_correct: true
+    - id: opt_b
+      label: The server immediately detects the client crashed by querying its CPU
+        directly.
+      explanation: Impossible! In distributed systems, no global shared state or CPU
+        probing exists.
+      is_correct: false
+    - id: opt_c
+      label: The router discards the packet because its timestamp is older than 5
+        seconds.
+      explanation: Incorrect! IP packets have TTL hop counts, not wall-clock timestamps.
+      is_correct: false
+    revealed_explanation: The 3rd handshake step (Client ACK) allows the client to
+      reject delayed duplicate packets and proves the client is still alive.
+  controls:
+  - id: simulate_delayed_duplicate
+    label: Inject Delayed Duplicate Packet
+    type: toggle
+    default: true
+    description: Simulate an old SYN packet arriving after client crash
+  visualizer_type: network_flow
+  visualizer_config:
+    mode: tcp
+    title: Phantom Connection Vulnerability
+- id: w41_s3_3way_state_machine
+  title: The 3-Way Handshake State Machine & ISN Synchronization
+  subtitle: 'SYN ➔ SYN-ACK ➔ ACK: Synchronizing independent random sequence numbers'
+  scenario: Both sender and receiver must synchronize their independent byte counters
+    (Initial Sequence Numbers) before transmitting application bytes.
+  mechanism: Client picks client_isn (e.g. 1000) and sends SYN (CLOSED -> SYN_SENT).
+    Server picks server_isn (e.g. 5000) and sends SYN-ACK with ack=1001 (LISTEN ->
+    SYN_RCVD). Client sends ACK with ack=5001 and seq=1001 (SYN_SENT -> ESTABLISHED).
+    Server verifies and enters ESTABLISHED.
+  prediction:
+    prompt: Why does a SYN packet consume 1 sequence number even though it carries
+      0 bytes of application payload?
+    choices:
+    - id: opt_a
+      label: Because the SYN flag is a state transition that must be reliably acknowledged
+        by the peer.
+      explanation: Correct! Consuming 1 sequence number guarantees that the ACK explicitly
+        confirms the SYN.
+      is_correct: true
+    - id: opt_b
+      label: Because the TCP packet header itself is 1 byte in size.
+      explanation: Incorrect! Standard TCP headers are 20 to 60 bytes.
+      is_correct: false
+    - id: opt_c
+      label: Sequence numbers only increment when payload bytes are transmitted.
+      explanation: Misconception! SYN and FIN flags both consume 1 logical sequence
+        number.
+      is_correct: false
+    revealed_explanation: Flags that change connection state (SYN and FIN) consume
+      one sequence number so they can be reliably tracked and acknowledged.
+  controls:
+  - id: client_isn
+    label: Client Initial Sequence Number (ISN)
+    type: slider
+    default: 1000
+    min: 1000
+    max: 9000
+    step: 500
+    description: Random initial byte offset selected by client OS
+  - id: server_isn
+    label: Server Initial Sequence Number (ISN)
+    type: slider
+    default: 5000
+    min: 1000
+    max: 9000
+    step: 500
+    description: Random initial byte offset selected by server OS
+  visualizer_type: network_flow
+  visualizer_config:
+    mode: tcp
+    title: TCP Sequence Number Arithmetic
+- id: w41_s4_packet_loss_rto
+  title: Packet Loss & Retransmission Timeouts (RTO)
+  subtitle: What happens when SYN-ACK or ACK drops in transit?
+  scenario: What happens when an intermediate network hop drops the SYN-ACK or final
+    ACK during handshake negotiation?
+  mechanism: When client sends SYN, it starts a Retransmission Timer (RTO). If no
+    SYN-ACK arrives within RTO, it retransmits with exponential backoff (1s, 2s, 4s).
+    If final ACK drops, server retransmits SYN-ACK until client ACKs again.
+  prediction:
+    prompt: If the final ACK sent by the client is dropped by a router, what state
+      is the server left in?
+    choices:
+    - id: opt_a
+      label: The server remains in SYN_RCVD and retransmits its SYN-ACK until receiving
+        an ACK or timing out.
+      explanation: Correct! The server does not transition to ESTABLISHED until the
+        final ACK arrives.
+      is_correct: true
+    - id: opt_b
+      label: The server immediately closes the socket and returns to CLOSED state.
+      explanation: Incorrect! TCP is resilient and retransmits before aborting.
+      is_correct: false
+    - id: opt_c
+      label: The server enters ESTABLISHED immediately upon transmitting SYN-ACK.
+      explanation: Catastrophic misconception! That would reintroduce the 2-way handshake
+        flaw.
+      is_correct: false
+    revealed_explanation: The server waits for the client to prove two-way reachability
+      before transitioning to ESTABLISHED.
+  controls:
+  - id: drop_packet_step
+    label: Inject Packet Loss Chaos
+    type: select
+    default: None
+    options:
+    - None
+    - DROP_SYN
+    - DROP_SYN_ACK
+    - DROP_ACK
+    description: Drop specific packet during handshake flow
+  visualizer_type: network_flow
+  visualizer_config:
+    mode: tcp
+    title: Handshake Retransmission & Drops
+- id: w41_s5_syn_flood_cookies
+  title: The SYN Flood Attack & Linux SYN Cookies Defense
+  subtitle: How 500k spoofed SYNs exhaust server memory and how cryptographic cookies
+    save the kernel
+  scenario: An attacker sends millions of SYN packets with spoofed source IPs and
+    never sends the final ACK. The server SYN backlog table fills up, dropping real
+    users.
+  mechanism: With SYN Cookies enabled (net.ipv4.tcp_syncookies = 1), the server does
+    NOT allocate memory upon receiving a SYN. Instead, it encodes the connection parameters
+    into the server_isn using a cryptographic hash. Only when a valid ACK arrives
+    is socket memory allocated.
+  prediction:
+    prompt: How do SYN Cookies protect a server from memory exhaustion during a SYN
+      Flood attack?
+    choices:
+    - id: opt_a
+      label: The server defers socket memory allocation until the client proves its
+        IP authenticity by returning the cryptographically signed ACK.
+      explanation: Correct! The server ISN encodes state statelessly without allocating
+        a TCB.
+      is_correct: true
+    - id: opt_b
+      label: The server blocks all traffic originating from unknown IP addresses.
+      explanation: Incorrect! In a SYN flood, the attacker spoofs legitimate global
+        IPs.
+      is_correct: false
+    - id: opt_c
+      label: The server switches the protocol from TCP to UDP automatically.
+      explanation: Incorrect! TCP cannot unilaterally downgrade to UDP.
+      is_correct: false
+    revealed_explanation: SYN Cookies are one of the most elegant mathematical defenses
+      in operating systems, turning connection state into a stateless cryptographic
+      puzzle.
+  controls:
+  - id: enable_syn_cookies
+    label: Enable Linux SYN Cookies (tcp_syncookies=1)
+    type: toggle
+    default: true
+    description: Encode connection state statelessly in sequence numbers
+  visualizer_type: network_flow
+  visualizer_config:
+    mode: tcp
+    title: SYN Flood & Cryptographic Cookie Defense
+- id: w41_s6_transfer_challenge
+  title: 'Transfer Challenge: TCP 3-Way Handshake Connection State Machine'
+  subtitle: Implement the connection transitions and packet loss handling in Python
+  scenario: 'Build the TCP connection simulator: manage states (CLOSED -> SYN_SENT
+    -> ESTABLISHED), process SYN and SYN-ACK packets, compute sequence numbers, and
+    handle dropped packet events.'
+  mechanism: The state machine validates transitions, constructs packet payloads with
+    sequence arithmetic, and handles DROP flags cleanly.
+  prediction:
+    prompt: When client_isn = 1000 and server_isn = 5000, what are the exact ack and
+      seq numbers on the final ACK packet?
+    choices:
+    - id: opt_a
+      label: seq = 1001, ack = 5001.
+      explanation: Correct! seq = client_isn + 1 and ack = server_isn + 1.
+      is_correct: true
+    - id: opt_b
+      label: seq = 1000, ack = 5000.
+      explanation: Incorrect! Initial sequence numbers must be incremented by 1.
+      is_correct: false
+    - id: opt_c
+      label: seq = 0, ack = 0.
+      explanation: Incorrect! Sequence synchronization cannot use null offsets.
+      is_correct: false
+    revealed_explanation: Sequence number agreement guarantees full-duplex communication
+      ready for TLS and HTTP.
+  controls:
+  - id: test_isn_offset
+    label: ISN Offset Test Vector
+    type: slider
+    default: 2000
+    min: 1000
+    max: 8000
+    step: 1000
+    description: Test sequence number calculations against edge cases
+  visualizer_type: network_flow
+  visualizer_config:
+    mode: tcp
+    title: TCP State Machine Runner
+  lab_starter_code: "class Solution:\n    def simulate_tcp_handshake(self, client_isn:\
+    \ int, server_isn: int, packet_events: list[str]) -> dict:\n        # Implement\
+    \ TCP 3-Way Handshake Connection State Machine\n        pass\n"
+  lab_solution: "class Solution:\n    def simulate_tcp_handshake(self, client_isn:\
+    \ int, server_isn: int, packet_events: list[str]) -> dict:\n        client_state\
+    \ = \"CLOSED\"\n        server_state = \"LISTEN\"\n        packets_transmitted\
+    \ = []\n\n        # Step 1: Client sends SYN\n        client_state = \"SYN_SENT\"\
+    \n        packets_transmitted.append({\"type\": \"SYN\", \"seq\": client_isn,\
+    \ \"ack\": 0})\n\n        if \"DROP_SYN\" in packet_events:\n            return\
+    \ {\n                \"client_state\": client_state,\n                \"server_state\"\
+    : server_state,\n                \"packets_transmitted\": packets_transmitted,\n\
+    \                \"connected\": False,\n            }\n\n        # Step 2: Server\
+    \ sends SYN-ACK\n        server_state = \"SYN_RCVD\"\n        packets_transmitted.append({\"\
+    type\": \"SYN-ACK\", \"seq\": server_isn, \"ack\": client_isn + 1})\n\n      \
+    \  if \"DROP_SYN_ACK\" in packet_events:\n            return {\n             \
+    \   \"client_state\": client_state,\n                \"server_state\": server_state,\n\
+    \                \"packets_transmitted\": packets_transmitted,\n             \
+    \   \"connected\": False,\n            }\n\n        # Step 3: Client sends ACK\n\
+    \        client_state = \"ESTABLISHED\"\n        packets_transmitted.append({\"\
+    type\": \"ACK\", \"seq\": client_isn + 1, \"ack\": server_isn + 1})\n\n      \
+    \  if \"DROP_ACK\" in packet_events:\n            return {\n                \"\
+    client_state\": client_state,\n                \"server_state\": server_state,\n\
+    \                \"packets_transmitted\": packets_transmitted,\n             \
+    \   \"connected\": False,\n            }\n\n        # Step 4: Server processes\
+    \ ACK\n        server_state = \"ESTABLISHED\"\n\n        return {\n          \
+    \  \"client_state\": client_state,\n            \"server_state\": server_state,\n\
+    \            \"packets_transmitted\": packets_transmitted,\n            \"connected\"\
+    : True,\n        }\n"

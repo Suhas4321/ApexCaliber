@@ -130,8 +130,20 @@ const TCP_STEPS: TcpStep[] = [
   },
 ]
 
-export default function NetworkPacketFlowVisualizer({ step: _step, config: _config }: VisualizerProps) {
-  const [mode, setMode] = useState<NetworkMode>('dns')
+export default function NetworkPacketFlowVisualizer({ step: _step, config }: VisualizerProps) {
+  const initialMode: NetworkMode =
+    (config?.mode as NetworkMode) || (config?.title?.toLowerCase().includes('tcp') ? 'tcp' : 'dns')
+  const [mode, setMode] = useState<NetworkMode>(initialMode)
+
+  useEffect(() => {
+    if (config?.mode) {
+      setMode(config.mode as NetworkMode)
+    } else if (config?.title?.toLowerCase().includes('tcp')) {
+      setMode('tcp')
+    } else if (config?.title?.toLowerCase().includes('dns')) {
+      setMode('dns')
+    }
+  }, [config?.mode, config?.title])
 
   // DNS State
   const [activeDnsHop, setActiveDnsHop] = useState<number>(0)

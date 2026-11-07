@@ -139,11 +139,13 @@ flowchart TD
 - [x] **Page Integration:** Connected `JourneyPlayer` in [`frontend/src/pages/QuestionPage.tsx`](file:///home/suhas/Desktop/DSA/frontend/src/pages/QuestionPage.tsx), automatically routing non-DSA citadels to the Concept Journey while preserving DSA coding workspaces.
 - [x] **Pilot Lesson (World 20):** Populated and verified [`content/questions/20-backend-fastapi/http-status-code-diagnostics.yaml`](file:///home/suhas/Desktop/DSA/content/questions/20-backend-fastapi/http-status-code-diagnostics.yaml) with all 7 POE stages from the approved RFC. Production build passed in 2.9s.
 
-### Phase 2: Networking & Backend Pipeline (Worlds 40, 41, 28)
+### Phase 2: Networking & Backend Pipeline (COMPLETED & VERIFIED)
 
-- [ ] Wire `network_engine` events for DNS (W40) and TCP 3-Way Handshake (W41).
-- [ ] Build Token Bucket rate limiter interactive simulation (W28).
-- [ ] Connect DNS ➔ TCP ➔ HTTP ➔ Rate Limiter end-to-end journey.
+- [x] **World 40 Specification & Content:** Published [`docs/rfc/W40_DNS_RESOLUTION.md`](file:///home/suhas/Desktop/DSA/docs/rfc/W40_DNS_RESOLUTION.md) and populated [`content/questions/40-dns-resolution/dns-recursive-resolver.yaml`](file:///home/suhas/Desktop/DSA/content/questions/40-dns-resolution/dns-recursive-resolver.yaml) with 6 organic POE stages and executable Python resolver lab.
+- [x] **World 41 Specification & Content:** Published [`docs/rfc/W41_TCP_HANDSHAKE.md`](file:///home/suhas/Desktop/DSA/docs/rfc/W41_TCP_HANDSHAKE.md) and populated [`content/questions/41-tcp-handshake/tcp-three-way-handshake.yaml`](file:///home/suhas/Desktop/DSA/content/questions/41-tcp-handshake/tcp-three-way-handshake.yaml) with 6 organic POE stages, sequence number arithmetic, and SYN flood defense.
+- [x] **World 34 Specification & Content:** Published [`docs/rfc/W34_RATE_LIMITER.md`](file:///home/suhas/Desktop/DSA/docs/rfc/W34_RATE_LIMITER.md) and populated [`content/questions/20-backend-fastapi/redis-sliding-window-rate-limiter.yaml`](file:///home/suhas/Desktop/DSA/content/questions/20-backend-fastapi/redis-sliding-window-rate-limiter.yaml) with 6 organic POE stages covering rolling sliding logs vs token buckets and atomic Redis Lua scripts.
+- [x] **Network Visualizer Enhancement:** Updated [`NetworkPacketFlowVisualizer.tsx`](file:///home/suhas/Desktop/DSA/frontend/src/components/visualizers/NetworkPacketFlowVisualizer.tsx) to automatically route between DNS hierarchical resolution and TCP 3-way handshake based on active configuration and step state.
+- [x] **End-to-End Pipeline Verification:** Full internet ingress pipeline connected: **DNS Resolution (W40) ➔ TCP Handshake (W41) ➔ HTTP Request Lifecycle (W20) ➔ Redis Rate Limiting (W34)**. Backend pytest (32/32) and frontend production build (3.23s) verified.
 
 ### Phase 3: Storage, ACID & Caching (Worlds 24, 25, 26, 39)
 
