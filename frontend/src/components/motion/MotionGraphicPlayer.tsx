@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import {
   Play,
   Pause,
@@ -9,7 +9,10 @@ import {
   Moon,
   Maximize2,
   Minimize2,
+  Monitor,
   Tv,
+  Keyboard,
+  Activity,
 } from 'lucide-react'
 
 export interface MotionGraphicPlayerProps {
@@ -47,14 +50,50 @@ export default function MotionGraphicPlayer({
 }: MotionGraphicPlayerProps) {
   const [canvasTheme, setCanvasTheme] = useState<'dark' | 'light'>('dark')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isTheaterMode, setIsTheaterMode] = useState(false)
+  const [showKeyboardHints, setShowKeyboardHints] = useState(false)
+
   const scrubberProgressPct = Math.min(100, Math.max(0, (currentTime / durationSec) * 100))
+
+  // Pro Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept typing in inputs or code editors
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+
+      if (e.code === 'Space') {
+        e.preventDefault()
+        onPlayPause()
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault()
+        onSeek(Math.max(0, currentTime - (e.shiftKey ? 2.5 : 1.0)))
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault()
+        onSeek(Math.min(durationSec, currentTime + (e.shiftKey ? 2.5 : 1.0)))
+      } else if (e.code === 'KeyR') {
+        e.preventDefault()
+        onReplay()
+      } else if (e.code === 'KeyF') {
+        e.preventDefault()
+        setIsFullscreen((prev) => !prev)
+      } else if (e.code === 'KeyT') {
+        e.preventDefault()
+        setIsTheaterMode((prev) => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentTime, durationSec, onPlayPause, onReplay, onSeek])
 
   return (
     <div
       className={`flex flex-col w-full rounded-2xl border transition-all duration-300 shadow-2xl select-none overflow-hidden ${
         isFullscreen
-          ? 'fixed inset-4 z-50 bg-panel border-line-strong'
-          : 'relative border-line bg-panel-2'
+          ? 'fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl p-3 sm:p-6 rounded-none flex flex-col justify-between'
+          : isTheaterMode
+          ? 'relative w-full max-w-none border-brand/40 bg-panel-2 shadow-2xl shadow-brand/10'
+          : 'relative border-line bg-panel-2 w-full max-w-7xl mx-auto'
       }`}
     >
       {/* 1. Top Header Toolbar (Shadcn Studio Header) */}
@@ -82,6 +121,38 @@ export default function MotionGraphicPlayer({
         <div className="flex items-center gap-2">
           {toolbarExtra}
 
+          {/* Keyboard Shortcuts Hint Button */}
+          <button
+            type="button"
+            onClick={() => setShowKeyboardHints((h) => !h)}
+            className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+              showKeyboardHints
+                ? 'bg-brand/15 border-brand/40 text-brand-light'
+                : 'bg-panel-3 border-line text-muted hover:text-chalk'
+            }`}
+            title="Toggle Keyboard Shortcuts Cheat Sheet"
+          >
+            <Keyboard size={13} />
+            <span className="text-[11px] font-mono">Shortcuts</span>
+          </button>
+
+          {/* Theater Mode Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsTheaterMode((t) => !t)}
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+              isTheaterMode
+                ? 'bg-brand/20 border-brand text-brand-light shadow-xs'
+                : 'bg-panel-3 border-line text-muted hover:text-chalk'
+            }`}
+            title={isTheaterMode ? 'Exit Theater Mode (Press T)' : 'Enter Theater Mode (Press T)'}
+          >
+            <Monitor size={13} />
+            <span className="text-[11px] font-mono">
+              {isTheaterMode ? 'Standard' : 'Theater'}
+            </span>
+          </button>
+
           {/* Canvas Theme Toggle (Studio Light vs Studio Dark) */}
           <button
             type="button"
@@ -104,19 +175,86 @@ export default function MotionGraphicPlayer({
             type="button"
             onClick={() => setIsFullscreen((f) => !f)}
             className="flex items-center justify-center h-8 w-8 rounded-lg border border-line bg-panel-3 hover:bg-panel text-muted hover:text-chalk transition-colors"
-            title={isFullscreen ? 'Exit Fullscreen' : 'Expand to Fullscreen'}
+            title={isFullscreen ? 'Exit Fullscreen (Press F or Esc)' : 'Expand to Fullscreen (Press F)'}
           >
             {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
         </div>
       </div>
 
-      {/* 2. Visual Animation Stage / Canvas Container */}
+      {/* Keyboard Shortcuts Helper Pill Banner (When Toggled) */}
+      {showKeyboardHints && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-2 bg-brand/10 border-b border-brand/20 text-xs text-brand-light">
+          <div className="flex items-center gap-2">
+            <Keyboard size={13} />
+            <span className="font-semibold font-sans">Pro Keyboard Controls:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 font-mono text-[11px]">
+            <span><kbd className="px-1.5 py-0.5 rounded bg-panel-3 border border-line">Space</kbd> Play/Pause</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-panel-3 border border-line">← / →</kbd> ±1s Seek</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-panel-3 border border-line">Shift + ← / →</kbd> ±2.5s Seek</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-panel-3 border border-line">R</kbd> Replay</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-panel-3 border border-line">T</kbd> Theater Mode</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-panel-3 border border-line">F</kbd> Fullscreen</span>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Dedicated Telemetry HUD Strip (Shadcn Badge Ribbon - Zero Overlap) */}
+      {metrics.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-5 py-2.5 border-b border-line/60 bg-panel/75 backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <Activity size={13} className="text-brand-light animate-pulse" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted">
+              Live Architecture Telemetry
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {metrics.map((m, idx) => {
+              const darkVariantClasses =
+                m.variant === 'danger'
+                  ? 'bg-red-950/80 text-red-300 border-red-700/60 shadow-xs'
+                  : m.variant === 'warning'
+                  ? 'bg-amber-950/80 text-amber-300 border-amber-700/60 shadow-xs'
+                  : m.variant === 'success'
+                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60 shadow-xs'
+                  : 'bg-panel-2/80 text-chalk border-line-strong'
+
+              const lightVariantClasses =
+                m.variant === 'danger'
+                  ? 'bg-red-50 text-red-700 border-red-300 shadow-xs'
+                  : m.variant === 'warning'
+                  ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs'
+                  : m.variant === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                  : 'bg-white/90 text-slate-800 border-slate-300 shadow-xs'
+
+              const classes = canvasTheme === 'light' ? lightVariantClasses : darkVariantClasses
+
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-mono transition-all duration-200 ${classes}`}
+                >
+                  <span className="text-[10px] font-sans font-semibold tracking-wider uppercase opacity-70">
+                    {m.label}:
+                  </span>
+                  <span className="font-bold text-xs">{m.value}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Visual Animation Stage / Canvas Container */}
       <div
-        className={`relative w-full flex items-center justify-center p-4 sm:p-8 transition-colors duration-300 overflow-hidden ${
+        className={`relative w-full flex items-center justify-center p-3 sm:p-6 md:p-8 transition-colors duration-300 overflow-hidden ${
           isFullscreen
-            ? 'flex-1 min-h-[500px]'
-            : 'min-h-[460px] sm:min-h-[520px] md:min-h-[560px]'
+            ? 'flex-1 min-h-[500px] h-full'
+            : isTheaterMode
+            ? 'min-h-[560px] sm:min-h-[640px] md:min-h-[720px]'
+            : 'min-h-[480px] sm:min-h-[540px] md:min-h-[600px]'
         } ${
           canvasTheme === 'light'
             ? 'bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-[#e2e8f0] text-slate-900'
@@ -137,52 +275,21 @@ export default function MotionGraphicPlayer({
           }}
         />
 
-        {/* Live Metrics Overlay (top right of stage) */}
-        {metrics.length > 0 && (
-          <div className="absolute top-4 right-4 flex flex-wrap items-center gap-2 z-10">
-            {metrics.map((m, idx) => {
-              const darkVariantClasses =
-                m.variant === 'danger'
-                  ? 'bg-red-950/80 text-red-300 border-red-700/60 shadow-lg shadow-red-950/50'
-                  : m.variant === 'warning'
-                  ? 'bg-amber-950/80 text-amber-300 border-amber-700/60 shadow-lg shadow-amber-950/50'
-                  : m.variant === 'success'
-                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60 shadow-lg shadow-emerald-950/50'
-                  : 'bg-panel-2/80 text-chalk border-line-strong backdrop-blur-md'
-
-              const lightVariantClasses =
-                m.variant === 'danger'
-                  ? 'bg-red-50 text-red-700 border-red-300 shadow-sm'
-                  : m.variant === 'warning'
-                  ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-sm'
-                  : m.variant === 'success'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm'
-                  : 'bg-white/90 text-slate-800 border-slate-300 shadow-sm'
-
-              const classes = canvasTheme === 'light' ? lightVariantClasses : darkVariantClasses
-
-              return (
-                <div
-                  key={idx}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all duration-200 ${classes}`}
-                >
-                  <span className="text-[10px] font-sans font-semibold tracking-wider uppercase opacity-70">
-                    {m.label}:
-                  </span>
-                  <span className="font-bold text-xs">{m.value}</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* The Animated SVG/Canvas Scene Passed in Children */}
-        <div className="relative z-0 w-full max-w-4xl flex items-center justify-center">
+        {/* The Animated SVG/Canvas Scene Passed in Children - Unlocked Fluid Width! */}
+        <div
+          className={`relative z-0 w-full flex items-center justify-center ${
+            isFullscreen
+              ? 'max-w-[95vw] max-h-[82vh]'
+              : isTheaterMode
+              ? 'max-w-7xl'
+              : 'max-w-6xl'
+          } transition-all duration-300`}
+        >
           {children(canvasTheme)}
         </div>
       </div>
 
-      {/* 3. Dynamic Narrative Subtitle Ribbon */}
+      {/* 4. Dynamic Narrative Subtitle Ribbon */}
       <div
         className={`px-6 py-3.5 border-t border-line flex items-center gap-3 transition-colors duration-200 ${
           canvasTheme === 'light' ? 'bg-white text-slate-800' : 'bg-panel text-chalk'
@@ -196,8 +303,44 @@ export default function MotionGraphicPlayer({
         </p>
       </div>
 
-      {/* 4. Controls & Scrubber Footer */}
+      {/* 5. Controls & Scrubber Footer */}
       <div className="px-5 py-3.5 border-t border-line bg-panel-2/95 flex flex-col gap-3">
+        {/* Timeline Act Quick-Jump Milestones */}
+        <div className="flex items-center justify-between px-1 text-[10px] font-mono text-muted select-none">
+          <button
+            type="button"
+            onClick={() => onSeek(0)}
+            className="hover:text-brand-light transition-colors flex items-center gap-1"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            <span>Act 1: Ingress (0s)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onSeek(durationSec * 0.25)}
+            className="hover:text-brand-light transition-colors flex items-center gap-1"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            <span>Act 2: Traversal (3s)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onSeek(durationSec * 0.5)}
+            className="hover:text-brand-light transition-colors flex items-center gap-1"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            <span>Act 3: Divergence (6s)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onSeek(durationSec * 0.75)}
+            className="hover:text-brand-light transition-colors flex items-center gap-1"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            <span>Act 4: Resolution (9s)</span>
+          </button>
+        </div>
+
         {/* Timeline Scrubber Bar */}
         <div className="flex items-center gap-3">
           <span className="font-mono text-xs font-semibold text-muted w-11 text-right shrink-0">
@@ -244,7 +387,7 @@ export default function MotionGraphicPlayer({
               type="button"
               onClick={onReplay}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-line bg-panel-3 hover:bg-panel text-muted hover:text-chalk text-xs font-medium transition-colors"
-              title="Restart from 0.0s"
+              title="Restart from 0.0s (Press R)"
             >
               <RotateCcw size={13} />
               <span>Replay</span>
