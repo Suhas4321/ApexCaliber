@@ -8,6 +8,7 @@ import VirtualMemoryMotionGraphic from './experiments/VirtualMemoryMotionGraphic
 import TcpHandshakeMotionGraphic from './experiments/TcpHandshakeMotionGraphic'
 import DnsResolutionMotionGraphic from './experiments/DnsResolutionMotionGraphic'
 import AcidTransactionsMotionGraphic from './experiments/AcidTransactionsMotionGraphic'
+import RedisCacheMotionGraphic from './experiments/RedisCacheMotionGraphic'
 
 /** Only show controls when a lesson-specific model consumes their values. */
 export default function LessonExperiment({ stage, question }: { stage: JourneyStage; question: QuestionDetail }) {
@@ -21,7 +22,8 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
   const isTcpHandshake = question.slug === 'tcp-three-way-handshake' || stage.id.startsWith('w41_')
   const isDnsResolution = question.slug === 'dns-recursive-resolver' || stage.id.startsWith('w40_')
   const isAcidTransactions = question.slug === 'sql-lost-update-optimistic-lock' || question.slug === 'sql-acid-money-transfer' || stage.id.startsWith('w25_')
-  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions
+  const isRedisCache = question.slug === 'redis-cache-stampede-mutex' || question.slug === 'redis-cache-aside-strategy' || stage.id.startsWith('w39_')
+  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache
   const topicSandboxes = new Set(['http_lifecycle', 'network_flow', 'concurrency_timeline', 'cache_relational'])
   const hasTopicSandbox = topicSandboxes.has(stage.visualizer_type || '') || (stage.visualizer_type === 'system_blueprint' && question.citadel_id === 'ai_resume')
   const rows = Math.max(1, Number(values.table_rows) || 1000)
@@ -47,7 +49,7 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
     </div>
   }
 
-  if (isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions) {
+  if (isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache) {
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
@@ -88,8 +90,10 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
             <TcpHandshakeMotionGraphic />
           ) : isDnsResolution ? (
             <DnsResolutionMotionGraphic />
-          ) : (
+          ) : isAcidTransactions ? (
             <AcidTransactionsMotionGraphic />
+          ) : (
+            <RedisCacheMotionGraphic />
           )
         ) : (
           <div className="lesson-worked-example">
