@@ -22,6 +22,7 @@ import ErrorBoundary from '../ErrorBoundary'
  * wrapping every archetype inside the shared, responsive StageShell.
  */
 export default function VisualizerHost({
+  inline = false,
   kind,
   title,
   description,
@@ -85,6 +86,8 @@ export default function VisualizerHost({
         return <ArrayPointerVisualizer {...visualizerProps} />
     }
   }
+
+  if (inline) return <ErrorBoundary fallbackTitle="This sandbox could not be displayed">{renderVisualizer()}</ErrorBoundary>
 
   // Derive default action caption from trace event if no semantic caption is passed
   const activeCaption = caption || (() => {

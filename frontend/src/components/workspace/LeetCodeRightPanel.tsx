@@ -73,6 +73,15 @@ export default function LeetCodeRightPanel({
   const [consoleCollapsed, setConsoleCollapsed] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  const [seenOutcome, setSeenOutcome] = useState({ result, error })
+  if (seenOutcome.result !== result || seenOutcome.error !== error) {
+    setSeenOutcome({ result, error })
+    if (result || error) {
+      setConsoleCollapsed(false)
+      setConsoleTab('result')
+    }
+  }
+
   // Switch to result tab automatically when a new result or error arrives
   const handleRunClick = () => {
     setConsoleCollapsed(false)
@@ -102,8 +111,8 @@ export default function LeetCodeRightPanel({
     <div className="flex h-full w-full flex-col overflow-hidden bg-void">
       {/* 36px LeetCode Editor Toolbar */}
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-line bg-panel px-3 text-xs select-none">
-        <div className="flex items-center gap-2">
-          <span className="rounded bg-panel-2 px-2 py-0.5 font-mono text-[11px] font-semibold text-cyan">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 whitespace-nowrap rounded bg-panel-2 px-2 py-0.5 font-mono text-[11px] font-semibold text-cyan">
             {question.runner_type === 'sql_sqlite' ? 'SQLite' : 'Python 3'}
           </span>
 
@@ -111,7 +120,7 @@ export default function LeetCodeRightPanel({
             <select
               value={activeTarget}
               onChange={(e) => onSelectTarget(e.target.value)}
-              className="rounded-md border border-line bg-panel-2 px-2 py-0.5 font-mono text-[11px] text-chalk"
+              className="min-w-0 max-w-[150px] sm:max-w-[240px] rounded-md border border-line bg-panel-2 px-2 py-0.5 font-mono text-[11px] text-chalk"
               aria-label="Target function"
             >
               <option value="main">Main: {content.function.name}()</option>
@@ -132,7 +141,7 @@ export default function LeetCodeRightPanel({
             title="Copy code"
           >
             {copied ? <Check size={12} className="text-emerald" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
           </button>
           <button
             type="button"
@@ -141,7 +150,7 @@ export default function LeetCodeRightPanel({
             title="Reset to starter code"
           >
             <RotateCcw size={12} />
-            <span>Reset</span>
+            <span className="hidden sm:inline">Reset</span>
           </button>
         </div>
       </div>

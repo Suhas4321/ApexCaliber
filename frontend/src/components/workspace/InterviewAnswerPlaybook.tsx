@@ -1,4 +1,5 @@
-import { ArrowRight, Clock, RotateCcw } from 'lucide-react'
+import StudyGuideLayout from './StudyGuideLayout'
+import { Clock, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../api/client'
 import type { Progress, QuestionDetail } from '../../api/types'
@@ -51,11 +52,10 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
 
   useEffect(() => {
     if (!timerRunning) return
-    if (timerSec <= 0) {
-      setTimerRunning(false)
-      return
-    }
-    const id = window.setTimeout(() => setTimerSec((s) => Math.max(0, s - 1)), 1000)
+    const id = window.setTimeout(() => {
+      setTimerSec(Math.max(0, timerSec - 1))
+      if (timerSec <= 1) setTimerRunning(false)
+    }, 1000)
     return () => window.clearTimeout(id)
   }, [timerRunning, timerSec])
 
@@ -78,18 +78,14 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
   const complexityStep = steps.find((s) => /complexity/i.test(s.tag))
 
   return (
-    <div className="mx-auto max-w-[820px] px-6 py-10 text-chalk">
-      {/* Top Editorial Header */}
-      <div className="border-b border-line pb-7">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-muted">
-            Editorial & Interview Guide · {question.world_name}
-          </span>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-md border border-line bg-panel px-2.5 py-1 font-mono text-xs">
+    <StudyGuideLayout
+      title={question.title}
+      label="Interview guide"
+      introduction={"Start with the constraints, explain your approach, then justify its cost. Use the timer to rehearse each part aloud."}
+      onPractice={onOpenTerminal}
+      tools={<div className="flex items-center gap-2 rounded-md border border-line bg-panel px-2.5 py-1 font-mono text-xs">
               <Clock size={13} className="text-muted" />
-              <span className="font-semibold text-chalk tabular-nums">00:{String(timerSec).padStart(2, '0')}</span>
+              <span className="font-semibold text-chalk tabular-nums">{Math.floor(timerSec / 60)}:{String(timerSec % 60).padStart(2, '0')}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -108,40 +104,14 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
                 }}
                 className="text-muted hover:text-chalk"
                 title="Reset 60s timer"
+                aria-label="Reset 60s timer"
               >
                 <RotateCcw size={12} />
               </button>
-            </div>
-
-            {onOpenTerminal && (
-              <button
-                type="button"
-                onClick={onOpenTerminal}
-                className="inline-flex items-center gap-1.5 rounded-md bg-chalk px-3 py-1.5 text-xs font-semibold text-void hover:opacity-90"
-              >
-                <span>Open Code Terminal</span>
-                <ArrowRight size={13} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-chalk">
-          How to Answer "{question.title}" in an Interview
-        </h1>
-        <p className="mt-2.5 text-sm sm:text-[15px] leading-relaxed text-muted">
-          Follow this 4-step sequence in a live interview: clarify the constraints first, state the brute-force baseline, explain why the optimal data structure works, and prove the Time & Space complexity.
-        </p>
-      </div>
-
-      {/* Section 1: Clarifying Questions */}
-      <section className="border-b border-line py-7">
-        <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk mb-3">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-            1
-          </span>
-          <span>Clarifying Questions to Ask First</span>
-        </h2>
+            </div>}
+      sections={[
+        { id: "section-1", title: "Clarify the problem", content: (
+          <section className="border-b border-line py-7">
         <p className="text-sm leading-relaxed text-muted mb-3">
           Before writing any code, ask these clarifying questions in the first 15 seconds to confirm input bounds and edge cases:
         </p>
@@ -149,15 +119,9 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
           "{clarifyStep?.text || 'Just to confirm: what are the input size bounds, can the input be empty or contain duplicates, and am I allowed to use auxiliary memory?'}"
         </blockquote>
       </section>
-
-      {/* Section 2: Brute Force vs Optimal */}
-      <section className="border-b border-line py-7 space-y-4">
-        <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-            2
-          </span>
-          <span>Brute Force Baseline vs. Optimal Approach</span>
-        </h2>
+        ) },
+        { id: "section-2", title: "Build your approach", content: (
+          <section className="border-b border-line py-7 space-y-4">
 
         <div className="space-y-2 text-sm leading-relaxed text-muted">
           <p>
@@ -178,20 +142,14 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
           "{optimalStep?.text || content.concept.key_insight}"
         </blockquote>
       </section>
-
-      {/* Section 3: Time & Space Complexity Proof Table */}
-      <section className="border-b border-line py-7">
-        <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk mb-3">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-            3
-          </span>
-          <span>How to Prove Time & Space Complexity</span>
-        </h2>
+        ) },
+        { id: "section-3", title: "Prove the complexity", content: (
+          <section className="border-b border-line py-7">
         <p className="text-sm leading-relaxed text-muted mb-4">
           {complexityStep?.text || 'State both Time and Space bounds explicitly and justify how they are derived from your loops and data structures:'}
         </p>
 
-        <div className="overflow-hidden rounded-md border border-line">
+        <div className="overflow-x-auto rounded-md border border-line">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-panel text-xs font-semibold text-muted">
@@ -227,15 +185,9 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
           </table>
         </div>
       </section>
-
-      {/* Section 4: Reference Implementation & Follow-Up Twist */}
-      <section className="py-7 space-y-6">
-        <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-            4
-          </span>
-          <span>Optimal Reference Implementation & Walkthrough</span>
-        </h2>
+        ) },
+        { id: "section-4", title: "Review & rehearse", content: (
+          <section className="py-7 space-y-6">
 
         <pre className="overflow-x-auto rounded-md border border-line bg-panel p-4 font-mono text-xs leading-relaxed text-chalk">
           {content.solution.code}
@@ -286,7 +238,8 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
           </div>
         </div>
       </section>
-    </div>
+        ) },
+      ]}
+    />
   )
 }
-

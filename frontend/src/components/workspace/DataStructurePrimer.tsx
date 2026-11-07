@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react'
+import StudyGuideLayout from './StudyGuideLayout'
 import type { QuestionDetail, TraceStep } from '../../api/types'
 import type { NarratorResult } from '../../lib/narrator/types'
 import { Markdown } from '../ui'
@@ -135,46 +135,20 @@ export default function DataStructurePrimer({
   const primer = WORLD_DS_PRIMERS[question.world_id] ?? DEFAULT_PRIMER
 
   return (
-    <div className="mx-auto max-w-[820px] px-6 py-10 text-chalk">
-      {/* Top Editorial Header */}
-      <div className="border-b border-line pb-7">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-muted">
-            Data Structure & Concept Guide · World {question.world_id}: {question.world_name}
-          </span>
-
-          <button
-            type="button"
-            onClick={onProceedToCode}
-            className="inline-flex items-center gap-1.5 rounded-md bg-chalk px-3 py-1.5 text-xs font-semibold text-void hover:opacity-90"
-          >
-            <span>Open Code Terminal</span>
-            <ArrowRight size={13} />
-          </button>
-        </div>
-
-        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-chalk">
-          {primer.dsName.replace(/`/g, '')}
-        </h1>
-        <p className="mt-2.5 text-sm sm:text-[15px] leading-relaxed text-muted">
-          {primer.whatIsIt.replace(/`/g, '')}
-        </p>
-      </div>
-
-      {/* Section 1: Core Data Structure & Python Operations Table */}
-      <section className="border-b border-line py-7 space-y-4">
-        <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-            1
-          </span>
-          <span>Python Data Structure Operations & Time Cost</span>
-        </h2>
+    <StudyGuideLayout
+      title={question.title}
+      label="Concept guide"
+      introduction={<><strong className="font-medium text-chalk">{primer.dsName.replace(/`/g, '')}</strong><p className="mt-2">{primer.whatIsIt.replace(/`/g, '')}</p></>}
+      onPractice={onProceedToCode}
+      sections={[
+        { id: "section-1", title: "Data structures & operations", content: (
+          <section className="border-b border-line py-7 space-y-4">
 
         <p className="text-sm leading-relaxed text-muted">
           {primer.memoryModel.replace(/`/g, '')}
         </p>
 
-        <div className="overflow-hidden rounded-md border border-line">
+        <div className="overflow-x-auto rounded-md border border-line">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-panel text-xs font-semibold text-muted">
@@ -199,15 +173,9 @@ export default function DataStructurePrimer({
           </table>
         </div>
       </section>
-
-      {/* Section 2: Why Brute Force Fails & How to Read Constraints */}
-      <section className="border-b border-line py-7 space-y-4">
-        <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-            2
-          </span>
-          <span>Why Brute Force Fails & How We Derive Complexity</span>
-        </h2>
+        ) },
+        { id: "section-2", title: "Reason about complexity", content: (
+          <section className="border-b border-line py-7 space-y-4">
 
         <div className="space-y-2 text-sm leading-relaxed text-muted">
           <p>
@@ -230,7 +198,7 @@ export default function DataStructurePrimer({
         </blockquote>
 
         {/* Clean Monochrome Constraints & Production Context Table */}
-        <div className="overflow-hidden rounded-md border border-line">
+        <div className="overflow-x-auto rounded-md border border-line">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-panel text-xs font-semibold text-muted">
@@ -270,22 +238,16 @@ export default function DataStructurePrimer({
           </table>
         </div>
       </section>
-
-      {/* Section 3: Full-Width Interactive Step-by-Step Visual Walkthrough */}
-      <section className="py-7 space-y-4">
+        ) },
+        { id: "section-3", title: "Step through the solution", content: (
+          <section className="py-7 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2.5 text-lg font-semibold text-chalk">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-panel-3 font-mono text-xs font-semibold text-chalk">
-              3
-            </span>
-            <span>Interactive Step-by-Step Visual Walkthrough</span>
-          </h2>
           <span className="font-mono text-xs text-muted">
             Step through how {primer.dsName.split('(')[0].trim()} processes the demo input
           </span>
         </div>
 
-        <div className="stage overflow-hidden rounded-md border border-line">
+        <div className="stage overflow-x-auto rounded-md border border-line">
           <VisualizerHost
             kind={question.visualizer}
             title={content.viz?.title || `${question.title} · Step-by-Step Visual Demo`}
@@ -315,7 +277,8 @@ export default function DataStructurePrimer({
           />
         </div>
       </section>
-    </div>
+        ) },
+      ]}
+    />
   )
 }
-

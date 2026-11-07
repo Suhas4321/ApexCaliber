@@ -1,4 +1,4 @@
-import { BookOpen, Bot, CheckCircle2, Cpu, Eye, Lightbulb, Play, Sparkles } from 'lucide-react'
+import { BookOpen, Bot, CheckCircle2, Cpu, Eye, Lightbulb, Play } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { api } from '../../api/client'
 import type { CoachReply, Drill, Progress, QuestionDetail, TraceStep } from '../../api/types'
@@ -66,7 +66,6 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
   const c = content.concept
   const drills = content.drills ?? []
 
-  const [storyMode, setStoryMode] = useState<'clean' | 'oa'>('clean')
   const [revealedHints, setRevealedHints] = useState<number>(0)
   const [coachLoading, setCoachLoading] = useState(false)
   const [coachReply, setCoachReply] = useState<CoachReply | null>(null)
@@ -97,7 +96,7 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
     <button
       type="button"
       onClick={() => onTabChange(id)}
-      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+      className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
         activeTab === id ? 'bg-panel-3 text-chalk font-semibold shadow-2xs' : 'text-muted hover:text-chalk'
       }`}
     >
@@ -110,10 +109,10 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-panel">
       <div className="flex h-9 shrink-0 items-center gap-1 border-b border-line bg-panel-2 px-2 overflow-x-auto no-scrollbar select-none">
-        {tabBtn('description', 'Description', <BookOpen size={13} className="text-cyan" />)}
+        {tabBtn('description', 'Problem', <BookOpen size={13} className="text-cyan" />)}
         {tabBtn(
           'visualizer',
-          'Visualizer',
+          'Trace',
           <Eye size={13} className="text-emerald" />,
           steps.length > 0 ? (
             <span className="rounded-full bg-emerald/20 px-1.5 py-0.2 font-mono text-[10px] font-bold text-emerald">
@@ -124,56 +123,28 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
         {drills.length > 0 &&
           tabBtn(
             'drills',
-            'Drills',
+            'Exercises',
             <Cpu size={13} className="text-amber" />,
             <span className="font-mono text-[10px] text-muted">
               {progress.drills_passed.length}/{drills.length}
             </span>,
           )}
-        {tabBtn('pitch', 'Hints', <Lightbulb size={13} className="text-amber" />)}
+        <button aria-label="Need a hint?" className="ml-auto shrink-0 whitespace-nowrap px-2 py-1 text-xs text-muted hover:text-chalk" onClick={() => {
+          onTabChange('description')
+          requestAnimationFrame(() => document.getElementById('question-help')?.scrollIntoView({ block: 'start' }))
+        }}>Help</button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5">
         {activeTab === 'description' && (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
-              <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setStoryMode('clean')}
-                  className={`rounded-md px-2.5 py-1 font-medium ${
-                    storyMode === 'clean' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
-                  }`}
-                >
-                  ⚡ Clean Statement
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStoryMode('oa')}
-                  className={`rounded-md px-2.5 py-1 font-medium ${
-                    storyMode === 'oa' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
-                  }`}
-                >
-                  🇮🇳 Indian OA Story
-                </button>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {question.patterns.map((p) => (
-                  <span key={p} className="rounded-md border border-line bg-panel-2 px-2 py-0.5 font-mono text-[11px] text-muted">
-                    {p}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="prose-forge text-sm leading-relaxed text-chalk">
-              <Markdown>{storyMode === 'clean' ? st.clean : st.oa_story}</Markdown>
-            </div>
-
+            <div className="problem-intro"><span className="lesson-eyebrow">The problem</span><h2>{question.title}</h2><p>Read the examples, check the constraints, then try a solution.</p></div>
+            <div className="prose-forge text-sm leading-relaxed text-chalk"><Markdown>{st.clean}</Markdown></div>
+            <details className="problem-disclosure"><summary>The real-world scenario</summary><Markdown>{st.oa_story}</Markdown></details>
             <div className="flex flex-col gap-3">
               {st.examples.map((ex, i) => (
-                <div key={i} className="rounded-xl border border-line bg-panel-2/70 p-3.5 font-mono text-xs">
+                <div key={i} className="border-l-2 border-line-strong pl-4 py-2 font-mono text-xs">
                   <div className="mb-1.5 font-sans text-xs font-bold text-chalk">Example {i + 1}:</div>
-                  <div className="space-y-1 border-l-2 border-line-strong pl-3">
+                  <div className="space-y-1">
                     <div>
                       <span className="font-semibold text-muted">Input: </span>
                       <span className="text-chalk">{ex.input}</span>
@@ -204,23 +175,10 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
               </ul>
             </div>
 
-            <div className="rounded-xl border border-line bg-panel-2/40 p-3.5">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-cyan">
-                <Sparkles size={13} />
-                <span>Pattern Trigger Keywords</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {st.trigger_keywords.map((kw) => (
-                  <span key={kw} className="rounded-full border border-cyan/30 bg-cyan/10 px-2.5 py-0.5 font-mono text-xs text-cyan">
-                    "{kw}"
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <details className="group rounded-xl border border-line bg-panel-2/30 overflow-hidden">
+            <details className="problem-disclosure"><summary>Pattern clues & trigger words</summary><div className="flex flex-wrap gap-2 pt-3">{st.trigger_keywords.map(kw => <span key={kw} className="text-xs text-muted">{kw}</span>)}</div></details>
+            <details className="problem-disclosure">
               <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-xs font-semibold text-chalk hover:bg-panel-2 select-none">
-                <span>🧠 Concept Intuition, Brute Force & Pattern Quizzes</span>
+                <span>Concept notes & self-checks</span>
                 <span className="font-mono text-[11px] text-cyan">Expand ▾</span>
               </summary>
               <div className="space-y-4 border-t border-line p-4 text-xs leading-relaxed text-muted">
@@ -342,11 +300,11 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
             })}
           </div>
         )}
-        {activeTab === 'pitch' && (
-          <div className="flex flex-col gap-5">
-            <div className="rounded-xl border border-line bg-panel-2/50 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber">
+        {(activeTab === 'pitch' || activeTab === 'description') && (
+          <section id="question-help" className="problem-help flex flex-col gap-5">
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-3 items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted">
                   <Lightbulb size={14} /> Progressive Hints ({revealedHints}/{content.hints.length})
                 </span>
                 <div className="flex items-center gap-2">
@@ -368,6 +326,8 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
                 </div>
               ))}
               {coachError && <ErrorNote message={coachError} />}
+              {coachReply && !coachReply.enabled && <p className="text-xs text-muted">The AI coach isn’t configured. Use the lesson’s hints above.</p>}
+              {coachReply?.error && <ErrorNote message={coachReply.error} />}
               {coachReply?.reply && (
                 <div className="rounded-lg border border-cyan/40 bg-cyan/10 p-3 text-xs text-chalk leading-relaxed">
                   <strong className="text-cyan block mb-1">Socratic AI Coach:</strong>
@@ -377,17 +337,17 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
             </div>
 
             {onOpenInterviewGuide && (
-              <div className="rounded-lg border border-emerald/30 bg-emerald/5 p-4 flex items-center justify-between gap-3 text-xs">
+              <div className="border-t border-line pt-5 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div>
-                  <strong className="text-emerald block">Ready for the Full Interview Answer Playbook?</strong>
+                  <strong className="text-emerald block">Explain your approach</strong>
                   <span className="text-muted">View clarifying questions, spoken script, and complexity proof in full screen.</span>
                 </div>
                 <Button className="h-8 px-3 text-xs shrink-0" onClick={onOpenInterviewGuide}>
-                  Open Step 3 Guide →
+                  Interview guide →
                 </Button>
               </div>
             )}
-          </div>
+          </section>
         )}
       </div>
     </div>

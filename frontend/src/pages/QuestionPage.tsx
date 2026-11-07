@@ -9,12 +9,12 @@ import {
   ScrollText,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Progress, QuestionDetail, RunResult, Trace } from '../api/types'
 import { ThemeToggle } from '../components/effects'
-import { Button, DifficultyBadge, ErrorNote, LeetCodeLink, Spinner } from '../components/ui'
+import { Button, DifficultyBadge, ErrorNote, Spinner } from '../components/ui'
 import VictoryModal from '../components/VictoryModal'
 import { usePlayback } from '../components/visualizers/stage/usePlayback'
 import DataStructurePrimer from '../components/workspace/DataStructurePrimer'
@@ -27,12 +27,27 @@ import { useGrimoire } from '../lib/grimoire'
 import { precomputeTraceNarration } from '../lib/narrator/index.ts'
 import { useDraft } from '../lib/useDraft'
 
+const compactQuery = '(max-width: 760px)'
+function subscribeCompactLayout(onChange: () => void) {
+  const query = window.matchMedia(compactQuery)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
 export default function QuestionPage() {
+  const { slug = '' } = useParams()
+  const [search] = useSearchParams()
+  return <QuestionWorkspace key={`${slug}:${search.toString()}`} />
+}
+
+function QuestionWorkspace() {
+  const compactLayout = useSyncExternalStore(subscribeCompactLayout, () => window.matchMedia(compactQuery).matches, () => false)
   const { slug = '' } = useParams()
   const [search] = useSearchParams()
   const navigate = useNavigate()
   const openGrimoire = useGrimoire()
   const blind = search.get('mode') === 'review'
+  const requestedStage = search.get('stage')
 
   const [question, setQuestion] = useState<QuestionDetail | null>(null)
   const [progress, setProgress] = useState<Progress | null>(null)
@@ -52,6 +67,7 @@ export default function QuestionPage() {
     return 'code'
   })
   const [leftCollapsed, setLeftCollapsed] = useState(false)
+  const [mobilePane, setMobilePane] = useState<'problem' | 'editor'>('problem')
   const [activeTarget, setActiveTarget] = useState<string>('main')
 
   // Execution & Trace state
@@ -65,41 +81,34 @@ export default function QuestionPage() {
   const [speed, setSpeed] = useState(1)
 
   useEffect(() => {
-    setQuestion(null)
-    setError(null)
-    setVictory(null)
-    setResult(null)
-    setRunError(null)
-    setTrace(null)
-    setStepIndex(0)
-    setPlaying(false)
-    setActiveTarget('main')
-
+    let active = true
     api
       .question(slug)
       .then((q) => {
+        if (!active) return
         setQuestion(q)
         setProgress(q.progress)
         progressRef.current = q.progress
         setTracedCode(q.content?.solution?.code || q.content?.starter_code || '')
         if ((q.content?.journey && q.content.journey.length > 0) || (q.citadel_id && q.citadel_id !== 'dsa')) {
-          if (!search.get('stage')) {
+          if (!requestedStage) {
             setWorkspaceStep('journey')
           }
         }
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => { if (active) setError(e.message) })
 
     // Preload demo trace so the Visualizer tab is immediately interactive
     api
       .demoTrace(slug)
       .then((res) => {
-        if (res.trace?.steps?.length) {
+        if (active && res.trace?.steps?.length) {
           setTrace((prev) => prev ?? res.trace)
         }
       })
       .catch(() => {})
-  }, [slug, blind])
+    return () => { active = false }
+  }, [slug, requestedStage])
 
   const onProgress = useCallback(
     (p: Progress) => {
@@ -218,133 +227,32 @@ export default function QuestionPage() {
     null
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-void text-chalk">
-      {/* 42px Slim LeetCode Top Bar */}
-      <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-line bg-panel px-3 select-none">
-        <div className="flex min-w-0 items-center gap-2">
-          <Link
-            to={`/world/${question.world_id}`}
-            className="flex items-center gap-1 rounded-lg border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-line-strong hover:text-chalk"
-            title={`Back to World ${question.world_id}: ${question.world_name}`}
-          >
-            <ArrowLeft size={13} />
-            <span className="hidden sm:inline">World {question.world_id}</span>
-          </Link>
-
-          <div className="flex items-center gap-0.5">
-            {question.prev_slug && (
-              <Link
-                to={`/q/${question.prev_slug}`}
-                className="rounded p-1 text-muted hover:bg-panel-2 hover:text-chalk"
-                title="Previous question"
-              >
-                <ChevronLeft size={16} />
-              </Link>
-            )}
-            {question.next_slug && (
-              <Link
-                to={`/q/${question.next_slug}`}
-                className="rounded p-1 text-muted hover:bg-panel-2 hover:text-chalk"
-                title="Next question"
-              >
-                <ChevronRight size={16} />
-              </Link>
-            )}
-          </div>
-
-          <LeetCodeLink lc={question.lc} url={question.leetcode_url} />
-          <h1 className="truncate font-plate text-sm font-bold text-chalk sm:text-base">{question.title}</h1>
-          <DifficultyBadge difficulty={question.difficulty} />
+    <div className="question-workspace flex h-dvh w-full flex-col overflow-hidden bg-void text-chalk">
+      <header className="question-header">
+        <div className="question-identity">
+          <Link to={`/world/${question.world_id}`} className="question-back" aria-label={`Back to World ${question.world_id}`} title={question.world_name}><ArrowLeft size={16} /><span>World {question.world_id}</span></Link>
+          <h1 title={question.title}>{question.title}</h1>
+          <span className="question-difficulty"><DifficultyBadge difficulty={question.difficulty} /></span>
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Pedagogical Step Switcher */}
-          <div className="inline-flex items-center rounded-md border border-line bg-panel-2 p-0.5 text-xs">
-            {((question.content?.journey && question.content.journey.length > 0) || (question.citadel_id && question.citadel_id !== 'dsa')) && (
-              <button
-                type="button"
-                onClick={() => setWorkspaceStep('journey')}
-                className={`rounded px-3 py-1 font-medium transition-colors ${
-                  workspaceStep === 'journey' ? 'bg-panel-3 text-brand-light font-semibold shadow-sm' : 'text-muted hover:text-chalk'
-                }`}
-              >
-                1. Concept Journey
-              </button>
-            )}
-            {(!question.citadel_id || question.citadel_id === 'dsa') && (
-              <button
-                type="button"
-                onClick={() => setWorkspaceStep('learn')}
-                className={`rounded px-3 py-1 font-medium transition-colors ${
-                  workspaceStep === 'learn' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
-                }`}
-              >
-                1. Data Structure & Concept
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setWorkspaceStep('code')}
-              className={`rounded px-3 py-1 font-medium transition-colors ${
-                workspaceStep === 'code' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
-              }`}
-            >
-              2. Code Terminal
-            </button>
-            <button
-              type="button"
-              onClick={() => setWorkspaceStep('interview')}
-              className={`rounded px-3 py-1 font-medium transition-colors ${
-                workspaceStep === 'interview' ? 'bg-panel-3 text-chalk font-semibold' : 'text-muted hover:text-chalk'
-              }`}
-            >
-              3. Interview Guide
-            </button>
-          </div>
-
-
-          {workspaceStep === 'code' && (
-            <>
-              <Button
-                className="h-7 px-3 text-xs font-semibold"
-                onClick={() => runCode(undefined, false)}
-                disabled={running}
-              >
-                <Play size={13} />
-                <span>{running ? 'Running…' : 'Run'}</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="hidden h-7 border-cyan/40 bg-cyan/10 px-3 text-xs font-semibold text-cyan hover:bg-cyan/20 sm:inline-flex"
-                onClick={() => runCode(undefined, true)}
-                disabled={running}
-              >
-                <Eye size={13} />
-                <span>Run & Visualize</span>
-              </Button>
-            </>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setLeftCollapsed((c) => !c)}
-            className="flex h-7 items-center gap-1 rounded-lg border border-line bg-panel-2 px-2 text-xs text-muted hover:text-chalk"
-            title={leftCollapsed ? 'Show Problem Panel' : 'Maximize Editor (Hide Left Panel)'}
-          >
-            {leftCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
-            <span className="hidden md:inline">{leftCollapsed ? 'Show Panel' : 'Full Editor'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => openGrimoire(question.world_id)}
-            className="hidden h-7 items-center gap-1 rounded-lg border border-line bg-panel-2 px-2 text-xs text-muted hover:text-chalk sm:flex"
-            title="Open World Cheat-Sheet (Grimoire)"
-          >
-            <ScrollText size={13} />
-            <span className="hidden lg:inline">Grimoire</span>
-          </button>
+        <nav className="question-modes" aria-label="Question workspace">
+          <button aria-pressed={workspaceStep === 'journey' || workspaceStep === 'learn'} onClick={() => setWorkspaceStep(question.citadel_id !== 'dsa' || content?.journey?.length ? 'journey' : 'learn')}>Learn</button>
+          <button aria-pressed={workspaceStep === 'code'} onClick={() => setWorkspaceStep('code')}>Practice</button>
+          <button aria-pressed={workspaceStep === 'interview'} onClick={() => setWorkspaceStep('interview')}>Interview</button>
+        </nav>
+        <div className="question-tools">
+          {workspaceStep === 'code' && <div className="question-code-tools flex items-center gap-2">
+            <Button className="h-7 px-3 text-xs" onClick={() => runCode()} disabled={running}><Play size={12} />{running ? 'Running…' : 'Run'}</Button>
+            <button className="question-icon" title="Run and visualize" aria-label="Run and visualize" onClick={() => runCode(undefined, true)} disabled={running}><Eye size={15} /></button>
+            <button className="question-icon" title={leftCollapsed ? 'Show problem' : 'Expand editor'} aria-label={leftCollapsed ? 'Show problem' : 'Expand editor'} onClick={() => setLeftCollapsed(c => !c)}>{leftCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}</button>
+          </div>}
+          <details className="question-resource-menu">
+            <summary aria-label="Question resources" title="Question resources"><ScrollText size={16} /></summary>
+            <div>
+              <button onClick={() => openGrimoire(question.world_id)}>World reference sheet</button>
+              {question.prev_slug && <Link to={`/q/${question.prev_slug}`}><ChevronLeft size={13} /> Previous question</Link>}
+              {question.next_slug && <Link to={`/q/${question.next_slug}`}>Next question <ChevronRight size={13} /></Link>}
+            </div>
+          </details>
           <ThemeToggle />
         </div>
       </header>
@@ -355,6 +263,7 @@ export default function QuestionPage() {
       ) : workspaceStep === 'journey' ? (
         <div className="flex-1 min-h-0 w-full overflow-y-auto bg-void">
           <JourneyPlayer
+            key={slug}
             question={question}
             onProceedToCode={() => setWorkspaceStep('code')}
           />
@@ -389,14 +298,16 @@ export default function QuestionPage() {
         </div>
       ) : (
 
-        <div className="flex-1 min-h-0 w-full overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
+          <div className="mobile-code-nav"><button aria-pressed={mobilePane === 'problem'} onClick={() => setMobilePane('problem')}>Problem & help</button><button aria-pressed={mobilePane === 'editor'} onClick={() => setMobilePane('editor')}>Code & tests</button><button disabled={running} onClick={() => { setMobilePane('editor'); runCode() }}>{running ? 'Running…' : 'Run code'}</button></div>
           <ResizableSplit
+            className={`question-code-split ${mobilePane}-view`}
             direction="horizontal"
             initialPrimaryPct={45}
             minPrimaryPct={22}
             maxPrimaryPct={76}
             storageKey="pf-lc-split-x"
-            primaryCollapsed={leftCollapsed}
+            primaryCollapsed={leftCollapsed && !compactLayout}
             first={
               <LeetCodeLeftPanel
                 question={question}

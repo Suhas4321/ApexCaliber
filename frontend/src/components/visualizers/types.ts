@@ -18,6 +18,8 @@ export interface VisualizerProps {
 
 /** Props VisualizerHost receives from StageArena or StageConcept. */
 export interface VisualizerHostProps extends VisualizerProps {
+  /** Standalone topic exploration without trace-player chrome. */
+  inline?: boolean
   kind: VisualizerKind
   title?: string
   description?: string
