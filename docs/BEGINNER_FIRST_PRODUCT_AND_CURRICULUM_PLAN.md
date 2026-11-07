@@ -230,6 +230,8 @@ Apply the button/token system and homepage hierarchy. Fix responsive System Desi
 - Mobile has no page-level horizontal overflow. Motion remains understandable when paused or reduced.
 - Existing tests and build pass after migration; focused tests cover entry state, prerequisite routing, progress migration and answer reveal.
 
-## Decision for this branch
+## Implementation status on this branch
 
-This branch contains planning documents only. It is ready for Antigravity to inspect and turn into implementation tasks. Do the pilot slices and component foundation first; use the acceptance criteria to review its output. The existing motion handoff remains the detailed specification for the animation refactor.
+The first product slice is implemented: fresh questions open in Learn; authored journeys put a short foundation screen before the first prediction; fifteen OS, backend and networking topics have a plain-language bridge and example. DSA solution traces and the interview reference answer are revealed deliberately. The question toolbar now uses a consistent control scale and a clearer world back link. System Design opens at an overview, has a mobile curriculum drawer and uses the next available citadel numeral. The question loading state uses a layout skeleton. The frontend build and existing journey-state checks pass.
+
+This is **not** a completed curriculum migration. Most question YAML still lacks an authored prerequisite graph, worked/non-examples and a transfer check. The first-stage fallback is a useful interruption to the immediate quiz, but its text can still be too advanced. The entire System Design track also needs foundations before SOLID, LLD and HLD lessons, and the remaining worlds need content review. Do not mark the acceptance criteria above complete until those authored lessons, beginner pilots, responsive/contrast checks and targeted tests are done. `ANTIGRAVITY_MOTION_LEARNING_REDESIGN.md` remains the motion implementation brief.
