@@ -706,9 +706,7 @@ export default function StageArena({ question, progress, blind, onProgress, onCo
                   <span className="font-plate text-sm font-semibold text-chalk">
                     {question.title}
                   </span>
-                  <span className="rounded-full border border-line bg-panel px-2 py-0.5 text-2xs font-mono text-muted">
-                    #{question.lc}
-                  </span>
+                  {question.citadel_id === 'dsa' && <span className="rounded-full border border-line bg-panel px-2 py-0.5 text-2xs font-mono text-muted">#{question.lc}</span>}
                   <span className="rounded-full border border-emerald/30 bg-emerald/10 px-2 py-0.5 text-2xs font-semibold text-emerald">
                     {question.difficulty}
                   </span>

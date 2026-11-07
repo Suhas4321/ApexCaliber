@@ -1,4 +1,5 @@
 import type { ActivityEvent, CheatSheet, CoachReply, CoachStatus, Pitch, Progress, QuestionDetail, ReviewQueue, RunResult, StatsResponse, Trace, World } from './types'
+import type { CheckResult, LearningPath, LearningSummary, LessonDetail } from './learningTypes'
 
 export class ApiError extends Error {
   status: number
@@ -34,6 +35,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 const json = (body: unknown) => JSON.stringify(body)
 
 export const api = {
+  learningSummary: () => request<LearningSummary>('/api/learning-paths/summary'),
+  learningPath: (citadelId: string) => request<LearningPath>(`/api/learning-paths/${citadelId}`),
+  lesson: (lessonId: string) => request<LessonDetail>(`/api/lessons/${lessonId}`),
+  checkLesson: (lessonId: string, checkIndex: number, answer: number) =>
+    request<CheckResult>(`/api/lessons/${lessonId}/checks/${checkIndex}`, { method: 'POST', body: json({ answer }) }),
   worlds: () => request<World[]>('/api/worlds'),
   review: () => request<ReviewQueue>('/api/review'),
   question: (slug: string) => request<QuestionDetail>(`/api/questions/${slug}`),

@@ -1,0 +1,233 @@
+# Phase 1 pilot. Each lesson is reviewed by hand; do not bulk-generate this graph.
+modules:
+  - id: os-foundations
+    citadel_id: os_concurrency
+    title: From a running program to a safe shared counter
+    summary: Learn what a process and thread are before diagnosing a race or using a lock.
+    position: 1
+    cue_card:
+      elevator_pitch: A process is a running program with an address space; threads are execution paths inside it. Shared data needs coordination when operations can interleave.
+      pillars:
+        - The OS creates and schedules processes and threads; an application asks it for services through system calls.
+        - Threads in one process share address-space data, while each thread has its own execution state.
+        - A race occurs when the result depends on an uncontrolled order of reads and writes.
+        - A mutex protects a critical section by allowing one owner at a time.
+      tradeoffs:
+        - Locks add waiting and can create deadlocks if acquired inconsistently; use the smallest correct critical section.
+        - Separate processes offer stronger memory isolation but need explicit communication.
+      candidate_trap: The default CPython GIL does not make an arbitrary read–modify–write operation safe. Explain the shared-state invariant and the actual lock.
+    lessons:
+      - id: os-process
+        title: What is a process?
+        summary: A saved program becomes a running process when the OS starts it.
+        position: 1
+        content:
+          situation: You open a music app while a browser is already running. How does the computer keep both alive?
+          explanation: A program is instructions stored on disk. When the operating system starts it, it creates a process with memory and resources for that running instance. The OS manages which process gets CPU time and controls access to files and devices. An app asks for protected services using a system call. Two launches of the same program can create separate processes.
+          terms:
+            - {name: Program, meaning: "Instructions saved as a file, before they run."}
+            - {name: Process, meaning: One running instance of a program with its own address space and resources.}
+            - {name: Operating system, meaning: Software that manages hardware resources and gives applications controlled services.}
+          worked_example: A browser and music app are two running processes. The OS switches CPU time between their work and keeps their ordinary memory separate. Pausing the music app does not erase its saved program.
+          second_example: Opening two copies of a text editor can create two processes from one installed program. They may each hold a different unsaved document in memory.
+          checks:
+            - prompt: You have one editor installed and open it twice. Which statement is best?
+              choices: [One program can have two running processes., A program is the same thing as a CPU core., Every window must be a separate operating system.]
+              answer: 0
+              explanation: The program is the stored instructions; each running instance can be a process.
+            - prompt: An app wants to read a file. Who normally controls access to that device and file?
+              choices: [The operating system through a service call., Any app directly reading arbitrary disk bytes., The app's screen layout.]
+              answer: 0
+              explanation: The OS mediates access to resources; applications request those services.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/, https://pdos.csail.mit.edu/6.828/2021/overview.html]
+      - id: os-thread
+        title: What is a thread?
+        summary: Threads are paths of work inside a process that can share data.
+        position: 2
+        prerequisites: [os-process]
+        content:
+          situation: A photo app responds to your clicks while it saves a large image. How can one app manage both activities?
+          explanation: A process can contain multiple threads. Each thread follows its own path through the program and has its own execution state. Threads in the same process can access shared memory. That makes exchanging data convenient, but it also means one thread can observe another thread's changes. Separate processes do not ordinarily share the same address space directly.
+          terms:
+            - {name: Thread, meaning: One sequence of execution within a process.}
+            - {name: Shared memory, meaning: Data in a process address space that more than one thread can access.}
+            - {name: Execution state, meaning: The position and local state a thread needs to continue its work.}
+          worked_example: One photo-app thread handles a button press while another prepares a save. Both may refer to the same document object. If they change it together, the app needs a coordination rule.
+          second_example: Two separate text-editor processes have separate address spaces. To exchange a document they normally use a file or some other explicit communication mechanism.
+          checks:
+            - prompt: Which pair can ordinarily access the same process memory directly?
+              choices: [Two threads in one process., Two unrelated processes., Two saved program files.]
+              answer: 0
+              explanation: Threads within one process share its address space; processes normally have separate address spaces.
+            - prompt: What remains separate for two threads in the same process?
+              choices: [Their execution paths and local execution state., The entire program's address space., Every file the process can use.]
+              answer: 0
+              explanation: Threads share process resources but each needs its own state to resume execution.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/, https://www.cs.cornell.edu/courses/cs3410/2025fa/notes/threads.html]
+      - id: os-race
+        title: Why can two increments become one?
+        summary: A race appears when the order of shared reads and writes changes the outcome.
+        position: 3
+        prerequisites: [os-thread]
+        content:
+          situation: Two workers each add one to a shared count. You expect two, but sometimes see one.
+          explanation: An increment can be understood as reading a value, calculating a new value, then writing it. Those conceptual steps can interleave with another worker's steps. If both read the old value before either writes, both can write the same new value. The result depends on timing; that is a race condition. This model does not depend on a particular Python bytecode listing.
+          terms:
+            - {name: Interleaving, meaning: Steps from different workers occur in a mixed order.}
+            - {name: Race condition, meaning: Correctness depends on an uncontrolled order of concurrent operations.}
+            - {name: Lost update, meaning: One change overwrites another because both used an old value.}
+          worked_example: Start with count 0. A reads 0; B reads 0; A writes 1; B writes 1. Two increments were requested, but the count is 1.
+          second_example: Two cashiers read that one seat is available and both try to reserve it. Without coordination, each may tell a different customer the seat is theirs.
+          checks:
+            - prompt: Count starts at 0. A and B both read 0, then each writes its calculated value. What is the final count?
+              choices: ['1', '2', '0']
+              answer: 0
+              explanation: Both calculated 1 from the same old value, so the later write overwrites an equivalent value.
+            - prompt: Why is this a race condition?
+              choices: [The result can depend on the order of shared reads and writes., Two workers always use two CPU cores., The code contains a loop.]
+              answer: 0
+              explanation: The uncontrolled interleaving changes whether one update is lost.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
+      - id: os-mutex
+        title: What does a mutex protect?
+        summary: A lock gives one worker exclusive access to a critical section.
+        position: 4
+        prerequisites: [os-race]
+        content:
+          situation: The shared counter must be correct even when many threads update it.
+          explanation: A mutex is a lock with one owner at a time. A thread acquires it before the critical section, performs the read–change–write sequence, then releases it. Other threads wait their turn. The lock protects an invariant such as “each completed increment changes the count once.” Holding it too long makes other workers wait; inconsistent lock order can cause deadlock later.
+          terms:
+            - {name: Mutex, meaning: A mutual-exclusion lock that allows one owner at a time.}
+            - {name: Critical section, meaning: The steps that must not overlap with another worker's conflicting steps.}
+            - {name: Invariant, meaning: "A rule the program must keep true, such as no lost increments."}
+          worked_example: A acquires the lock, reads 0, writes 1 and releases it. B then acquires the lock, reads 1, writes 2 and releases it. The final count is 2.
+          second_example: For one available seat, a reservation system can protect the check-and-reserve operation so only one customer can claim it. A database transaction is often the real tool for this case; a local process lock alone would not protect multiple servers.
+          checks:
+            - prompt: Which part needs the counter's mutex?
+              choices: [The entire read–change–write sequence., Only the final print statement., Only the arithmetic after both threads already read.]
+              answer: 0
+              explanation: Protect all steps that must behave as one change to shared state.
+            - prompt: Why should a lock usually cover no more work than necessary?
+              choices: [Other workers must wait while it is held., A longer lock changes the data type., Locks prevent all deadlocks automatically.]
+              answer: 0
+              explanation: An unnecessarily long critical section increases contention and can reduce responsiveness.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/, https://docs.python.org/3/library/threading.html]
+  - id: db-foundations
+    citadel_id: sql_dbms
+    title: From tables to a safe money transfer
+    summary: Build relational intuition before joins, transactions and storage internals.
+    position: 1
+    cue_card:
+      elevator_pitch: A relational database stores rows in tables, uses keys to identify and connect them, joins to answer questions across tables, and transactions to keep multi-step changes safe.
+      pillars:
+        - A table has typed columns and rows; a primary key identifies a logical row.
+        - A foreign key checks that a referenced row exists and expresses a relationship.
+        - A join combines related rows using a stated matching condition.
+        - A transaction groups changes so failure can roll them back together.
+      tradeoffs:
+        - A missing or incorrect join condition can multiply rows; inspect the relationship and expected cardinality.
+        - Transactions protect correctness but may hold locks or conflict with concurrent work.
+      candidate_trap: A foreign key is not a copy of the whole parent row, and an index is not the same as a primary key's logical identity.
+    lessons:
+      - id: db-table
+        title: What is a table?
+        summary: Rows describe individual records; columns describe their fields.
+        position: 1
+        content:
+          situation: A school needs to remember students and courses after its website closes.
+          explanation: A database stores structured information persistently. In a relational database, a table holds records of one kind. Each row is one record; columns name its fields and have data types. A database management system (DBMS) stores the data and answers queries. Begin with a small table before thinking about pages or indexes.
+          terms:
+            - {name: Table, meaning: A named collection of records with defined columns.}
+            - {name: Row, meaning: One record in a table.}
+            - {name: Column, meaning: One named field shared by the table's rows.}
+          worked_example: A students table has columns student_id, name and year. The row (7, Asha, 1) describes one student. Another row can have a different student_id and the same name.
+          second_example: A products table has product_id, name and price. A price is data about a product, not a separate product row.
+          checks:
+            - prompt: In a students table, what does one row represent?
+              choices: [One student record., Every student name., One database server.]
+              answer: 0
+              explanation: A row is one record; the columns define its fields.
+            - prompt: Where does the field name “price” belong in a products table?
+              choices: [In a column definition., As a separate database., In the server's process ID.]
+              answer: 0
+              explanation: A column names a field that product rows can carry.
+          sources: [https://www.postgresql.org/docs/current/tutorial.html]
+      - id: db-key
+        title: How do keys identify and connect rows?
+        summary: A primary key identifies a row; a foreign key refers to another table's row.
+        position: 2
+        prerequisites: [db-table]
+        content:
+          situation: Two students are named Asha. The school still needs to know which one enrolled in a course.
+          explanation: A primary key is a column or combination of columns whose value uniquely identifies a row and cannot be null. A foreign key in another table refers to a valid row, usually by its primary key. The database can reject an enrollment that points to a student who does not exist. Keys express logical identity and relationships; they are not physical disk addresses.
+          terms:
+            - {name: Primary key, meaning: A non-null value or set of values that uniquely identifies a table row.}
+            - {name: Foreign key, meaning: A column or columns constrained to refer to a valid row in another table.}
+            - {name: Constraint, meaning: A rule the DBMS checks when data changes.}
+          worked_example: students has student_id 7 for Asha. enrollments has (student_id 7, course_id 12). The enrollment's student_id is a foreign key to students.student_id. An enrollment with student_id 999 is rejected if no such student exists.
+          second_example: orders.order_id identifies an order; orders.customer_id points to customers.customer_id. A customer can have several orders without copying their full address into each order.
+          checks:
+            - prompt: Two students share the name Asha. Which field is a safer primary key?
+              choices: [A unique student_id., The name Asha., A random row position on disk.]
+              answer: 0
+              explanation: Names may repeat; a stable unique student_id can identify each logical student.
+            - prompt: What should happen if an enrollment refers to a nonexistent student_id?
+              choices: [A foreign-key constraint can reject it., The DBMS automatically invents a student., The name column becomes the primary key.]
+              answer: 0
+              explanation: The foreign key protects the relationship by requiring a matching referenced row.
+          sources: [https://www.postgresql.org/docs/current/ddl-constraints.html]
+      - id: db-join
+        title: How do we answer a question across tables?
+        summary: A join matches related rows; the join type controls missing matches.
+        position: 3
+        prerequisites: [db-key]
+        content:
+          situation: The school wants a list of student names next to the courses they enrolled in.
+          explanation: A join combines rows from two tables according to a matching condition, such as enrollments.student_id = students.student_id. An inner join keeps matching pairs. A left join keeps every row from the left table and fills unmatched right-side fields with null. Think about how many matches one row can have before writing SQL.
+          terms:
+            - {name: Join condition, meaning: The rule that says which rows correspond.}
+            - {name: Inner join, meaning: Keeps row pairs that satisfy the match.}
+            - {name: Left join, meaning: "Keeps every left row, even without a matching right row."}
+          worked_example: Asha (id 7) has two enrollments, so joining students to enrollments produces two rows for her. Bilal (id 8) has none; an inner join omits him, while a left join keeps him with null enrollment fields.
+          second_example: To find customers who never ordered, left join customers to orders and look for rows where the matched order ID is null. A missing join condition would produce many unrelated combinations.
+          checks:
+            - prompt: Which join keeps students who have not enrolled in any course?
+              choices: [A left join starting from students., An inner join only., A join with no matching condition.]
+              answer: 0
+              explanation: A left join retains all students, including those with no enrollment match.
+            - prompt: One student has two enrollments. How many joined rows can that student produce?
+              choices: ['2', '1 always', '0 always']
+              answer: 0
+              explanation: The student row matches each of its two enrollment rows.
+          sources: [https://www.postgresql.org/docs/current/tutorial-join.html]
+      - id: db-transaction
+        title: How do several changes succeed together?
+        summary: A transaction groups related writes and can roll them back after failure.
+        position: 4
+        prerequisites: [db-join]
+        content:
+          situation: A school transfers a fee payment from one account to another. The system must not lose the money halfway through.
+          explanation: A transaction treats related database changes as one unit. If a step fails before commit, the DBMS can roll back the unit so the partial changes do not remain. Atomicity is this all-or-nothing property. Other ACID properties cover valid rules, concurrent visibility and durability after commit; each needs a later lesson before advanced isolation questions.
+          terms:
+            - {name: Transaction, meaning: A unit of related database operations.}
+            - {name: Commit, meaning: Finish a successful transaction so its changes become permanent.}
+            - {name: Rollback, meaning: Undo the transaction's uncommitted changes after failure.}
+          worked_example: Account A has 100 and B has 50. In one transaction, subtract 20 from A and add 20 to B, then commit. If the second operation fails, roll back; balances remain 100 and 50, not 80 and 50.
+          second_example: An online shop reduces stock and creates an order in one transaction. If order creation fails, the stock reduction should not remain by itself.
+          checks:
+            - prompt: A transfer subtracts money but fails before adding it to the destination. What should happen?
+              choices: [Roll back the transaction's uncommitted changes., Keep the subtraction alone., Create a foreign key instead.]
+              answer: 0
+              explanation: Atomicity means the related operations succeed together or are undone together.
+            - prompt: When should the transfer transaction commit?
+              choices: [After both balance changes succeed and required rules hold., Immediately after subtracting from A., Before any statement runs.]
+              answer: 0
+              explanation: Commit only when the unit of work is complete and valid.
+          sources: [https://www.postgresql.org/docs/current/tutorial-transactions.html]
+challenges:
+  - {slug: memory-isolation-threads-vs-processes, requires: [os-thread]}
+  - {slug: deterministic-interleaving-counter, requires: [os-race]}
+  - {slug: processes-vs-threads-memory, requires: [os-mutex]}
+  - {slug: mutex-protected-counter, requires: [os-mutex]}
+  - {slug: sql-customers-never-order, requires: [db-join]}
+  - {slug: sql-acid-money-transfer, requires: [db-transaction]}

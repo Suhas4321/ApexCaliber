@@ -10,9 +10,10 @@ from sqlalchemy import func, inspect, select, text
 from app.config import PROJECT_DIR, settings
 from app.db import Base, SessionLocal, engine
 from app.models import Progress
-from app.routers import backup, playground, questions, stats, worlds
+from app.routers import backup, learning, playground, questions, stats, worlds
 from app.services import backup_manager
 from app.services.content_loader import sync_content
+from app.services.learning_paths import sync_learning_paths
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("patternforge")
@@ -34,6 +35,7 @@ def startup() -> None:
         log.warning("Column migration check: %s", e)
     with SessionLocal() as session:
         sync_content(session, settings.content_dir)
+        sync_learning_paths(session, settings.content_dir)
         # Fresh database (new machine, deleted SQLite file, switched to Supabase) but a backup
         # exists: bring user data back automatically. Otherwise refresh the backup.
         has_progress = session.scalar(select(func.count()).select_from(Progress)) > 0
@@ -58,6 +60,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(worlds.router)
+app.include_router(learning.router)
 app.include_router(questions.router)
 app.include_router(stats.router)
 app.include_router(backup.router)
@@ -74,6 +77,7 @@ def reload_content():
     """Re-read content/ without restarting the server (handy while editing question files)."""
     with SessionLocal() as session:
         report = sync_content(session, settings.content_dir)
+        sync_learning_paths(session, settings.content_dir)
     return {"worlds": report.worlds, "questions": report.questions,
             "with_content": report.with_content, "errors": report.errors}
 

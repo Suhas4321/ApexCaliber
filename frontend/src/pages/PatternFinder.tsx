@@ -180,7 +180,7 @@ function ResultCard({ result: r, worlds, onRestart, onBack }: { result: PatternR
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm text-chalk group-hover:text-sky-400">{q?.title ?? slug}</span>
                     {q && <DifficultyBadge difficulty={q.difficulty} />}
-                    {q && <LeetCodeLink lc={q.lc} url={q.leetcode_url} />}
+                    {q?.citadel_id === 'dsa' && <LeetCodeLink lc={q.lc} url={q.leetcode_url} />}
                   </Link>
                 </li>
               )

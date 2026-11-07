@@ -16,7 +16,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import Draft, PitchNote, Progress, Question, Submission, utcnow
+from app.models import Draft, Lesson, LessonProgress, PitchNote, Progress, Question, Submission, utcnow
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ USER_TABLES = {
     "pitch_notes": PitchNote,
     "drafts": Draft,
     "submissions": Submission,
+    "lesson_progress": LessonProgress,
 }
 
 
@@ -100,13 +101,17 @@ def import_user_data(session: Session, data: dict) -> dict[str, int]:
         raise ValueError(f"unsupported backup format_version {data.get('format_version')!r}")
     tables = data.get("tables", {})
     known_slugs = set(session.scalars(select(Question.slug)))
+    known_lessons = set(session.scalars(select(Lesson.id)))
 
     counts: dict[str, int] = {}
     # Delete children first (all reference questions only, so order among them doesn't matter).
     for model in USER_TABLES.values():
         session.execute(delete(model))
     for name, model in USER_TABLES.items():
-        rows = [r for r in tables.get(name, []) if r.get("question_slug") in known_slugs]
+        if name == "lesson_progress":
+            rows = [r for r in tables.get(name, []) if r.get("lesson_id") in known_lessons]
+        else:
+            rows = [r for r in tables.get(name, []) if r.get("question_slug") in known_slugs]
         for r in rows:
             session.add(_dict_to_row(model, r))
         counts[name] = len(rows)

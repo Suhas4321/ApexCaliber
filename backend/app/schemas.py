@@ -77,6 +77,7 @@ class QuestionDetail(QuestionSummary):
     drafts: dict[str, str]
     prev_slug: str | None
     next_slug: str | None
+    required_lessons: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ProgressPatch(BaseModel):

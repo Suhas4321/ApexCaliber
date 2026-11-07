@@ -59,6 +59,7 @@ function WorldTrail({ world }: { world: World }) {
 
   return (
     <div className="shell flex flex-col gap-5 py-5">
+      {(citadel.id === 'os_concurrency' || citadel.id === 'sql_dbms') && <Link to={`/learn/${citadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/30 bg-cyan/10 px-5 py-4 text-sm hover:bg-cyan/15"><span><strong className="block text-chalk">Learn the foundations first</strong><span className="text-muted">Build the idea step by step before you solve the challenge.</span></span><span className="shrink-0 font-semibold text-cyan">Open lessons →</span></Link>}
       {/* Compact World header (Zone 2, ~160px desktop height) */}
       <header className="card flex flex-col justify-between gap-4 rounded-2xl p-4 sm:p-5 md:flex-row md:items-center">
         <div className="min-w-0 flex-1">

@@ -23,6 +23,7 @@ from app.services import ai_coach
 from app.services.backup_manager import auto_dump
 from app.services.progress_service import get_or_create_progress, progress_out, question_summary
 from app.services.spaced_repetition import next_review_interval
+from app.routers.learning import required_lessons
 
 router = APIRouter(prefix="/api/questions", tags=["questions"])
 
@@ -59,6 +60,7 @@ def get_question(slug: str, session: Session = Depends(get_session)):
         drafts=drafts,
         prev_slug=ordered[idx - 1] if idx > 0 else None,
         next_slug=ordered[idx + 1] if idx + 1 < len(ordered) else None,
+        required_lessons=required_lessons(session, slug),
     )
 
 
@@ -83,6 +85,10 @@ def _save_draft(session: Session, slug: str, target: str, code: str) -> None:
 @router.post("/{slug}/run", response_model=RunOut)
 def run_code(slug: str, body: RunIn, session: Session = Depends(get_session)):
     question = _question(session, slug)
+    required = required_lessons(session, slug)
+    old_progress = session.get(Progress, slug)
+    if required and not all(item["mastered"] for item in required) and not (old_progress and old_progress.solved):
+        raise HTTPException(409, "Complete the linked concept lessons before this challenge")
     content = _content(question)
     spec, tests, reference, default_trace = _target_spec(content, body.target)
     runner_type = question.runner_type or content.get("runner_type", "python_trace")

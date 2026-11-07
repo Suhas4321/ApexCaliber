@@ -1,8 +1,9 @@
 import { CalendarClock, Check, ChevronDown, Compass, Crown, Lock, Sparkles } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
+import type { LearningSummary } from '../api/learningTypes'
 import type { ReviewQueue, World } from '../api/types'
 import ChapterIntroModal from '../components/ChapterIntroModal'
 import DailyQuestCard from '../components/DailyQuestCard'
@@ -39,6 +40,7 @@ export default function Dashboard() {
 
   const [worlds, setWorlds] = useState<World[] | null>(null)
   const [review, setReview] = useState<ReviewQueue | null>(null)
+  const [learningSummary, setLearningSummary] = useState<LearningSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function Dashboard() {
         setReview(r)
       })
       .catch((e) => setError(e.message))
+    api.learningSummary().then(setLearningSummary).catch(() => {})
   }, [])
 
   if (error) return <div className="shell p-8"><ErrorNote message={error} /></div>
@@ -104,6 +107,13 @@ export default function Dashboard() {
       <div className="shell relative z-10 flex flex-col gap-5 pt-5 w-full">
         {/* 1. Dashboard Header: Slim ~120px Row */}
         <CommandHud worlds={displayWorlds} review={review} citadel={activeCitadel} />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Concepts mastered</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.concepts_mastered} / ${learningSummary.total_concepts}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Understanding checked through short situations</p></div>
+          <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Challenges solved</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.challenges_solved} / ${learningSummary.total_challenges}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Practice after the foundations</p></div>
+        </div>
+
+        {(activeCitadel.id === 'os_concurrency' || activeCitadel.id === 'sql_dbms') && <Link to={`/learn/${activeCitadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/35 bg-cyan/10 px-5 py-4 hover:bg-cyan/15"><span><strong className="block text-white">New here? Start with the basics</strong><span className="text-sm text-slate-300">Small lessons and examples before the interview questions.</span></span><span className="shrink-0 text-sm font-semibold text-cyan">Start learning →</span></Link>}
 
         {/* 2. Collapsible Activity & Practice Heatmap */}
         <details className="group rounded-2xl border border-white/12 bg-[#0D1220]/70 backdrop-blur-md transition-colors overflow-hidden shadow-xl">

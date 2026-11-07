@@ -234,6 +234,15 @@ function QuestionWorkspace() {
     )
   }
 
+  const prerequisiteLessons = ((question as QuestionDetail & { required_lessons?: Array<{ id: string; title: string; mastered: boolean }> }).required_lessons ?? [])
+  const missingLessons = progress.solved ? [] : prerequisiteLessons.filter((lesson) => !lesson.mastered)
+  if (missingLessons.length > 0) {
+    return <div className="shell max-w-3xl py-10 space-y-6">
+      <Link to={`/world/${question.world_id}`} className="inline-flex items-center gap-2 text-sm text-muted hover:text-chalk"><ArrowLeft size={16} /> Back to {question.world_name}</Link>
+      <div className="rounded-3xl border border-line bg-panel p-7 sm:p-9"><div className="text-xs font-semibold uppercase tracking-widest text-cyan">Before this challenge</div><h1 className="mt-2 font-plate text-3xl font-semibold text-chalk">Build the idea first</h1><p className="mt-3 leading-7 text-muted">{question.title} uses ideas that are easier to understand in this order. Each lesson starts with a familiar situation and two examples.</p><ol className="mt-6 space-y-3">{prerequisiteLessons.map((lesson) => <li key={lesson.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel-2 p-4"><span className="text-chalk">{lesson.title}</span><span className="text-sm text-cyan">{lesson.mastered ? 'Understood' : 'Next to learn'}</span></li>)}</ol><Link to={`/lesson/${missingLessons[0].id}`} className="mt-6 inline-flex rounded-xl bg-cyan px-5 py-3 text-sm font-semibold text-[#06121a]">Start with {missingLessons[0].title} →</Link></div>
+    </div>
+  }
+
   const content = question.content
   const isBoss = question.position === question.world_total - 1
   const steps = playback.steps

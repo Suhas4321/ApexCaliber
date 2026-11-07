@@ -15,6 +15,8 @@ import Dashboard from './pages/Dashboard'
 import WorldPage from './pages/WorldPage'
 import PatternFinder from './pages/PatternFinder'
 import NotFound from './pages/NotFound'
+import LearningPathPage from './pages/LearningPathPage'
+import LessonPage from './pages/LessonPage'
 import { Spinner } from './components/ui'
 
 // Lazy-load heavier interactive pages
@@ -36,6 +38,8 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'citadel/:citadelId', element: <Dashboard /> },
       { path: 'world/:id', element: <WorldPage /> },
+      { path: 'learn/:citadelId', element: <LearningPathPage /> },
+      { path: 'lesson/:lessonId', element: <LessonPage /> },
       { path: 'q/:slug', element: withSpinner(<QuestionPage />) },
       { path: 'playground', element: withSpinner(<Playground />) },
       { path: 'finder', element: <PatternFinder /> },

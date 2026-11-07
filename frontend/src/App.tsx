@@ -48,6 +48,8 @@ function BreadcrumbBar() {
   const citadelMatch = /^\/citadel\/([^/]+)/.exec(pathname)
   const worldMatch = /^\/world\/(\d+)/.exec(pathname)
   const questionMatch = /^\/q\/([^/]+)/.exec(pathname)
+  const learningMatch = /^\/learn\/([^/]+)/.exec(pathname)
+  const lessonMatch = /^\/lesson\/([^/]+)/.exec(pathname)
 
   if (citadelMatch) {
     const cit = getCitadel(citadelMatch[1])
@@ -64,6 +66,12 @@ function BreadcrumbBar() {
     crumbs.push({ label: worldName })
   } else if (questionMatch) {
     crumbs.push({ label: 'Question Workspace' })
+  } else if (learningMatch) {
+    const cit = getCitadel(learningMatch[1])
+    crumbs.push({ label: cit.shortName, to: `/citadel/${cit.id}` })
+    crumbs.push({ label: 'Concept route' })
+  } else if (lessonMatch) {
+    crumbs.push({ label: 'Concept lesson' })
   } else if (pathname === '/resume-grill') {
     const cit = getCitadel('ai_resume')
     crumbs.push({
@@ -109,7 +117,7 @@ function TopBar() {
   const openGrimoire = useGrimoire()
   const { pathname } = useLocation()
   const worldMatch = /^\/world\/(\d+)/.exec(pathname)
-  const onJourney = pathname === '/' || pathname.startsWith('/citadel') || pathname.startsWith('/world') || pathname.startsWith('/q/')
+  const onJourney = pathname === '/' || pathname.startsWith('/citadel') || pathname.startsWith('/world') || pathname.startsWith('/q/') || pathname.startsWith('/learn/') || pathname.startsWith('/lesson/')
 
   return (
     <GlassSurface

@@ -48,6 +48,57 @@ class Question(Base):
     world: Mapped[World] = relationship(back_populates="questions")
 
 
+class LearningModule(Base):
+    """A teaching unit, independent of the coding-challenge world model."""
+
+    __tablename__ = "learning_modules"
+
+    id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    citadel_id: Mapped[str] = mapped_column(String(32), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    summary: Mapped[str] = mapped_column(Text, default="")
+    position: Mapped[int] = mapped_column(Integer)
+    cue_card: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    lessons: Mapped[list["Lesson"]] = relationship(back_populates="module", order_by="Lesson.position")
+
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    module_id: Mapped[str] = mapped_column(ForeignKey("learning_modules.id"), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    summary: Mapped[str] = mapped_column(Text, default="")
+    position: Mapped[int] = mapped_column(Integer)
+    content: Mapped[dict] = mapped_column(JSON)
+
+    module: Mapped[LearningModule] = relationship(back_populates="lessons")
+
+
+class LessonPrerequisite(Base):
+    __tablename__ = "lesson_prerequisites"
+
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), primary_key=True)
+    prerequisite_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), primary_key=True)
+
+
+class ChallengePrerequisite(Base):
+    __tablename__ = "challenge_prerequisites"
+
+    question_slug: Mapped[str] = mapped_column(ForeignKey("questions.slug"), primary_key=True)
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), primary_key=True)
+
+
+class LessonProgress(Base):
+    __tablename__ = "lesson_progress"
+
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), primary_key=True)
+    passed_checks: Mapped[list] = mapped_column(JSON, default=list)
+    mastered: Mapped[bool] = mapped_column(Boolean, default=False)
+    mastered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class Progress(Base):
     __tablename__ = "progress"
 

@@ -470,7 +470,7 @@ function TrailNode({
       </Link>
       <div className="mt-1.5 flex flex-wrap items-center gap-2">
         <DifficultyBadge difficulty={q.difficulty} />
-        <LeetCodeLink lc={q.lc} url={q.leetcode_url} />
+        {q.citadel_id === 'dsa' && <LeetCodeLink lc={q.lc} url={q.leetcode_url} />}
         {solved && <ConfidenceStars value={q.progress.confidence} />}
         {due && !active && (
           <span className="inline-flex items-center gap-1 text-2xs text-amber">

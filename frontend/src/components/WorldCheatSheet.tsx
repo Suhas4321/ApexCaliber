@@ -157,7 +157,7 @@ export default function WorldCheatSheet({ worldId, onWorldChange, onClose }: Pro
                           <div>
                             <div className="text-sm font-medium">{p.title}</div>
                             <div className="mt-0.5 flex items-center gap-2">
-                              <span className="font-mono text-2xs text-faint">#{p.lc}</span>
+                              {worlds.find((world) => world.id === worldId)?.citadel_id === 'dsa' && <span className="font-mono text-2xs text-faint">#{p.lc}</span>}
                               <DifficultyBadge difficulty={p.difficulty} />
                             </div>
                           </div>
@@ -188,7 +188,7 @@ export default function WorldCheatSheet({ worldId, onWorldChange, onClose }: Pro
                         {sheet.solved.map((s) => (
                           <div key={s.slug} className="break-inside-avoid rounded-xl border border-line bg-ink/60 p-4">
                             <div className="flex flex-wrap items-center gap-3">
-                              <LeetCodeLink lc={s.lc} url={`https://leetcode.com/problems/${s.slug}/`} />
+                              {worlds.find((world) => world.id === worldId)?.citadel_id === 'dsa' && <LeetCodeLink lc={s.lc} url={`https://leetcode.com/problems/${s.slug}/`} />}
                               <Link to={`/q/${s.slug}?stage=4`} onClick={onClose} className="font-semibold hover:text-cyan">
                                 {s.title}
                               </Link>
