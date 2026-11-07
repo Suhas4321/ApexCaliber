@@ -1,79 +1,171 @@
-# PatternForge DSA
+# ApexCaliber (formerly PatternForge)
 
-A personal DSA trainer built to stop memorising solutions. Every question goes through four stages:
+<div align="center">
 
-1. **Concept**: why the pattern exists, an Indian OA story vs the clean LeetCode statement (trigger
-   words highlighted), and two quick quizzes on constraints and pattern choice.
-2. **Micro-drills**: three tiny functions, each training one piece of the solution.
-3. **Arena**: write the full solution in a real editor; your own code is traced line by line and
-   animated in the visualizer. Socratic hints never give the answer away.
-4. **Pitch**: write your 4-line interview explanation, compare it with a senior engineer's spoken
-   script, rate your confidence, and get scheduled for a blind re-solve (3 / 7 / 21 days).
+**The Full-Stack, Systems & AI Engineering Citadel Platform**
 
-115 questions across 12 worlds, easy to hard, each linked to LeetCode. The Journey page maps the worlds
-as a constellation; each world is a trail of trials ending in a World Boss. The **Grimoire** compiles a
-printable 10-minute revision sheet per world from your own pitches and working code, and the
-**Playground** traces any solution you paste, and the **Pattern Finder** walks you from a problem's input
-and ask to the right pattern. The dashboard tracks your streak, daily goal and activity heatmap. See [docs/SPEC.md](docs/SPEC.md) and
-[BUILD_TRACKER.md](BUILD_TRACKER.md).
+[![Tests](https://img.shields.io/badge/tests-32%20passed-brightgreen.svg)]()
+[![Curriculum](https://img.shields.io/badge/curriculum-198%20verified%20problems-blue.svg)]()
+[![Citadels](https://img.shields.io/badge/citadels-7%20specialized%20domains-purple.svg)]()
+[![Worlds](https://img.shields.io/badge/worlds-42%20total%20worlds-orange.svg)]()
+[![Protocol](https://img.shields.io/badge/protocol-apex.trace.v1-cyan.svg)]()
 
-## Run it
+*Stop memorizing code templates. Master the causal mechanisms, basement-layer trade-offs, and failure modes of production engineering.*
 
-Needs Python 3.11+ and Node 20+. The first run installs everything.
+</div>
 
+---
+
+## 🏛️ The Pedagogical Philosophy: Two Distinct Engines
+
+Traditional platforms force a single paradigm onto every topic—either reducing complex distributed systems to multiple-choice trivia or forcing distributed consensus into an empty coding box.
+
+**ApexCaliber** splits engineering mastery into two deliberate learning architectures:
+
+```
+                                 APEXCALIBER CURRICULUM
+                                           │
+         ┌─────────────────────────────────┴─────────────────────────────────┐
+         ▼                                                                   ▼
+  CITADEL I: DSA                                              CITADELS II–VII: SYSTEMS & AI
+  [Code-First Mastery]                                        [Concept Journey & POE First]
+  ────────────────────                                        ─────────────────────────────
+  • 12 Worlds · 107 Problems                                  • 30 Worlds · 91 Problems
+  • Line-by-Line Heap/Pointer Tracing                         • 6–7 Stage POE Simulation Loop
+  • Indian OA Real-World Hooks                                • Predict ➔ Observe ➔ Explain
+  • 3-Tier Socratic Hint System                               • Interactive Parameter Controls
+  • 4-Line Interview Pitch Defense                            • Pre-Wired Code Transfer Labs
+```
+
+### 1. Code-First Engine (Citadel I: Data Structures & Algorithms)
+Every algorithmic problem guides the developer through 4 rigorous phases:
+1. **Concept**: Why the pattern exists, Indian OA scenario vs clean LeetCode statement with trigger keywords.
+2. **Micro-drills**: 3 targeted exercises training isolated sub-mechanics.
+3. **Arena**: Real Monaco editor with line-by-line animated state tracing (pointers, heaps, trees, recursions). Socratic hints guide without giving away answers.
+4. **Pitch Studio**: Practice defending time/space complexity and trade-offs against a model interview script, scheduled via spaced repetition (3, 7, 21 days).
+
+### 2. Teaching-First Engine (Citadels II–VII: Systems, Runtime, Data & GenAI)
+Non-DSA systems problems adhere to the **`apex.trace.v1` Universal Learning Protocol**, powered by the **POE (Predict ➔ Observe ➔ Explain)** model:
+- **Incident Anchor**: Grounded in real-world outages (e.g. Swiggy delivery deadlocks, BharatPay token theft, SwiftCart 2M QPS polling stampedes, FitLabs 10GB OOM crashes).
+- **Predict**: Interactive hypothesis quiz confronting common misconceptions before seeing the simulation.
+- **Observe**: Interactive reactive controls (sliders, selectors, toggles) driving deterministic simulations (packet flows, buffer pools, page replacement, lock wait-for graphs).
+- **Explain**: Deep causal explanation illuminating why the systems invariant functions.
+- **Transfer Challenge**: Pre-wired coding sandbox with instant test execution—no blank-canvas homework fatigue.
+
+---
+
+## 🏰 The 7 Citadels (42 Worlds · 198 Problems)
+
+| Citadel | Domain | Worlds Covered | Highlights & Systems Concepts |
+| :--- | :--- | :---: | :--- |
+| **🏰 Citadel I** | **Data Structures & Algorithms** | Worlds 1–12 *(107 problems)* | Two Pointers, Sliding Window, Monotonic Stack, Binary Search, Trees, Graphs, DP, Intervals. |
+| **🐍 Citadel II** | **Python Internals & Data Engineering** | Worlds 13–16 *(16 problems)* | PyObject 28-byte headers, O(1) generator streaming, SOLID OOP patterns, vectorized Pandas merges. |
+| **🗄️ Citadel III** | **Database Systems, SQL & In-Memory Caching** | Worlds 17, 18, 22–25, 39 *(25 problems)* | 8KB Slotted Heap Pages, B-Trees vs Hash indexes, ACID isolation anomalies, Redis cache-aside stampede mutex. |
+| **⚙️ Citadel IV** | **Operating Systems, Concurrency & Memory** | Worlds 19, 26–30, 42 *(18 problems)* | 4KB Virtual Memory paging, Belady's Anomaly, 3-color DFS deadlock cycle detection, CPython GIL contention. |
+| **🚀 Citadel V** | **Backend Engineering & API Design** | Worlds 20, 31–34 *(15 problems)* | HTTP lifecycle diagnostics, OAuth 2.0 Refresh Token Rotation (RTR), Pydantic 422 validation, HTTP 202 async backoff. |
+| **🤖 Citadel VI** | **GenAI Systems, RAG & Agents** | Worlds 21, 35–38 *(13 problems)* | Vector Cosine Similarity, Reciprocal Rank Fusion (RRF), LangGraph cyclic state machines, GEPA prompt optimization, Staff Resume Grill. |
+| **🌐 Citadel VII** | **High-Performance Networking** | Worlds 40–41 *(4 problems)* | Hierarchical recursive DNS resolution, TCP 3-Way Handshake, SYN flood resilience, sliding window rate limiters. |
+
+---
+
+## 📚 Architectural Specifications & RFC Library
+
+Every systems world is engineered according to an explicit pedagogical blueprint published in [`docs/rfc/`](docs/rfc/):
+
+- [`W13_PYTHON_MEMORY.md`](docs/rfc/W13_PYTHON_MEMORY.md) — PyObject Memory Layout, Eager List Danger & Lazy Generator Streaming.
+- [`W17_DBMS_STORAGE.md`](docs/rfc/W17_DBMS_STORAGE.md) — 8KB Slotted Heap Pages, Item Pointers, and Physical Tuple IDs (`ctid`).
+- [`W21_VECTOR_SEARCH.md`](docs/rfc/W21_VECTOR_SEARCH.md) — Dense Vector Embeddings, Cosine Similarity & Unit Sphere Normalization.
+- [`W25_TRANSACTIONS_ACID.md`](docs/rfc/W25_TRANSACTIONS_ACID.md) — Transaction Isolation Levels, Dirty Reads, Phantom Reads & Optimistic Locks.
+- [`W27_LOCKS_DEADLOCKS.md`](docs/rfc/W27_LOCKS_DEADLOCKS.md) — Coffman Conditions, Wait-For Graphs (WFG), 3-Color DFS Cycle Detection.
+- [`W28_GIL_CONCURRENCY.md`](docs/rfc/W28_GIL_CONCURRENCY.md) — CPython Reference Counting, GIL Contention & Free-Threaded Python 3.13t.
+- [`W31_TOKEN_ROTATION.md`](docs/rfc/W31_TOKEN_ROTATION.md) — OAuth 2.0 Single-Use Refresh Token Rotation (RTR) & Family Revocation.
+- [`W32_FASTAPI_VALIDATION.md`](docs/rfc/W32_FASTAPI_VALIDATION.md) — Declarative Pydantic Schemas, CPython Boolean Inheritance & HTTP 422.
+- [`W33_ASYNC_POLLING.md`](docs/rfc/W33_ASYNC_POLLING.md) — HTTP 202 Accepted, Reverse Proxy Timeouts & Truncated Exponential Backoff with Jitter.
+- [`W34_RATE_LIMITER.md`](docs/rfc/W34_RATE_LIMITER.md) — Redis Sorted Sets, Sliding Window Log & Atomic Lua Scripts.
+- [`W35_HYBRID_RRF.md`](docs/rfc/W35_HYBRID_RRF.md) — BM25 Lexical + Vector Dense Retrieval & Reciprocal Rank Fusion ($k=60$).
+- [`W36_AGENT_GRAPH.md`](docs/rfc/W36_AGENT_GRAPH.md) — LangGraph Cyclic StateGraphs, Conditional Edge Routing & Step Budget Guards.
+- [`W37_PROMPT_OPTIMIZER.md`](docs/rfc/W37_PROMPT_OPTIMIZER.md) — GEPA Genetic Optimization, Token Budget Penalties & Pareto Frontiers.
+- [`W38_RESUME_GRILL.md`](docs/rfc/W38_RESUME_GRILL.md) — The 4-Part Staff Engineering Defense Matrix (Bottleneck $\rightarrow$ Alternatives $\rightarrow$ Primitives $\rightarrow$ Metrics).
+- [`W39_REDIS_CACHING.md`](docs/rfc/W39_REDIS_CACHING.md) — Cache-Aside, TTL Expiration, and Distributed Mutex Locks against Cache Stampedes.
+- [`W40_DNS_RESOLUTION.md`](docs/rfc/W40_DNS_RESOLUTION.md) — Root, TLD, and Authoritative Nameserver Resolution Hierarchy.
+- [`W41_TCP_HANDSHAKE.md`](docs/rfc/W41_TCP_HANDSHAKE.md) — TCP 3-Way Handshake, ISN Sequence Offsets & SYN Flood SYN Cookies.
+- [`W42_VIRTUAL_MEMORY.md`](docs/rfc/W42_VIRTUAL_MEMORY.md) — 4KB Paging, Hardware Page Fault Traps, Belady's Anomaly & LRU Stack Property.
+
+---
+
+## ⚡ Quickstart
+
+### Prerequisites
+- **Python 3.11+**
+- **Node.js 20+**
+
+### 1. Launch Production Server
 ```bash
 ./run.sh
 ```
+Builds the frontend and boots the FastAPI service on **http://127.0.0.1:8010**.
 
-Then open http://127.0.0.1:8010. For hot reload while changing the app itself, use `./run.sh dev`
-and open http://127.0.0.1:5173.
+### 2. Launch Development Server (Hot-Reload)
+```bash
+./run.sh dev
+```
+Runs the FastAPI backend daemon on `:8010` and Vite dev server on **http://127.0.0.1:5173**.
 
+### 3. Run Automated Quality & Verification Suite
 ```bash
 ./run.sh test
 ```
+Executes:
+1. Backend pytest suite (`32 passed, 0 failed`).
+2. Full curriculum test harness (`scripts/validate_content.py`): executes all reference solutions across all 198 problems.
 
-runs the backend tests and validates every lesson (each reference solution must pass its own tests).
+---
 
-## Your data
+## 🛠️ Multi-Runner Execution Architecture
 
-- Progress, pitches and drafts live in `backend/patternforge.db` (SQLite) and are copied to
-  `backend/backups/user_data.json` after every change. If the database is ever lost, the next start
-  restores it from that file automatically. Use the **Backup** menu to back up or restore by hand.
-- To use Supabase instead of SQLite, copy `backend/.env.example` to `backend/.env`, set
-  `DATABASE_URL`, and `backend/.venv/bin/pip install -r backend/requirements-postgres.txt`.
-- Your code runs in a separate Python process with time and memory limits. That protects the app
-  from infinite loops, but it is not a security sandbox: only run code you wrote.
+ApexCaliber includes specialized code execution runners tailored to distinct engineering disciplines:
 
-## Optional AI coach
+- **`algorithmic`**: High-performance Python sandbox tracing local frame pointers, array indices, variables, and recursive call trees.
+- **`python_practical`**: Realistic unit-test harness running assertions on production Python classes, generators, and async functions.
+- **`sql_schema`**: In-memory relational database engine evaluating queries against real schemas, table relationships, and window functions.
+- **`bash_terminal`**: Shell command evaluator testing Linux CLI pipes, sed/awk, and process inspection.
 
-Without any key, the arena uses each lesson's three built-in Socratic hints and the pitch studio shows
-the model interview script. To add a live coach ("Ask Socratic Coach" and "Polish My Pitch"), put one of
-these in `backend/.env` and restart:
+---
 
-```bash
-# Snowflake Cortex (or any OpenAI-compatible API)
-AI_BASE_URL=https://<account-identifier>.snowflakecomputing.com/api/v2/cortex/v1
-AI_API_KEY=<programmatic access token>
-AI_MODEL=<model name>
-# or Gemini
-GEMINI_API_KEY=<key from aistudio.google.com>
-```
+## 💾 Local Storage & Data Portability
 
-The coach reads your current code and the first failing test, and is instructed never to hand over a
-full solution.
+- **Zero External Dependencies Required**: Progress, drafts, notes, and pitch recordings are stored in `backend/patternforge.db` (SQLite).
+- **Automated Backup & Restore**: State is automatically mirrored to `backend/backups/user_data.json` after every modification. If the SQLite database is ever reset, the next boot automatically restores your complete progress.
+- **Cloud Database (Optional)**: To connect a remote PostgreSQL/Supabase database, copy `backend/.env.example` to `backend/.env`, set `DATABASE_URL`, and install `requirements-postgres.txt`.
 
-## Themes
+---
 
-The sun/moon button in the top bar switches between **studio contrast** (warm stone and ivory, the
-default) and **carbon dark**. Maps, visualizers and editors stay on pitch-carbon stages in both. The
-design rules are in [frontend/DESIGN_REFERENCES.md](frontend/DESIGN_REFERENCES.md).
+## ⌨️ Keyboard Shortcuts & Power Navigation
 
-## Keyboard
+| Shortcut | Action |
+| :--- | :--- |
+| `Ctrl+K` or `/` | Global search for any question, topic, citadel, or pattern |
+| `Ctrl+Enter` | Run solution against test suite in active editor |
+| `Alt+1` – `Alt+4` | Switch between unlocked stages / tabs |
+| `←` / `→` | Step backward / forward through an execution trace |
+| `Space` | Play / Pause execution animation |
 
-`Ctrl+K` (or `/`) opens search for any question, `#number`, pattern or world. `Ctrl+Enter` runs code, `Alt+1`–`Alt+4` switch between unlocked stages, `←`/`→` step through a trace and
-`Space` plays or pauses it.
+---
 
-## Adding lessons
+## 📜 Adding New Content
 
-Lessons are YAML files in `content/questions/`. Follow [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md),
-then run `backend/.venv/bin/python scripts/validate_content.py <slug>`.
+To author a new question or concept journey:
+1. Create a YAML file in `content/questions/<NN-world-name>/<slug>.yaml`.
+2. Follow the schema defined in `backend/app/content_schema.py` and [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md).
+3. Validate locally:
+   ```bash
+   backend/.venv/bin/python scripts/validate_content.py <slug>
+   ```
+
+---
+
+<div align="center">
+
+Crafted with precision for engineers who refuse to memorize solutions.
+
+</div>
