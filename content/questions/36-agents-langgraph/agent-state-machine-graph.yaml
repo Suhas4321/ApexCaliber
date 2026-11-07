@@ -4,53 +4,66 @@ citadel_id: ai_resume
 brick_layer: 5
 runner_type: python_practical
 concept:
-  problem_it_solves: How do agentic orchestration frameworks like LangGraph and CrewAI coordinate multi-step LLM workflows
-    without fragile if-else spaghetti? By modeling execution as a directed cyclic StateGraph, shared state dictionaries flow
-    through node functions, while conditional routing edges dynamically inspect output state to steer control flow or terminate
-    safely.
-  brute_force: Hardcoded sequential script execution that cannot handle non-linear branching, human-in-the-loop validation,
-    or cyclical agent retries.
-  brute_force_complexity: O(N) rigid script execution that breaks on unpredictable LLM outputs.
-  key_insight: Separating state mutation (nodes) from control routing (conditional edges) allows deterministic testing of
-    agent workflows with strict step budgets.
-  real_world: LangGraph multi-agent customer support routers, Drizz autonomous mobile test agents, and LangChain graph executors.
+  problem_it_solves: How do agentic orchestration frameworks like LangGraph and CrewAI
+    coordinate multi-step LLM workflows without fragile if-else spaghetti? By modeling
+    execution as a directed cyclic StateGraph, shared state dictionaries flow through
+    node functions, while conditional routing edges dynamically inspect output state
+    to steer control flow or terminate safely.
+  brute_force: Hardcoded sequential script execution that cannot handle non-linear
+    branching, human-in-the-loop validation, or cyclical agent retries.
+  brute_force_complexity: O(N) rigid script execution that breaks on unpredictable
+    LLM outputs.
+  key_insight: Separating state mutation (nodes) from control routing (conditional
+    edges) allows deterministic testing of agent workflows with strict step budgets.
+  real_world: LangGraph multi-agent customer support routers, Drizz autonomous mobile
+    test agents, and LangChain graph executors.
 statement:
-  clean: "Implement a finite state machine workflow engine with nodes and conditional edges:\n`run_state_graph(self, initial_state:\
-    \ dict, max_steps: int = 10) -> dict`.\n\nThe workflow models an agentic customer support router across 4 nodes:\n- `'classifier'`:\
-    \ Inspects `state['query']`.\n  - If query contains `'refund'` (case-insensitive), set `state['intent'] = 'billing'`.\n\
-    \  - If query contains `'reset'` (case-insensitive), set `state['intent'] = 'auth'`.\n  - Otherwise, set `state['intent']\
-    \ = 'general'`.\n  - Append `'classified'` to `state['log']`.\n- `'billing_agent'`: Appends `'billing_resolved'` to `state['log']`,\
-    \ sets `state['resolved'] = True`.\n- `'auth_agent'`: Appends `'auth_resolved'` to `state['log']`, sets `state['resolved']\
-    \ = True`.\n- `'general_agent'`: Appends `'general_resolved'` to `state['log']`, sets `state['resolved'] = True`.\n\n\
-    Conditional Edge Rules:\n1. Start node is `'classifier'`.\n2. After `'classifier'`:\n   - If `state['intent'] == 'billing'`\
-    \ -> route to `'billing_agent'`.\n   - If `state['intent'] == 'auth'` -> route to `'auth_agent'`.\n   - If `state['intent']\
-    \ == 'general'` -> route to `'general_agent'`.\n3. After any agent node (`billing_agent`, `auth_agent`, `general_agent`)\
-    \ -> route to `'__end__'`.\n\nTermination & Guard:\n- Stop execution when current node is `'__end__'` or when steps executed\
-    \ reaches `max_steps`.\n- Return a dictionary:\n  `{'final_state': state, 'visited_nodes': visited_nodes, 'status': 'completed'\
-    \ | 'max_steps_exceeded'}`."
-  oa_story: '**PayLoop Agent Platform — Autonomous Support Escalation Engine**
-
-
-    During a major UPI network disruption, PayLoop''s customer support inbox was flooded with 200,000 queries an hour ranging
-    from urgent refund requests to PIN resets. Monolithic script bots crashed under unpredictable prompt variations.
-
-
-    The AI platform team redesigned the pipeline as a LangGraph cyclic state machine. Nodes encapsulate deterministic task
-    execution while conditional edges dynamically branch based on classified intents. Implement this state graph runner to
-    route queries reliably.'
+  clean: "Implement a finite state machine workflow engine with nodes and conditional\
+    \ edges:\n`run_state_graph(self, initial_state: dict, max_steps: int = 10) ->\
+    \ dict`.\n\nThe workflow models an agentic customer support router across 4 nodes:\n\
+    - `'classifier'`: Inspects `state['query']`.\n  - If query contains `'refund'`\
+    \ (case-insensitive), set `state['intent'] = 'billing'`.\n  - If query contains\
+    \ `'reset'` (case-insensitive), set `state['intent'] = 'auth'`.\n  - Otherwise,\
+    \ set `state['intent'] = 'general'`.\n  - Append `'classified'` to `state['log']`.\n\
+    - `'billing_agent'`: Appends `'billing_resolved'` to `state['log']`, sets `state['resolved']\
+    \ = True`.\n- `'auth_agent'`: Appends `'auth_resolved'` to `state['log']`, sets\
+    \ `state['resolved'] = True`.\n- `'general_agent'`: Appends `'general_resolved'`\
+    \ to `state['log']`, sets `state['resolved'] = True`.\n\nConditional Edge Rules:\n\
+    1. Start node is `'classifier'`.\n2. After `'classifier'`:\n   - If `state['intent']\
+    \ == 'billing'` -> route to `'billing_agent'`.\n   - If `state['intent'] == 'auth'`\
+    \ -> route to `'auth_agent'`.\n   - If `state['intent'] == 'general'` -> route\
+    \ to `'general_agent'`.\n3. After any agent node (`billing_agent`, `auth_agent`,\
+    \ `general_agent`) -> route to `'__end__'`.\n\nTermination & Guard:\n- Stop execution\
+    \ when current node is `'__end__'` or when steps executed reaches `max_steps`.\n\
+    - Return a dictionary:\n  `{'final_state': state, 'visited_nodes': visited_nodes,\
+    \ 'status': 'completed' | 'max_steps_exceeded'}`."
+  oa_story: "**PayLoop Agent Platform \u2014 Autonomous Support Escalation Engine**\n\
+    \nDuring a major UPI network disruption, PayLoop's customer support inbox was\
+    \ flooded with 200,000 queries an hour ranging from urgent refund requests to\
+    \ PIN resets. Monolithic script bots crashed under unpredictable prompt variations.\n\
+    \nThe AI platform team redesigned the pipeline as a LangGraph cyclic state machine.\
+    \ Nodes encapsulate deterministic task execution while conditional edges dynamically\
+    \ branch based on classified intents. Implement this state graph runner to route\
+    \ queries reliably."
   trigger_keywords:
   - state machine workflow engine
   - conditional edges
   - visited_nodes
   examples:
-  - input: 'initial_state = {''query'': ''I need a refund on order 123'', ''log'': []}, max_steps = 10'
-    output: '{''final_state'': {''query'': ''I need a refund on order 123'', ''log'': [''classified'', ''billing_resolved''],
-      ''intent'': ''billing'', ''resolved'': True}, ''visited_nodes'': [''classifier'', ''billing_agent''], ''status'': ''completed''}'
-    explanation: Classifier routes to billing_agent which marks resolved and transitions to __end__.
-  - input: 'initial_state = {''query'': ''Please reset my password'', ''log'': []}, max_steps = 10'
-    output: '{''final_state'': {''query'': ''Please reset my password'', ''log'': [''classified'', ''auth_resolved''], ''intent'':
-      ''auth'', ''resolved'': True}, ''visited_nodes'': [''classifier'', ''auth_agent''], ''status'': ''completed''}'
-    explanation: Classifier routes to auth_agent which resolves the authentication intent.
+  - input: 'initial_state = {''query'': ''I need a refund on order 123'', ''log'':
+      []}, max_steps = 10'
+    output: '{''final_state'': {''query'': ''I need a refund on order 123'', ''log'':
+      [''classified'', ''billing_resolved''], ''intent'': ''billing'', ''resolved'':
+      True}, ''visited_nodes'': [''classifier'', ''billing_agent''], ''status'': ''completed''}'
+    explanation: Classifier routes to billing_agent which marks resolved and transitions
+      to __end__.
+  - input: 'initial_state = {''query'': ''Please reset my password'', ''log'': []},
+      max_steps = 10'
+    output: '{''final_state'': {''query'': ''Please reset my password'', ''log'':
+      [''classified'', ''auth_resolved''], ''intent'': ''auth'', ''resolved'': True},
+      ''visited_nodes'': [''classifier'', ''auth_agent''], ''status'': ''completed''}'
+    explanation: Classifier routes to auth_agent which resolves the authentication
+      intent.
   constraints:
   - 1 <= max_steps <= 100
   - query is a non-empty string
@@ -58,23 +71,27 @@ statement:
 constraint_quiz:
   prompt: Why must an agentic StateGraph enforce an explicit max_steps execution guard?
   options:
-  - To prevent infinite execution loops caused by cyclic agent critique and reflection edges
+  - To prevent infinite execution loops caused by cyclic agent critique and reflection
+    edges
   - To reduce the size of the Python bytecode
   - To force all node functions to run asynchronously
   - Because Python dictionaries can only hold 10 keys
   answer: 0
-  explanation: Agent graphs frequently contain cycles (e.g. generator -> critic -> generator). A max_steps guard prevents
-    infinite loops and uncontrolled API cost blowouts if an agent fails to converge.
+  explanation: Agent graphs frequently contain cycles (e.g. generator -> critic ->
+    generator). A max_steps guard prevents infinite loops and uncontrolled API cost
+    blowouts if an agent fails to converge.
 pattern_quiz:
-  prompt: In LangGraph and StateGraph architectures, what is the primary role of a conditional edge?
+  prompt: In LangGraph and StateGraph architectures, what is the primary role of a
+    conditional edge?
   options:
-  - Dynamically inspect current state values and return the string identifier of the next node to execute
+  - Dynamically inspect current state values and return the string identifier of the
+    next node to execute
   - Directly serialize state to disk as a JSON file
   - Compile Python functions into C extensions
   - Encrypt customer database queries
   answer: 0
-  explanation: Conditional routing edges are pure functions that read the state dictionary and return the destination node
-    ID, decoupling execution logic from workflow topology.
+  explanation: Conditional routing edges are pure functions that read the state dictionary
+    and return the destination node ID, decoupling execution logic from workflow topology.
 function:
   name: run_state_graph
   params:
@@ -83,8 +100,8 @@ function:
   - name: max_steps
     type: any
   returns: any
-starter_code: "class Solution:\n    def run_state_graph(self, initial_state: dict, max_steps: int = 10) -> dict:\n       \
-  \ pass\n"
+starter_code: "class Solution:\n    def run_state_graph(self, initial_state: dict,\
+  \ max_steps: int = 10) -> dict:\n        pass\n"
 tests:
 - args:
   - query: I need a refund on order 123
@@ -156,13 +173,15 @@ drills:
 - title: Classify User Intent
   skill: setup
   goal: Extract intent string based on query keyword matching.
-  instructions: Return 'billing' if 'refund' in query.lower(), 'auth' if 'reset' in query.lower(), else 'general'.
+  instructions: Return 'billing' if 'refund' in query.lower(), 'auth' if 'reset' in
+    query.lower(), else 'general'.
   function:
     name: classify_intent
     params:
     - name: query
       type: any
-  starter_code: "class Solution:\n    def classify_intent(self, query: str) -> str:\n        pass\n"
+  starter_code: "class Solution:\n    def classify_intent(self, query: str) -> str:\n\
+    \        pass\n"
   tests:
   - args:
     - Need a refund
@@ -173,20 +192,23 @@ drills:
   - args:
     - Hello bot
     expected: general
-  solution: "class Solution:\n    def classify_intent(self, query: str) -> str:\n        q = query.lower()\n        if \"\
-    refund\" in q:\n            return \"billing\"\n        if \"reset\" in q:\n            return \"auth\"\n        return\
+  solution: "class Solution:\n    def classify_intent(self, query: str) -> str:\n\
+    \        q = query.lower()\n        if \"refund\" in q:\n            return \"\
+    billing\"\n        if \"reset\" in q:\n            return \"auth\"\n        return\
     \ \"general\"\n"
   hint: Check query.lower() for keywords 'refund' and 'reset'.
 - title: Conditional Edge Routing
   skill: core
   goal: Map intent string to destination node ID.
-  instructions: Return 'billing_agent' for 'billing', 'auth_agent' for 'auth', and 'general_agent' for 'general'.
+  instructions: Return 'billing_agent' for 'billing', 'auth_agent' for 'auth', and
+    'general_agent' for 'general'.
   function:
     name: route_edge
     params:
     - name: intent
       type: any
-  starter_code: "class Solution:\n    def route_edge(self, intent: str) -> str:\n        pass\n"
+  starter_code: "class Solution:\n    def route_edge(self, intent: str) -> str:\n\
+    \        pass\n"
   tests:
   - args:
     - billing
@@ -197,9 +219,10 @@ drills:
   - args:
     - general
     expected: general_agent
-  solution: "class Solution:\n    def route_edge(self, intent: str) -> str:\n        if intent == \"billing\":\n         \
-    \   return \"billing_agent\"\n        if intent == \"auth\":\n            return \"auth_agent\"\n        return \"general_agent\"\
-    \n"
+  solution: "class Solution:\n    def route_edge(self, intent: str) -> str:\n    \
+    \    if intent == \"billing\":\n            return \"billing_agent\"\n       \
+    \ if intent == \"auth\":\n            return \"auth_agent\"\n        return \"\
+    general_agent\"\n"
   hint: Match intent against agent node names.
 - title: Check Step Budget
   skill: edge
@@ -212,7 +235,8 @@ drills:
       type: any
     - name: max_steps
       type: any
-  starter_code: "class Solution:\n    def is_budget_exhausted(self, steps: int, max_steps: int) -> bool:\n        pass\n"
+  starter_code: "class Solution:\n    def is_budget_exhausted(self, steps: int, max_steps:\
+    \ int) -> bool:\n        pass\n"
   tests:
   - args:
     - 10
@@ -222,47 +246,59 @@ drills:
     - 3
     - 10
     expected: false
-  solution: "class Solution:\n    def is_budget_exhausted(self, steps: int, max_steps: int) -> bool:\n        return steps\
-    \ >= max_steps\n"
+  solution: "class Solution:\n    def is_budget_exhausted(self, steps: int, max_steps:\
+    \ int) -> bool:\n        return steps >= max_steps\n"
   hint: Return steps >= max_steps.
 hints:
 - Initialize state copy and start at node 'classifier'.
 - In each step, record current_node into visited_nodes and increment step counter.
 - Inspect state intent to pick next node, or transition to '__end__' after agent execution.
 solution:
-  code: "class Solution:\n    def run_state_graph(self, initial_state: dict, max_steps: int = 10) -> dict:\n        state\
-    \ = dict(initial_state)\n        state[\"log\"] = list(state.get(\"log\", []))\n        visited_nodes = []\n        current_node\
-    \ = \"classifier\"\n        steps = 0\n        \n        while current_node != \"__end__\" and steps < max_steps:\n  \
-    \          visited_nodes.append(current_node)\n            steps += 1\n            \n            if current_node == \"\
-    classifier\":\n                q = state.get(\"query\", \"\").lower()\n                if \"refund\" in q:\n         \
-    \           state[\"intent\"] = \"billing\"\n                elif \"reset\" in q:\n                    state[\"intent\"\
-    ] = \"auth\"\n                else:\n                    state[\"intent\"] = \"general\"\n                state[\"log\"\
-    ].append(\"classified\")\n                \n                # Conditional edge routing\n                if state[\"intent\"\
-    ] == \"billing\":\n                    current_node = \"billing_agent\"\n                elif state[\"intent\"] == \"\
-    auth\":\n                    current_node = \"auth_agent\"\n                else:\n                    current_node =\
-    \ \"general_agent\"\n            elif current_node == \"billing_agent\":\n                state[\"log\"].append(\"billing_resolved\"\
-    )\n                state[\"resolved\"] = True\n                current_node = \"__end__\"\n            elif current_node\
-    \ == \"auth_agent\":\n                state[\"log\"].append(\"auth_resolved\")\n                state[\"resolved\"] =\
-    \ True\n                current_node = \"__end__\"\n            elif current_node == \"general_agent\":\n            \
-    \    state[\"log\"].append(\"general_resolved\")\n                state[\"resolved\"] = True\n                current_node\
-    \ = \"__end__\"\n                \n        status = \"completed\" if current_node == \"__end__\" else \"max_steps_exceeded\"\
-    \n        return {\n            \"final_state\": state,\n            \"visited_nodes\": visited_nodes,\n            \"\
-    status\": status,\n        }\n"
-  explanation: The graph executor cleanly separates node state mutation from conditional edge transitions. By checking the
-    step budget at each iteration, it prevents infinite execution loops.
+  code: "class Solution:\n    def run_state_graph(self, initial_state: dict, max_steps:\
+    \ int = 10) -> dict:\n        state = dict(initial_state)\n        state[\"log\"\
+    ] = list(state.get(\"log\", []))\n        visited_nodes = []\n        current_node\
+    \ = \"classifier\"\n        steps = 0\n        \n        while current_node !=\
+    \ \"__end__\" and steps < max_steps:\n            visited_nodes.append(current_node)\n\
+    \            steps += 1\n            \n            if current_node == \"classifier\"\
+    :\n                q = state.get(\"query\", \"\").lower()\n                if\
+    \ \"refund\" in q:\n                    state[\"intent\"] = \"billing\"\n    \
+    \            elif \"reset\" in q:\n                    state[\"intent\"] = \"\
+    auth\"\n                else:\n                    state[\"intent\"] = \"general\"\
+    \n                state[\"log\"].append(\"classified\")\n                \n  \
+    \              # Conditional edge routing\n                if state[\"intent\"\
+    ] == \"billing\":\n                    current_node = \"billing_agent\"\n    \
+    \            elif state[\"intent\"] == \"auth\":\n                    current_node\
+    \ = \"auth_agent\"\n                else:\n                    current_node =\
+    \ \"general_agent\"\n            elif current_node == \"billing_agent\":\n   \
+    \             state[\"log\"].append(\"billing_resolved\")\n                state[\"\
+    resolved\"] = True\n                current_node = \"__end__\"\n            elif\
+    \ current_node == \"auth_agent\":\n                state[\"log\"].append(\"auth_resolved\"\
+    )\n                state[\"resolved\"] = True\n                current_node =\
+    \ \"__end__\"\n            elif current_node == \"general_agent\":\n         \
+    \       state[\"log\"].append(\"general_resolved\")\n                state[\"\
+    resolved\"] = True\n                current_node = \"__end__\"\n             \
+    \   \n        status = \"completed\" if current_node == \"__end__\" else \"max_steps_exceeded\"\
+    \n        return {\n            \"final_state\": state,\n            \"visited_nodes\"\
+    : visited_nodes,\n            \"status\": status,\n        }\n"
+  explanation: The graph executor cleanly separates node state mutation from conditional
+    edge transitions. By checking the step budget at each iteration, it prevents infinite
+    execution loops.
   time: O(S) where S is the number of executed steps (bounded by max_steps)
   space: O(S + N) for state log and visited nodes trail
-pitch_script: '**(Clarify)** "We are implementing an agentic StateGraph finite state machine where a shared state dictionary
-  transitions across nodes via conditional routing edges."
+pitch_script: '**(Clarify)** "We are implementing an agentic StateGraph finite state
+  machine where a shared state dictionary transitions across nodes via conditional
+  routing edges."
 
 
-  **(Basement Insight)** "Without formal state machines, agent code quickly degrades into deeply nested try-catch if-else
-  blocks. Modeling workflows as graphs provides deterministic replay, step budgeting, and explicit state handoffs."
+  **(Basement Insight)** "Without formal state machines, agent code quickly degrades
+  into deeply nested try-catch if-else blocks. Modeling workflows as graphs provides
+  deterministic replay, step budgeting, and explicit state handoffs."
 
 
-  **(Solution)** "We start at the classifier node to categorize query intent. A conditional routing edge inspects this intent
-  and directs execution to the appropriate specialist agent node, which mutates the state and routes to __end__. A max_steps
-  guard stops rogue loops."
+  **(Solution)** "We start at the classifier node to categorize query intent. A conditional
+  routing edge inspects this intent and directs execution to the appropriate specialist
+  agent node, which mutates the state and routes to __end__. A max_steps guard stops
+  rogue loops."
 
 
   **(Complexity)** "Executes in O(S) time and O(S) space bounded by max_steps."
@@ -271,7 +307,265 @@ pitch_script: '**(Clarify)** "We are implementing an agentic StateGraph finite s
 twist:
   lc: 9632
   title: Autonomous Tool-Calling Loop with ReAct Cycle
-  why: Instead of pre-defined graph edges, empower an LLM node to dynamically generate tool calls that feed observation state
-    back into the graph.
+  why: Instead of pre-defined graph edges, empower an LLM node to dynamically generate
+    tool calls that feed observation state back into the graph.
 viz:
   title: StateGraph Multi-Agent Routing Topology
+journey:
+- id: w36_s1_script_fragility
+  title: Monolithic Script Spaghetti vs StateGraph Architecture
+  subtitle: Why hardcoded scripts fail on non-linear multi-step agent workflows
+  scenario: A developer attempts to orchestrate a customer support LLM pipeline using
+    a 500-line Python script with nested while and if loops. What happens when a new
+    refund policy requires human approval before payment?
+  mechanism: In monolithic scripts, control flow, prompt construction, and tool execution
+    are tightly coupled. Adding non-linear steps (like human approval or multi-turn
+    retries) requires rewriting core loop mechanics. In a StateGraph, adding a human-in-the-loop
+    step simply means adding an approval node and updating two edge pointers.
+  prediction:
+    prompt: What is the primary architectural advantage of modeling agent workflows
+      as a directed graph rather than a sequential script?
+    choices:
+    - id: opt_a
+      label: Nodes and conditional edges decouple state transformation from routing
+        decisions, allowing complex non-linear branching, cyclical retries, and modular
+        testing.
+      explanation: Correct! StateGraphs separate what a node does (state mutation)
+        from where the workflow goes next (routing).
+      is_correct: true
+    - id: opt_b
+      label: Directed graphs allow Python code to run directly on GPU tensor cores.
+      explanation: Incorrect! StateGraphs are Python orchestration abstractions, not
+        GPU kernels.
+      is_correct: false
+    - id: opt_c
+      label: Scripts are only supported on Windows operating systems.
+      explanation: Nonsense! Python scripts run across all major operating systems.
+      is_correct: false
+    revealed_explanation: StateGraphs model complex autonomous agent workflows cleanly
+      as directed cyclic graphs where state moves between specialized nodes.
+  controls:
+  - id: orchestration_paradigm
+    label: Architecture Style
+    type: select
+    default: Directed StateGraph (LangGraph)
+    options:
+    - Directed StateGraph (LangGraph)
+    - Monolithic Script (Nested Ifs)
+    description: Workflow coordination model
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Monolithic Script Spaghetti vs Directed StateGraph
+- id: w36_s2_shared_state_contract
+  title: 'The Shared State Contract: State Mutation & Context Flow'
+  subtitle: Passing structured data dictionaries deterministically across workflow
+    vertices
+  scenario: In an agent graph, how do different nodes (like a query classifier and
+    a billing agent) share information without global variables?
+  mechanism: 'The workflow passes a centralized state dictionary between nodes. Each
+    node receives the current state, performs its task, and returns updated state
+    fields (e.g. {"intent": "billing", "log": ["classified"]}). State reducers merge
+    updates deterministically into the shared context.'
+  prediction:
+    prompt: How is context communicated between independent nodes in a StateGraph?
+    choices:
+    - id: opt_a
+      label: Via a centralized state dictionary passed into and updated by each node
+        along the execution path.
+      explanation: Correct! Shared state contracts ensure clean data isolation and
+        predictable state progression.
+      is_correct: true
+    - id: opt_b
+      label: Through global operating system environment variables.
+      explanation: Antipattern! Global state creates race conditions and prevents
+        concurrent agent sessions.
+      is_correct: false
+    - id: opt_c
+      label: By saving JSON files to disk between each node execution.
+      explanation: Inefficient! Disk I/O between every node adds unnecessary latency.
+      is_correct: false
+    revealed_explanation: Explicit state dictionaries ensure that agent execution
+      is reproducible, serializable, and easily testable.
+  controls:
+  - id: context_passing
+    label: Context Mechanism
+    type: select
+    default: Typed State Dictionary
+    options:
+    - Typed State Dictionary
+    - Global Variables
+    description: How nodes communicate execution state
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'State Transformation Timeline: State In -> Node -> State Out'
+- id: w36_s3_specialized_nodes
+  title: Nodes as Specialized Execution Units
+  subtitle: Applying the Principle of Least Privilege to agent prompts and tools
+  scenario: 'You have 3 specialized support agents: billing_agent (handles refunds
+    and charges), auth_agent (handles password and 2FA resets), and general_agent
+    (handles FAQs). How are they represented?'
+  mechanism: Each agent is an isolated Node in the graph. The node encapsulates specific
+    system prompts, specialized tools (e.g. only billing_agent has access to the Stripe
+    refund API), and constrained output schemas.
+  prediction:
+    prompt: Why is it safer to separate agents into specialized nodes rather than
+      having one massive prompt with all tools enabled?
+    choices:
+    - id: opt_a
+      label: 'Principle of Least Privilege: Giving each node only the tools and instructions
+        relevant to its domain prevents tool hallucinations and unauthorized actions.'
+      explanation: Correct! Constraining tool access per node dramatically reduces
+        hallucination surface area and security vulnerabilities.
+      is_correct: true
+    - id: opt_b
+      label: LLMs refuse to run if they have more than 2 tools.
+      explanation: Incorrect! LLMs can accept many tools, but accuracy degrades and
+        security risks multiply.
+      is_correct: false
+    - id: opt_c
+      label: Massive prompts are automatically blocked by cloud firewalls.
+      explanation: Nonsense! Prompts are limited by context window, not firewalls.
+      is_correct: false
+    revealed_explanation: Specialized domain nodes allow fine-grained permission boundaries
+      and targeted evaluation across distinct agent capabilities.
+  controls:
+  - id: node_architecture
+    label: Agent Specialization
+    type: select
+    default: Modular Domain Nodes (Least Privilege)
+    options:
+    - Modular Domain Nodes (Least Privilege)
+    - Monolithic All-In-One Prompt
+    description: Tool access boundary design
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Domain Isolation: Specialized Agents & Scoped Toolsets'
+- id: w36_s4_conditional_edges
+  title: 'Conditional Edges: Dynamic Intent-Driven State Routing'
+  subtitle: Dynamic edge resolution functions that steer execution graph trajectories
+  scenario: After the classifier node inspects the user's query and sets state['intent']
+    = 'billing', how does the graph transition to the billing agent?
+  mechanism: 'Conditional Edges! Instead of hardcoding a direct link from classifier
+    to billing_agent, the edge between classifier and the next node is dynamic: route_after_classification(state)
+    inspects state[''intent''] and returns the string identifier of the destination
+    node. The graph engine calls this function to resolve the next vertex dynamically.'
+  prediction:
+    prompt: How does a StateGraph decide which node to execute after the classifier
+      completes?
+    choices:
+    - id: opt_a
+      label: A conditional edge routing function inspects state attributes (like intent)
+        and returns the string identifier of the target node.
+      explanation: Correct! Dynamic edge functions evaluate state outputs to determine
+        graph transitions.
+      is_correct: true
+    - id: opt_b
+      label: The operating system kernel chooses the next node at random.
+      explanation: Incorrect! Routing is deterministic based on user intent and state
+        data.
+      is_correct: false
+    - id: opt_c
+      label: All nodes run simultaneously in an uncoordinated race condition.
+      explanation: Incorrect! The graph coordinates sequential or parallel execution
+        according to edge topology.
+      is_correct: false
+    revealed_explanation: Conditional edges provide the dynamic steering mechanism
+      that makes agent graphs adaptable to arbitrary customer intents.
+  controls:
+  - id: customer_intent
+    label: Sample Customer Query
+    type: select
+    default: '"I need a refund on order 123" (Billing)'
+    options:
+    - '"I need a refund on order 123" (Billing)'
+    - '"Please reset my password" (Auth)'
+    - '"What are your business hours?" (General)'
+    description: Input query steering the conditional edge
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Conditional Edge Branching: Classifier -> Specialized Agents'
+- id: w36_s5_step_budget_guardrails
+  title: Cyclic Execution & Step Budget Guardrails (max_steps)
+  subtitle: Preventing infinite loops, runaway recursion, and billing explosions
+  scenario: 'An agent attempts to solve a problem: if tool execution fails, it reflects
+    and retries (a cycle in the graph). What happens if the tool continuously errors
+    or the LLM hallucinates an invalid argument in an infinite loop?'
+  mechanism: The graph will loop forever, consuming thousands of dollars in LLM API
+    tokens. To prevent runaway costs and server resource starvation, all production
+    agent graph runtimes enforce an explicit max_steps execution ceiling. If step_count
+    >= max_steps, the graph forcibly halts with status "max_steps_exceeded".
+  prediction:
+    prompt: Why must an agentic StateGraph enforce an explicit max_steps execution
+      guard?
+    choices:
+    - id: opt_a
+      label: To prevent infinite execution loops and runaway API token costs caused
+        by cyclical tool retry failures or circular routing logic.
+      explanation: Correct! Without a step budget, non-terminating cycles in agent
+        graphs drain API budgets and stall server workers.
+      is_correct: true
+    - id: opt_b
+      label: Because Python can only count up to 10.
+      explanation: Nonsense! Python supports arbitrarily large integers.
+      is_correct: false
+    - id: opt_c
+      label: Because web browsers crash if an agent runs for more than 3 seconds.
+      explanation: Incorrect! Step budgets protect backend resources, independent
+        of browsers.
+      is_correct: false
+    revealed_explanation: Every cyclic agent graph in production must enforce strict
+      step and timeout budgets to guarantee deterministic termination.
+  controls:
+  - id: max_steps_slider
+    label: Max Steps Budget
+    type: slider
+    default: 10
+    min: 1
+    max: 25
+    step: 1
+    description: Execution ceiling before forced termination
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Step Budget Counter & Loop Termination Guard
+- id: w36_s6_transfer_challenge
+  title: 'Transfer Challenge: Agentic Customer Support StateGraph Engine'
+  subtitle: Build the LangGraph-style state machine router
+  scenario: 'Implement `run_state_graph(initial_state: dict, max_steps: int = 10)
+    -> dict` across classifier and domain agents.'
+  mechanism: 1. Start at "classifier". If query has "refund", intent="billing". If
+    "reset", intent="auth". Else intent="general". Append "classified" to log. 2.
+    Route to billing_agent, auth_agent, or general_agent based on intent. 3. Each
+    agent appends its resolution to log, sets resolved=True, and routes to "__end__".
+    4. Enforce max_steps guard. Return final_state, visited_nodes, and status.
+  prediction:
+    prompt: Given initial_state with query "Please reset my password", what node sequence
+      is visited?
+    choices:
+    - id: opt_a
+      label: '["classifier", "auth_agent"] with final status "completed" and resolved=True.'
+      explanation: Correct! The query matches "reset", routing from classifier to
+        auth_agent which transitions to __end__.
+      is_correct: true
+    - id: opt_b
+      label: '["classifier", "billing_agent"] with status "completed".'
+      explanation: Incorrect! A password reset query routes to auth, not billing.
+      is_correct: false
+    - id: opt_c
+      label: '["classifier"] with status "max_steps_exceeded".'
+      explanation: Incorrect! The workflow successfully traverses to auth_agent in
+        2 steps.
+      is_correct: false
+    revealed_explanation: Implement the state graph in the code editor below and verify
+      with all routing scenarios.
+  controls:
+  - id: run_verification
+    label: Run Full StateGraph Tests
+    type: button
+    default: true
+    description: Execute test suite validating intent routing, state mutation, and
+      max_steps guards
+  lab_starter_code: "class Solution:\n    def run_state_graph(self, initial_state:\
+    \ dict, max_steps: int = 10) -> dict:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Agentic StateGraph Engine Sandbox

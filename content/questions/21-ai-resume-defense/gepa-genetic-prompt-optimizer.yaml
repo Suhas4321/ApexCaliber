@@ -3,288 +3,581 @@ lc: 9603
 citadel_id: ai_resume
 brick_layer: 3
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    "How do you compress LLM system prompts to reduce API costs by 66% without degrading output accuracy?"
-    Manually tweaking prompts is tedious, unscientific, and prone to regressions.
-    Genetic and Evolutionary Prompt Architecture (GEPA / LLEGO) formalizes prompt engineering into an optimization search:
-    treating prompts as genomes evaluated against a dual objective of accuracy and token brevity.
-  brute_force: >-
-    Trial-and-error prompt edits: an engineer trims words manually, tests on 3 prompts, and ships to production,
-    inevitably causing regressions on complex edge cases.
-  brute_force_complexity: O(E^M) heuristic trial-and-error with no guarantees of optimality or Pareto efficiency.
-  key_insight: >-
-    Evolutionary algorithms search the discrete space of prompt variations:
-    1. Fitness evaluation: `fitness = accuracy - penalty`, where penalty penalizes candidates exceeding the target token budget.
-    2. Selection: candidates on the Pareto frontier (high accuracy, minimal tokens) are preserved.
-    3. Mutation: applying rules like removing conversational filler, condensing multi-line instructions into concise Markdown schemas.
-    Over successive generations, the algorithm converges on the most token-efficient prompt that preserves benchmark accuracy.
-  real_world: >-
-    Suhas's Drizz prompt optimization pipeline (66% token cost reduction via GEPA), DSPy teleprompter (MIPROv2), and LLEGO research.
-
+  problem_it_solves: '"How do you compress LLM system prompts to reduce API costs
+    by 66% without degrading output accuracy?" Manually tweaking prompts is tedious,
+    unscientific, and prone to regressions. Genetic and Evolutionary Prompt Architecture
+    (GEPA / LLEGO) formalizes prompt engineering into an optimization search: treating
+    prompts as genomes evaluated against a dual objective of accuracy and token brevity.'
+  brute_force: 'Trial-and-error prompt edits: an engineer trims words manually, tests
+    on 3 prompts, and ships to production, inevitably causing regressions on complex
+    edge cases.'
+  brute_force_complexity: O(E^M) heuristic trial-and-error with no guarantees of optimality
+    or Pareto efficiency.
+  key_insight: 'Evolutionary algorithms search the discrete space of prompt variations:
+    1. Fitness evaluation: `fitness = accuracy - penalty`, where penalty penalizes
+    candidates exceeding the target token budget. 2. Selection: candidates on the
+    Pareto frontier (high accuracy, minimal tokens) are preserved. 3. Mutation: applying
+    rules like removing conversational filler, condensing multi-line instructions
+    into concise Markdown schemas. Over successive generations, the algorithm converges
+    on the most token-efficient prompt that preserves benchmark accuracy.'
+  real_world: Suhas's Drizz prompt optimization pipeline (66% token cost reduction
+    via GEPA), DSPy teleprompter (MIPROv2), and LLEGO research.
 statement:
-  clean: |
-    Implement a genetic prompt mutation and token budget optimizer using gepa genetic optimization:
-    `def optimize_prompt_generation(self, candidates: list[dict], token_budget: int) -> dict`.
-    
-    Given a list of `candidates`, where each candidate is:
-    - `prompt_id`: string identifier (e.g. `"prompt_v1"`)
-    - `tokens`: integer token count
-    - `accuracy`: float accuracy score (e.g. `0.95` for 95%)
-    
-    And `token_budget` (integer target token limit):
-    1. If `candidates` is empty:
-       return `{"selected_id": None, "tokens": 0, "accuracy": 0.0, "cost_penalty": 0.0, "fitness": 0.0}`
-    2. For each candidate:
-       - If `tokens > token_budget`:
-         `cost_penalty = round((tokens - token_budget) * 0.01, 4)`
-       - If `tokens <= token_budget`:
-         `cost_penalty = 0.0`
-       - Calculate fitness:
-         `fitness = round(accuracy - cost_penalty, 4)`
-    3. Select the candidate with the highest `fitness`.
-       Tie-breakers:
-       - Primary: highest `fitness`
-       - Secondary: lowest `tokens` (more compressed)
-       - Tertiary: original index order in `candidates`
-    4. Return a dictionary of the winning candidate:
-       `{"selected_id": best["prompt_id"], "tokens": best["tokens"], "accuracy": best["accuracy"], "cost_penalty": best["cost_penalty"], "fitness": best["fitness"]}`
-  oa_story: |
-    **Drizz Prompt Engineering Pipeline — 66% Token Cost Trimming**
-    
-    When running hundreds of automated UI classification tasks across GPT-4o, our long-form
-    system prompts generated high monthly API bills.
-    
-    By running a genetic algorithm across mutated instruction candidates, we automatically
-    selected prompt variants that reduced token volume by 66% while maintaining 100% eval score.
-  trigger_keywords: ["gepa genetic optimization", "optimize_prompt_generation", "candidates"]
+  clean: "Implement a genetic prompt mutation and token budget optimizer using gepa\
+    \ genetic optimization:\n`def optimize_prompt_generation(self, candidates: list[dict],\
+    \ token_budget: int) -> dict`.\n\nGiven a list of `candidates`, where each candidate\
+    \ is:\n- `prompt_id`: string identifier (e.g. `\"prompt_v1\"`)\n- `tokens`: integer\
+    \ token count\n- `accuracy`: float accuracy score (e.g. `0.95` for 95%)\n\nAnd\
+    \ `token_budget` (integer target token limit):\n1. If `candidates` is empty:\n\
+    \   return `{\"selected_id\": None, \"tokens\": 0, \"accuracy\": 0.0, \"cost_penalty\"\
+    : 0.0, \"fitness\": 0.0}`\n2. For each candidate:\n   - If `tokens > token_budget`:\n\
+    \     `cost_penalty = round((tokens - token_budget) * 0.01, 4)`\n   - If `tokens\
+    \ <= token_budget`:\n     `cost_penalty = 0.0`\n   - Calculate fitness:\n    \
+    \ `fitness = round(accuracy - cost_penalty, 4)`\n3. Select the candidate with\
+    \ the highest `fitness`.\n   Tie-breakers:\n   - Primary: highest `fitness`\n\
+    \   - Secondary: lowest `tokens` (more compressed)\n   - Tertiary: original index\
+    \ order in `candidates`\n4. Return a dictionary of the winning candidate:\n  \
+    \ `{\"selected_id\": best[\"prompt_id\"], \"tokens\": best[\"tokens\"], \"accuracy\"\
+    : best[\"accuracy\"], \"cost_penalty\": best[\"cost_penalty\"], \"fitness\": best[\"\
+    fitness\"]}`\n"
+  oa_story: "**Drizz Prompt Engineering Pipeline \u2014 66% Token Cost Trimming**\n\
+    \nWhen running hundreds of automated UI classification tasks across GPT-4o, our\
+    \ long-form\nsystem prompts generated high monthly API bills.\n\nBy running a\
+    \ genetic algorithm across mutated instruction candidates, we automatically\n\
+    selected prompt variants that reduced token volume by 66% while maintaining 100%\
+    \ eval score.\n"
+  trigger_keywords:
+  - gepa genetic optimization
+  - optimize_prompt_generation
+  - candidates
   examples:
-    - input: 'candidates = [{"prompt_id": "p1", "tokens": 150, "accuracy": 0.95}, {"prompt_id": "p2", "tokens": 80, "accuracy": 0.94}], token_budget = 100'
-      output: '{"selected_id": "p2", "tokens": 80, "accuracy": 0.94, "cost_penalty": 0.0, "fitness": 0.94}'
-      explanation: "p1 has tokens=150 (50 over budget of 100), penalty = 0.50, fitness = 0.45. p2 is within budget, fitness = 0.94."
-    - input: 'candidates = [{"prompt_id": "p1", "tokens": 90, "accuracy": 0.90}, {"prompt_id": "p2", "tokens": 80, "accuracy": 0.90}], token_budget = 100'
-      output: '{"selected_id": "p2", "tokens": 80, "accuracy": 0.90, "cost_penalty": 0.0, "fitness": 0.90}'
-      explanation: "Both have 0.90 fitness, p2 wins tie-breaker with lower tokens (80 < 90)."
+  - input: 'candidates = [{"prompt_id": "p1", "tokens": 150, "accuracy": 0.95}, {"prompt_id":
+      "p2", "tokens": 80, "accuracy": 0.94}], token_budget = 100'
+    output: '{"selected_id": "p2", "tokens": 80, "accuracy": 0.94, "cost_penalty":
+      0.0, "fitness": 0.94}'
+    explanation: p1 has tokens=150 (50 over budget of 100), penalty = 0.50, fitness
+      = 0.45. p2 is within budget, fitness = 0.94.
+  - input: 'candidates = [{"prompt_id": "p1", "tokens": 90, "accuracy": 0.90}, {"prompt_id":
+      "p2", "tokens": 80, "accuracy": 0.90}], token_budget = 100'
+    output: '{"selected_id": "p2", "tokens": 80, "accuracy": 0.90, "cost_penalty":
+      0.0, "fitness": 0.90}'
+    explanation: Both have 0.90 fitness, p2 wins tie-breaker with lower tokens (80
+      < 90).
   constraints:
-    - "0 <= len(candidates) <= 50"
-    - "token_budget >= 1"
-
+  - 0 <= len(candidates) <= 50
+  - token_budget >= 1
 constraint_quiz:
-  prompt: "Why is a token budget penalty term necessary in prompt optimization instead of simply maximizing accuracy alone?"
+  prompt: Why is a token budget penalty term necessary in prompt optimization instead
+    of simply maximizing accuracy alone?
   options:
-    - "Because without a token penalty, the optimizer would evolve increasingly bloated prompts containing repetitive few-shot examples, exploding latency and inference cost"
-    - "Because LLMs crash if prompts contain fewer than 500 tokens"
-    - "Because token counts are only measured in binary"
-    - "Because genetic algorithms cannot handle floating point numbers"
+  - Because without a token penalty, the optimizer would evolve increasingly bloated
+    prompts containing repetitive few-shot examples, exploding latency and inference
+    cost
+  - Because LLMs crash if prompts contain fewer than 500 tokens
+  - Because token counts are only measured in binary
+  - Because genetic algorithms cannot handle floating point numbers
   answer: 0
-  explanation: "Maximizing accuracy alone produces bloated, overfitted prompts. Penalizing excess token usage forces the algorithm to explore the Pareto frontier of high accuracy and low cost."
-
+  explanation: Maximizing accuracy alone produces bloated, overfitted prompts. Penalizing
+    excess token usage forces the algorithm to explore the Pareto frontier of high
+    accuracy and low cost.
 pattern_quiz:
-  prompt: "In frameworks like DSPy and GEPA, what corresponds to a 'mutation' in prompt space?"
+  prompt: In frameworks like DSPy and GEPA, what corresponds to a 'mutation' in prompt
+    space?
   options:
-    - "Rephrasing instructions, reordering few-shot exemplars, or converting natural language instructions into structured JSON schemas"
-    - "Changing the Python compiler version"
-    - "Deleting the database indexes"
-    - "Restarting the GPU container"
+  - Rephrasing instructions, reordering few-shot exemplars, or converting natural
+    language instructions into structured JSON schemas
+  - Changing the Python compiler version
+  - Deleting the database indexes
+  - Restarting the GPU container
   answer: 0
-  explanation: "Mutations in prompt optimization involve syntactic and semantic transformations: removing conversational fluff, reordering instructions, and restructuring few-shot demonstrations."
-
+  explanation: 'Mutations in prompt optimization involve syntactic and semantic transformations:
+    removing conversational fluff, reordering instructions, and restructuring few-shot
+    demonstrations.'
 function:
   name: optimize_prompt_generation
   params:
-    - name: candidates
-      type: any
-    - name: token_budget
-      type: any
+  - name: candidates
+    type: any
+  - name: token_budget
+    type: any
   returns: any
-
-starter_code: |
-  class Solution:
-      def optimize_prompt_generation(self, candidates: list[dict], token_budget: int) -> dict:
-          pass
-
+starter_code: "class Solution:\n    def optimize_prompt_generation(self, candidates:\
+  \ list[dict], token_budget: int) -> dict:\n        pass\n"
 tests:
-  - args:
-      - [{"prompt_id": "p1", "tokens": 150, "accuracy": 0.95}, {"prompt_id": "p2", "tokens": 80, "accuracy": 0.94}]
-      - 100
-    expected:
-      selected_id: "p2"
+- args:
+  - - prompt_id: p1
+      tokens: 150
+      accuracy: 0.95
+    - prompt_id: p2
       tokens: 80
       accuracy: 0.94
-      cost_penalty: 0.0
-      fitness: 0.94
-    note: "Penalize over-budget candidate"
-
-  - args:
-      - [{"prompt_id": "p1", "tokens": 90, "accuracy": 0.90}, {"prompt_id": "p2", "tokens": 80, "accuracy": 0.90}]
-      - 100
-    expected:
-      selected_id: "p2"
+  - 100
+  expected:
+    selected_id: p2
+    tokens: 80
+    accuracy: 0.94
+    cost_penalty: 0.0
+    fitness: 0.94
+  note: Penalize over-budget candidate
+- args:
+  - - prompt_id: p1
+      tokens: 90
+      accuracy: 0.9
+    - prompt_id: p2
       tokens: 80
-      accuracy: 0.90
-      cost_penalty: 0.0
-      fitness: 0.90
-    note: "Tie-breaker selects fewer tokens"
-
-  - args:
-      - []
-      - 100
-    expected:
-      selected_id: null
-      tokens: 0
-      accuracy: 0.0
-      cost_penalty: 0.0
-      fitness: 0.0
-    note: "Empty candidates list"
-
-  - args:
-      - [{"prompt_id": "p_heavy", "tokens": 200, "accuracy": 1.0}]
-      - 100
-    expected:
-      selected_id: "p_heavy"
+      accuracy: 0.9
+  - 100
+  expected:
+    selected_id: p2
+    tokens: 80
+    accuracy: 0.9
+    cost_penalty: 0.0
+    fitness: 0.9
+  note: Tie-breaker selects fewer tokens
+- args:
+  - []
+  - 100
+  expected:
+    selected_id: null
+    tokens: 0
+    accuracy: 0.0
+    cost_penalty: 0.0
+    fitness: 0.0
+  note: Empty candidates list
+- args:
+  - - prompt_id: p_heavy
       tokens: 200
       accuracy: 1.0
-      cost_penalty: 1.0
-      fitness: 0.0
-    note: "Heavy penalty applied correctly"
-
+  - 100
+  expected:
+    selected_id: p_heavy
+    tokens: 200
+    accuracy: 1.0
+    cost_penalty: 1.0
+    fitness: 0.0
+  note: Heavy penalty applied correctly
 visualize_test: 0
-
 drills:
-  - title: Calculate budget penalty
-    skill: setup
-    goal: Return 0.0 if tokens <= budget, else round((tokens - budget) * 0.01, 4).
-    instructions: |
-      Return `round((tokens - budget) * 0.01, 4)` if tokens > budget else 0.0.
-    function:
-      name: calc_penalty
-      params: [{name: tokens}, {name: budget}]
-    starter_code: |
-      class Solution:
-          def calc_penalty(self, tokens: int, budget: int) -> float:
-              pass
-    tests:
-      - {args: [150, 100], expected: 0.5}
-      - {args: [80, 100], expected: 0.0}
-    solution: |
-      class Solution:
-          def calc_penalty(self, tokens: int, budget: int) -> float:
-              return round((tokens - budget) * 0.01, 4) if tokens > budget else 0.0
-    hint: "Use conditional check on tokens > budget."
+- title: Calculate budget penalty
+  skill: setup
+  goal: Return 0.0 if tokens <= budget, else round((tokens - budget) * 0.01, 4).
+  instructions: 'Return `round((tokens - budget) * 0.01, 4)` if tokens > budget else
+    0.0.
 
-  - title: Fitness calculation
-    skill: core
-    goal: Compute round(acc - penalty, 4).
-    instructions: |
-      Return `round(acc - penalty, 4)`.
-    function:
-      name: calc_fitness
-      params: [{name: acc}, {name: penalty}]
-    starter_code: |
-      class Solution:
-          def calc_fitness(self, acc: float, penalty: float) -> float:
-              pass
-    tests:
-      - {args: [0.95, 0.5], expected: 0.45}
-    solution: |
-      class Solution:
-          def calc_fitness(self, acc: float, penalty: float) -> float:
-              return round(acc - penalty, 4)
-    hint: "Return round(acc - penalty, 4)."
+    '
+  function:
+    name: calc_penalty
+    params:
+    - name: tokens
+    - name: budget
+  starter_code: "class Solution:\n    def calc_penalty(self, tokens: int, budget:\
+    \ int) -> float:\n        pass\n"
+  tests:
+  - args:
+    - 150
+    - 100
+    expected: 0.5
+  - args:
+    - 80
+    - 100
+    expected: 0.0
+  solution: "class Solution:\n    def calc_penalty(self, tokens: int, budget: int)\
+    \ -> float:\n        return round((tokens - budget) * 0.01, 4) if tokens > budget\
+    \ else 0.0\n"
+  hint: Use conditional check on tokens > budget.
+- title: Fitness calculation
+  skill: core
+  goal: Compute round(acc - penalty, 4).
+  instructions: 'Return `round(acc - penalty, 4)`.
 
-  - title: Candidate comparison key
-    skill: edge
-    goal: Generate sort tuple (-fitness, tokens, idx).
-    instructions: |
-      Return `(-fitness, tokens, idx)`.
-    function:
-      name: sort_key
-      params: [{name: fitness}, {name: tokens}, {name: idx}]
-    starter_code: |
-      class Solution:
-          def sort_key(self, fitness: float, tokens: int, idx: int) -> tuple:
-              pass
-    tests:
-      - {args: [0.9, 80, 0], expected: [-0.9, 80, 0]}
-    solution: |
-      class Solution:
-          def sort_key(self, fitness: float, tokens: int, idx: int) -> tuple:
-              return (-fitness, tokens, idx)
-    hint: "Return (-fitness, tokens, idx)."
+    '
+  function:
+    name: calc_fitness
+    params:
+    - name: acc
+    - name: penalty
+  starter_code: "class Solution:\n    def calc_fitness(self, acc: float, penalty:\
+    \ float) -> float:\n        pass\n"
+  tests:
+  - args:
+    - 0.95
+    - 0.5
+    expected: 0.45
+  solution: "class Solution:\n    def calc_fitness(self, acc: float, penalty: float)\
+    \ -> float:\n        return round(acc - penalty, 4)\n"
+  hint: Return round(acc - penalty, 4).
+- title: Candidate comparison key
+  skill: edge
+  goal: Generate sort tuple (-fitness, tokens, idx).
+  instructions: 'Return `(-fitness, tokens, idx)`.
 
+    '
+  function:
+    name: sort_key
+    params:
+    - name: fitness
+    - name: tokens
+    - name: idx
+  starter_code: "class Solution:\n    def sort_key(self, fitness: float, tokens: int,\
+    \ idx: int) -> tuple:\n        pass\n"
+  tests:
+  - args:
+    - 0.9
+    - 80
+    - 0
+    expected:
+    - -0.9
+    - 80
+    - 0
+  solution: "class Solution:\n    def sort_key(self, fitness: float, tokens: int,\
+    \ idx: int) -> tuple:\n        return (-fitness, tokens, idx)\n"
+  hint: Return (-fitness, tokens, idx).
 hints:
-  - "If `not candidates`, return `{'selected_id': None, 'tokens': 0, 'accuracy': 0.0, 'cost_penalty': 0.0, 'fitness': 0.0}`."
-  - "For each candidate, compute `cost_penalty = round((tokens - token_budget) * 0.01, 4)` if `tokens > token_budget` else `0.0`."
-  - "Compute `fitness = round(accuracy - cost_penalty, 4)`. Sort with key `(-fitness, tokens, idx)` and return the top candidate."
-
+- 'If `not candidates`, return `{''selected_id'': None, ''tokens'': 0, ''accuracy'':
+  0.0, ''cost_penalty'': 0.0, ''fitness'': 0.0}`.'
+- For each candidate, compute `cost_penalty = round((tokens - token_budget) * 0.01,
+  4)` if `tokens > token_budget` else `0.0`.
+- Compute `fitness = round(accuracy - cost_penalty, 4)`. Sort with key `(-fitness,
+  tokens, idx)` and return the top candidate.
 solution:
-  code: |
-    class Solution:
-        def optimize_prompt_generation(self, candidates: list[dict], token_budget: int) -> dict:
-            if not candidates:
-                return {
-                    "selected_id": None,
-                    "tokens": 0,
-                    "accuracy": 0.0,
-                    "cost_penalty": 0.0,
-                    "fitness": 0.0,
-                }
+  code: "class Solution:\n    def optimize_prompt_generation(self, candidates: list[dict],\
+    \ token_budget: int) -> dict:\n        if not candidates:\n            return\
+    \ {\n                \"selected_id\": None,\n                \"tokens\": 0,\n\
+    \                \"accuracy\": 0.0,\n                \"cost_penalty\": 0.0,\n\
+    \                \"fitness\": 0.0,\n            }\n\n        evaluated = []\n\
+    \        for idx, c in enumerate(candidates):\n            tokens = c.get(\"tokens\"\
+    , 0)\n            accuracy = c.get(\"accuracy\", 0.0)\n\n            if tokens\
+    \ > token_budget:\n                cost_penalty = round((tokens - token_budget)\
+    \ * 0.01, 4)\n            else:\n                cost_penalty = 0.0\n\n      \
+    \      fitness = round(accuracy - cost_penalty, 4)\n\n            evaluated.append({\n\
+    \                \"selected_id\": c.get(\"prompt_id\"),\n                \"tokens\"\
+    : tokens,\n                \"accuracy\": accuracy,\n                \"cost_penalty\"\
+    : cost_penalty,\n                \"fitness\": fitness,\n                \"_order\"\
+    : idx,\n            })\n\n        evaluated.sort(key=lambda x: (-x[\"fitness\"\
+    ], x[\"tokens\"], x[\"_order\"]))\n        best = evaluated[0]\n\n        return\
+    \ {\n            \"selected_id\": best[\"selected_id\"],\n            \"tokens\"\
+    : best[\"tokens\"],\n            \"accuracy\": best[\"accuracy\"],\n         \
+    \   \"cost_penalty\": best[\"cost_penalty\"],\n            \"fitness\": best[\"\
+    fitness\"],\n        }\n"
+  explanation: 'The GEPA optimizer evaluates each candidate against a combined fitness
+    objective:
 
-            evaluated = []
-            for idx, c in enumerate(candidates):
-                tokens = c.get("tokens", 0)
-                accuracy = c.get("accuracy", 0.0)
-
-                if tokens > token_budget:
-                    cost_penalty = round((tokens - token_budget) * 0.01, 4)
-                else:
-                    cost_penalty = 0.0
-
-                fitness = round(accuracy - cost_penalty, 4)
-
-                evaluated.append({
-                    "selected_id": c.get("prompt_id"),
-                    "tokens": tokens,
-                    "accuracy": accuracy,
-                    "cost_penalty": cost_penalty,
-                    "fitness": fitness,
-                    "_order": idx,
-                })
-
-            evaluated.sort(key=lambda x: (-x["fitness"], x["tokens"], x["_order"]))
-            best = evaluated[0]
-
-            return {
-                "selected_id": best["selected_id"],
-                "tokens": best["tokens"],
-                "accuracy": best["accuracy"],
-                "cost_penalty": best["cost_penalty"],
-                "fitness": best["fitness"],
-            }
-  explanation: |
-    The GEPA optimizer evaluates each candidate against a combined fitness objective:
     rewarding high eval accuracy while penalizing token counts that exceed the budget.
-    Sorting by `(-fitness, tokens, original_index)` guarantees the selection of the most concise,
+
+    Sorting by `(-fitness, tokens, original_index)` guarantees the selection of the
+    most concise,
+
     highest-performing prompt variant.
+
+    '
   time: O(N log N) sorting
   space: O(N) candidate records
+pitch_script: '**(Clarify)** "We need to evaluate candidate prompt variations against
+  a token budget, computing fitness based on accuracy penalized by excess tokens,
+  and selecting the optimal prompt variant."
 
-pitch_script: |
-  **(Clarify)** "We need to evaluate candidate prompt variations against a token budget, computing fitness based on accuracy penalized by excess tokens, and selecting the optimal prompt variant."
 
-  **(Basement Insight)** "Manual prompt edits are unscientific and result in prompt bloat. Applying an evolutionary fitness objective penalizes verbosity while rewarding accuracy, automatically pruning filler tokens and discovering compressed prompt formulations."
+  **(Basement Insight)** "Manual prompt edits are unscientific and result in prompt
+  bloat. Applying an evolutionary fitness objective penalizes verbosity while rewarding
+  accuracy, automatically pruning filler tokens and discovering compressed prompt
+  formulations."
 
-  **(Solution)** "For each candidate, we calculate penalty = (tokens - budget) * 0.01 for any excess tokens, yielding fitness = accuracy - penalty. We sort candidates by (-fitness, tokens, index) to break ties in favor of conciseness and return the best candidate."
+
+  **(Solution)** "For each candidate, we calculate penalty = (tokens - budget) * 0.01
+  for any excess tokens, yielding fitness = accuracy - penalty. We sort candidates
+  by (-fitness, tokens, index) to break ties in favor of conciseness and return the
+  best candidate."
+
 
   **(Complexity)** "Runs in O(N log N) time and O(N) space."
 
+  '
 twist:
   lc: 9604
   title: Multi-Objective Pareto Frontier Domination
-  why: >-
-    Instead of a single scalar fitness formula with a fixed penalty multiplier,
-    compute the Non-Dominated Sorting (NSGA-II) Pareto frontier across 3 dimensions: latency, token cost, and eval score.
-
+  why: 'Instead of a single scalar fitness formula with a fixed penalty multiplier,
+    compute the Non-Dominated Sorting (NSGA-II) Pareto frontier across 3 dimensions:
+    latency, token cost, and eval score.'
 viz:
-  title: "Genetic Prompt Architecture Pareto Optimization"
+  title: Genetic Prompt Architecture Pareto Optimization
+journey:
+- id: w37_s1_verbose_prompt_trap
+  title: 'The Verbose Prompt Trap: Why Conversational Filler Costs $35,000/mo'
+  subtitle: How unformatted instructions and polite filler explode enterprise API
+    bills
+  scenario: When running hundreds of thousands of automated UI verification runs across
+    GPT-4o, Drizz's monthly OpenAI API invoice suddenly surged past $35,000. An audit
+    revealed that engineers had crafted a verbose 1,800-token system prompt containing
+    conversational filler ("Please be polite and ensure that you always..."). Why
+    was this costly?
+  mechanism: LLM APIs bill for every input token on every API call. Adding 100 unnecessary
+    tokens across 1,000,000 monthly API calls costs 100,000,000 wasted input tokens
+    with zero benefit to reasoning accuracy. Furthermore, verbose preambles dilute
+    attention mechanisms on complex instructions.
+  prediction:
+    prompt: How does conversational filler ("Please be polite and carefully think...")
+      impact production LLM applications?
+    choices:
+    - id: opt_a
+      label: It increases API billing costs linearly across every API invocation and
+        dilutes attention on crucial technical constraints without improving accuracy.
+      explanation: Correct! Conversational padding wastes money on every request and
+        clutters model attention.
+      is_correct: true
+    - id: opt_b
+      label: It makes the LLM happier and prevents model hallucinations.
+      explanation: Misconception! LLMs are mathematical transformer functions, not
+        human beings.
+      is_correct: false
+    - id: opt_c
+      label: It speeds up generation speed because polite prompts run on higher-priority
+        servers.
+      explanation: Nonsense! Token count increases processing latency.
+      is_correct: false
+    revealed_explanation: Pruning conversational fluff and structuring instructions
+      into dense Markdown schemas saves tens of thousands of dollars in production.
+  controls:
+  - id: monthly_api_volume
+    label: Monthly API Request Volume
+    type: slider
+    default: 500000
+    min: 50000
+    max: 1000000
+    step: 50000
+    description: Number of LLM invocations per month
+  - id: filler_tokens
+    label: Wasted Filler Tokens per Request
+    type: slider
+    default: 150
+    min: 20
+    max: 500
+    step: 20
+    description: Unnecessary conversational padding in system prompt
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Token Inflation Cost Curve: Filler Tokens vs Monthly Invoice'
+- id: w37_s2_prompts_as_genomes
+  title: 'Prompts as Genomes: The Genetic Search Space'
+  subtitle: Treating prompt variations as evolutionary candidates evaluated on benchmarks
+  scenario: How can we search through thousands of possible prompt phrasings to find
+    the best candidate without manually testing each one?
+  mechanism: Treat the system prompt as a genome! A population of prompt variants
+    is generated through programmatic mutations (e.g., converting prose to bullet
+    points, extracting JSON schemas, reordering constraints). The algorithm evaluates
+    the fitness of each candidate and evolves better candidates over successive generations.
+  prediction:
+    prompt: In genetic prompt optimization (GEPA), what represents the "individual
+      genome"?
+    choices:
+    - id: opt_a
+      label: A candidate system prompt string with specific instructions, formatting
+        styles, and phrasing.
+      explanation: Correct! The prompt text itself is the discrete genome subject
+        to mutation and selection.
+      is_correct: true
+    - id: opt_b
+      label: The physical CPU chip running the server.
+      explanation: Incorrect! The optimization operates on software prompts, not hardware.
+      is_correct: false
+    - id: opt_c
+      label: The Python interpreter executable file.
+      explanation: Incorrect! The Python interpreter remains unchanged.
+      is_correct: false
+    revealed_explanation: Evolutionary algorithms transform intuitive prompt hacking
+      into a reproducible, automated optimization pipeline.
+  controls:
+  - id: population_size
+    label: Candidate Population Size
+    type: slider
+    default: 20
+    min: 5
+    max: 50
+    step: 5
+    description: Number of active prompt variations per generation
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Prompt Population Generation & Evolutionary Tree
+- id: w37_s3_fitness_penalty_function
+  title: 'The Multi-Objective Fitness Function: Accuracy vs Token Cost Penalty'
+  subtitle: Formulating mathematical constraints against prompt bloat
+  scenario: If an optimizer only maximized accuracy, it would choose a 5,000-token
+    prompt with 50 few-shot examples. If it only minimized token count, it would choose
+    a 2-word prompt that fails on edge cases. How do we balance both?
+  mechanism: 'A composite fitness function! 1. Measure benchmark accuracy on test
+    queries: accuracy in [0.0, 1.0]. 2. If tokens > token_budget: cost_penalty = (tokens
+    - token_budget) * 0.01. 3. If tokens <= token_budget: cost_penalty = 0.0. 4. Final
+    fitness: fitness = accuracy - cost_penalty. This creates a steep penalty surface
+    against prompt bloat.'
+  prediction:
+    prompt: Given a candidate with accuracy 0.95 and 250 tokens under a budget of
+      200 tokens (penalty 0.01 per excess token), what is its fitness?
+    choices:
+    - id: opt_a
+      label: 0.45 (Penalty is (250 - 200) * 0.01 = 0.50; fitness = 0.95 - 0.50 = 0.45).
+      explanation: Correct! 0.95 - 0.50 = 0.45, heavily disincentivizing the candidate
+        for exceeding the budget.
+      is_correct: true
+    - id: opt_b
+      label: 0.95 because accuracy is the only metric that matters.
+      explanation: Misconception! Production systems must account for token economics.
+      is_correct: false
+    - id: opt_c
+      label: 0.0 because it exceeded the budget.
+      explanation: Incorrect! The penalty degrades fitness proportionally rather than
+        zeroing it out entirely.
+      is_correct: false
+    revealed_explanation: A dual-objective fitness function forces the genetic algorithm
+      to find concise prompts that maintain high accuracy.
+  controls:
+  - id: budget_tokens
+    label: Target Token Budget
+    type: slider
+    default: 200
+    min: 100
+    max: 500
+    step: 25
+    description: Maximum allowable tokens without penalty
+  - id: candidate_tokens
+    label: Candidate Token Length
+    type: slider
+    default: 250
+    min: 100
+    max: 500
+    step: 25
+    description: Tested candidate token count
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Fitness Surface: Accuracy minus Token Budget Penalty'
+- id: w37_s4_pareto_efficiency
+  title: 'The Pareto Efficiency Frontier: Selecting Non-Dominated Candidates'
+  subtitle: Identifying candidates that cannot be improved in accuracy without increasing
+    cost
+  scenario: 'You have 3 candidate prompts: Candidate A (95% accuracy, 180 tokens),
+    Candidate B (90% accuracy, 120 tokens), and Candidate C (85% accuracy, 220 tokens).
+    Which candidate is strictly inferior?'
+  mechanism: 'Candidate C is dominated: it has lower accuracy AND more tokens than
+    Candidate A! Candidates A and B lie on the Pareto Frontier: neither is strictly
+    better on both dimensions; Candidate A offers higher accuracy, while Candidate
+    B offers lower cost. Genetic selection preserves the Pareto frontier to find the
+    optimal trade-off point.'
+  prediction:
+    prompt: In multi-objective prompt optimization, when is Candidate X considered
+      "dominated" by Candidate Y?
+    choices:
+    - id: opt_a
+      label: When Candidate Y achieves both equal or higher accuracy AND uses equal
+        or fewer tokens than Candidate X.
+      explanation: Correct! A candidate is Pareto-dominated if another solution outperforms
+        it across all objectives.
+      is_correct: true
+    - id: opt_b
+      label: When Candidate X has an older timestamp.
+      explanation: Irrelevant! Pareto dominance is based on metric coordinates, not
+        creation time.
+      is_correct: false
+    - id: opt_c
+      label: When Candidate Y was written by human engineers.
+      explanation: Nonsense! Optimization is strictly data-driven.
+      is_correct: false
+    revealed_explanation: Pruning dominated candidates ensures that compute budget
+      is spent only on prompts that expand the Pareto frontier.
+  controls:
+  - id: pareto_display
+    label: Frontier View
+    type: select
+    default: Pareto Frontier Highlighted
+    options:
+    - Pareto Frontier Highlighted
+    - All Candidates Unfiltered
+    description: Filter dominated prompt variants
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Pareto Frontier: Accuracy vs Token Length Trade-off'
+- id: w37_s5_mutation_operators
+  title: 'Evolutionary Mutation Operators: Markdown Schemas & Few-Shot Pruning'
+  subtitle: The algorithmic transformations that trim tokens without degrading reasoning
+  scenario: What concrete prompt mutations produce high-accuracy compression in real
+    production deployments?
+  mechanism: '1. Markdown Schema Transformation: Replace verbose sentences ("The output
+    must be a dictionary with keys name and age") with strict TypeScript/Pydantic
+    code blocks. 2. Filler Pruning: Strip polite introductory and concluding phrases.
+    3. Dynamic Few-Shot Pruning: Keep only ambiguous boundary test cases, eliminating
+    redundant simple examples.'
+  prediction:
+    prompt: Which prompt refactoring technique typically achieves the highest compression
+      without sacrificing structural compliance?
+    choices:
+    - id: opt_a
+      label: Replacing paragraph prose instructions with concise Markdown code blocks
+        or TypeScript/JSON schemas.
+      explanation: Correct! Code and schemas communicate structural constraints in
+        70% fewer tokens than prose sentences.
+      is_correct: true
+    - id: opt_b
+      label: Removing all vowels from the English language.
+      explanation: Nonsense! That destroys tokenizer recognition and degrades model
+        reasoning.
+      is_correct: false
+    - id: opt_c
+      label: Translating the prompt into binary 0s and 1s.
+      explanation: Incorrect! Binary text explodes token count dramatically.
+      is_correct: false
+    revealed_explanation: Structured schemas and boundary few-shot pruning produce
+      lean, high-performing prompts that slash API costs.
+  controls:
+  - id: mutation_type
+    label: Active Mutation Operator
+    type: select
+    default: Markdown Schema Compression
+    options:
+    - Markdown Schema Compression
+    - Filler Pruning
+    - Boundary Example Distillation
+    description: Prompt mutation technique to apply
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Mutation Transformation: Prose Paragraph -> Concise Schema'
+- id: w37_s6_transfer_challenge
+  title: 'Transfer Challenge: GEPA Genetic Prompt Generation Optimizer'
+  subtitle: Build the automated candidate evaluation and selection engine
+  scenario: 'Implement `optimize_prompt_generation(candidates: list[dict], token_budget:
+    int) -> dict` to select the highest-fitness prompt candidate.'
+  mechanism: '1. Return zeros if candidates is empty. 2. For each candidate: cost_penalty
+    = round((tokens - token_budget) * 0.01, 4) if tokens > token_budget else 0.0.
+    Calculate fitness = round(accuracy - cost_penalty, 4). 3. Select winning candidate:
+    primary by highest fitness, secondary by lowest tokens, tertiary by original index.
+    4. Return selected_id, tokens, accuracy, cost_penalty, and fitness.'
+  prediction:
+    prompt: 'Given candidates [{"prompt_id": "p1", "tokens": 150, "accuracy": 0.90},
+      {"prompt_id": "p2", "tokens": 250, "accuracy": 0.95}] with token_budget=200,
+      which candidate wins?'
+    choices:
+    - id: opt_a
+      label: p1 (p1 fitness is 0.90 - 0 = 0.90; p2 penalty is (250-200)*0.01 = 0.50,
+        so p2 fitness is 0.95 - 0.50 = 0.45).
+      explanation: Correct! Even though p2 has higher raw accuracy, its token penalty
+        severely lowers its fitness below p1.
+      is_correct: true
+    - id: opt_b
+      label: p2 because 0.95 is higher than 0.90.
+      explanation: Incorrect! The token budget penalty penalizes p2 for bloat.
+      is_correct: false
+    - id: opt_c
+      label: Neither, both are disqualified.
+      explanation: Incorrect! Both are valid candidates with calculated fitness scores.
+      is_correct: false
+    revealed_explanation: Implement the prompt optimization evaluator in the code
+      editor below and test against all candidate pools.
+  controls:
+  - id: run_verification
+    label: Run Full GEPA Optimizer Tests
+    type: button
+    default: true
+    description: Execute test suite validating token budget penalties, fitness ranking,
+      and tie-breaking
+  lab_starter_code: "class Solution:\n    def optimize_prompt_generation(self, candidates:\
+    \ list[dict], token_budget: int) -> dict:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: GEPA Prompt Generation Optimizer Sandbox
