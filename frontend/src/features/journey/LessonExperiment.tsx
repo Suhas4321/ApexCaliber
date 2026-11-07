@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { ArrowRight, Database, HardDrive, RotateCcw } from 'lucide-react'
+import { ArrowRight, Database, Film, HardDrive, RotateCcw, Terminal } from 'lucide-react'
 import type { JourneyStage, QuestionDetail, VisualizerKind } from '../../api/types'
 import { Markdown } from '../../components/ui'
 import VisualizerHost from '../../components/visualizers/VisualizerHost'
+import DeadlockMotionGraphic from './experiments/DeadlockMotionGraphic'
 
 /** Only show controls when a lesson-specific model consumes their values. */
 export default function LessonExperiment({ stage, question }: { stage: JourneyStage; question: QuestionDetail }) {
   const [values, setValues] = useState<Record<string, unknown>>(() => Object.fromEntries((stage.controls || []).map(c => [c.id, c.default])))
   const [scanned, setScanned] = useState(false)
+  const [motionViewMode, setMotionViewMode] = useState<'motion' | 'code'>('motion')
   const heap = stage.id === 'w17_s1_flat_file_illusion'
   const http = stage.id === 'w17_s1_why_http'
-  const modeled = heap || http
+  const isDeadlock = question.slug === 'deadlock-cycle-detector' || stage.id.startsWith('w27_')
+  const modeled = heap || http || isDeadlock
   const topicSandboxes = new Set(['http_lifecycle', 'network_flow', 'concurrency_timeline', 'cache_relational'])
   const hasTopicSandbox = topicSandboxes.has(stage.visualizer_type || '') || (stage.visualizer_type === 'system_blueprint' && question.citadel_id === 'ai_resume')
   const rows = Math.max(1, Number(values.table_rows) || 1000)
@@ -34,6 +37,61 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
         <VisualizerHost inline kind={stage.visualizer_type as VisualizerKind} steps={[]} index={0} code="" step={{ event: 'line', line: 1, func: '', depth: 0, frames: [], heap: {} }} config={stage.visualizer_config || {}} />
       </div></details>}
     </div>
+  }
+
+  if (isDeadlock) {
+    return (
+      <div className="w-full space-y-4">
+        <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
+          <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setMotionViewMode('motion')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+                motionViewMode === 'motion'
+                  ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
+                  : 'text-muted hover:text-chalk'
+              }`}
+            >
+              <Film size={13} />
+              <span>Cinematic Motion Graphic</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMotionViewMode('code')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+                motionViewMode === 'code'
+                  ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
+                  : 'text-muted hover:text-chalk'
+              }`}
+            >
+              <Terminal size={13} />
+              <span>Code Walkthrough</span>
+            </button>
+          </div>
+        </div>
+
+        {motionViewMode === 'motion' ? (
+          <DeadlockMotionGraphic />
+        ) : (
+          <div className="lesson-worked-example">
+            <span className="lesson-eyebrow">Worked example</span>
+            <div className="lesson-prose"><Markdown>{stage.scenario}</Markdown></div>
+            <p className="lesson-muted">Trace the example below and consider which step supports your prediction. This lesson uses a code walkthrough; you can execute the question’s tests in the practice editor.</p>
+            <pre><code>{stage.lab_starter_code || question.content!.starter_code}</code></pre>
+            <details className="lesson-reference"><summary>Example inputs and expected outputs</summary>
+              {question.content!.statement.examples.map((example, i) => (
+                <div key={i} className="lesson-example">
+                  <p><strong>Input</strong> {example.input}</p>
+                  <p><strong>Output</strong> {example.output}</p>
+                  {example.explanation && <Markdown>{example.explanation}</Markdown>}
+                </div>
+              ))}
+            </details>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return <div className="lesson-experiment">
