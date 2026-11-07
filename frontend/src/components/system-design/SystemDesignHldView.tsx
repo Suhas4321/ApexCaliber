@@ -4,6 +4,7 @@ import ArchitectureFlowSimulator from './ArchitectureFlowSimulator'
 import CodeExecutionMotionGraphic from '../../features/system-design/motion/CodeExecutionMotionGraphic'
 import RateLimiterMotionGraphic from '../../features/system-design/motion/RateLimiterMotionGraphic'
 import TinyUrlMotionGraphic from '../../features/system-design/motion/TinyUrlMotionGraphic'
+import ConsistentHashingMotionGraphic from '../../features/system-design/motion/ConsistentHashingMotionGraphic'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { HLD_PROBLEMS } from '../../lib/systemDesignData'
@@ -116,7 +117,7 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
             <span>Architecture Simulation & Motion Graphic</span>
           </h2>
 
-          {(index === 0 || index === 1 || index === 2) && (
+          {(index === 0 || index === 1 || index === 2 || index === 5) && (
             <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
               <button
                 type="button"
@@ -152,6 +153,8 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
           <RateLimiterMotionGraphic />
         ) : simViewMode === 'motion' && index === 2 ? (
           <TinyUrlMotionGraphic />
+        ) : simViewMode === 'motion' && index === 5 ? (
+          <ConsistentHashingMotionGraphic />
         ) : (
           <ArchitectureFlowSimulator
             systemTitle={hld.title}
