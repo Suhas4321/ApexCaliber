@@ -1,6 +1,7 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Film, Sliders } from 'lucide-react'
 import { useState } from 'react'
 import ArchitectureFlowSimulator from './ArchitectureFlowSimulator'
+import CodeExecutionMotionGraphic from '../../features/system-design/motion/CodeExecutionMotionGraphic'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { HLD_PROBLEMS } from '../../lib/systemDesignData'
@@ -16,6 +17,7 @@ interface Props {
 export default function SystemDesignHldView({ index, onNavigate, completedIds, onCompleted }: Props) {
   const hld = HLD_PROBLEMS[index] ?? HLD_PROBLEMS[0]
   const [activeHop, setActiveHop] = useState(0)
+  const [simViewMode, setSimViewMode] = useState<'motion' | 'hop'>('motion')
   const isDone = completedIds.includes(hld.id)
 
   return (
@@ -106,14 +108,54 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
 
       {/* 3. Scaled Hop-by-Hop Flow & Live Interactive Simulation */}
       <section id="section-architecture" className="space-y-4 pt-4 border-t border-line">
-        <ArchitectureFlowSimulator
-          systemTitle={hld.title}
-          nodes={hld.architectureNodes}
-          peakRps={hld.scale.peakRps}
-          latencySla={hld.scale.latency}
-          activeHop={activeHop}
-          onHopChange={setActiveHop}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-amber-500/15 font-mono text-2xs text-amber font-semibold">3</span>
+            <span>Architecture Simulation & Motion Graphic</span>
+          </h2>
+
+          {index === 0 && (
+            <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setSimViewMode('motion')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+                  simViewMode === 'motion'
+                    ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
+                    : 'text-muted hover:text-chalk'
+                }`}
+              >
+                <Film size={13} />
+                <span>Cinematic Motion Graphic</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSimViewMode('hop')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+                  simViewMode === 'hop'
+                    ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
+                    : 'text-muted hover:text-chalk'
+                }`}
+              >
+                <Sliders size={13} />
+                <span>Hop-by-Hop Flow</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {index === 0 && simViewMode === 'motion' ? (
+          <CodeExecutionMotionGraphic />
+        ) : (
+          <ArchitectureFlowSimulator
+            systemTitle={hld.title}
+            nodes={hld.architectureNodes}
+            peakRps={hld.scale.peakRps}
+            latencySla={hld.scale.latency}
+            activeHop={activeHop}
+            onHopChange={setActiveHop}
+          />
+        )}
       </section>
 
       {/* 4. Chaos & Defenses Table */}
