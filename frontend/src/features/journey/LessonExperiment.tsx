@@ -15,6 +15,7 @@ import AsyncJobPollingMotionGraphic from './experiments/AsyncJobPollingMotionGra
 import VectorRagMotionGraphic from './experiments/VectorRagMotionGraphic'
 import AgentStateGraphMotionGraphic from './experiments/AgentStateGraphMotionGraphic'
 import BTreeVsHashIndexMotionGraphic from './experiments/BTreeVsHashIndexMotionGraphic'
+import FastApiAsyncDefMotionGraphic from './experiments/FastApiAsyncDefMotionGraphic'
 
 /** Only show controls when a lesson-specific model consumes their values. */
 export default function LessonExperiment({ stage, question }: { stage: JourneyStage; question: QuestionDetail }) {
@@ -35,7 +36,8 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
   const isVectorRag = question.slug === 'rag-cross-encoder-reranker' || question.slug === 'rag-text-chunker-with-overlap' || stage.id.startsWith('w35_')
   const isAgentStateGraph = question.slug === 'agent-state-machine-graph' || question.slug === 'agent-tool-calling-loop' || stage.id.startsWith('w36_')
   const isBTreeIndex = question.slug === 'btree-vs-hash-indexes' || question.slug === 'sql-explain-composite-index' || question.slug === 'composite-index-left-prefix' || stage.id.startsWith('w22_')
-  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling || isVectorRag || isAgentStateGraph || isBTreeIndex
+  const isFastApiAsync = question.slug === 'sync-vs-async-handler-throughput' || question.slug === 'asyncio-event-loop-semaphore' || stage.id.startsWith('w32_')
+  const modeled = heap || http || isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling || isVectorRag || isAgentStateGraph || isBTreeIndex || isFastApiAsync
   const topicSandboxes = new Set(['http_lifecycle', 'network_flow', 'concurrency_timeline', 'cache_relational'])
   const hasTopicSandbox = topicSandboxes.has(stage.visualizer_type || '') || (stage.visualizer_type === 'system_blueprint' && question.citadel_id === 'ai_resume')
   const rows = Math.max(1, Number(values.table_rows) || 1000)
@@ -61,7 +63,7 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
     </div>
   }
 
-  if (isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling || isVectorRag || isAgentStateGraph || isBTreeIndex) {
+  if (isDeadlock || isVirtualMemory || isTcpHandshake || isDnsResolution || isAcidTransactions || isRedisCache || isTokenRotation || isGilConcurrency || isAsyncJobPolling || isVectorRag || isAgentStateGraph || isBTreeIndex || isFastApiAsync) {
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
@@ -116,8 +118,10 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
             <VectorRagMotionGraphic />
           ) : isAgentStateGraph ? (
             <AgentStateGraphMotionGraphic />
-          ) : (
+          ) : isBTreeIndex ? (
             <BTreeVsHashIndexMotionGraphic />
+          ) : (
+            <FastApiAsyncDefMotionGraphic />
           )
         ) : (
           <div className="lesson-worked-example">
