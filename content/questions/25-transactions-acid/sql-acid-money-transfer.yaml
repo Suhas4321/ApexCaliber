@@ -4,74 +4,93 @@ citadel_id: sql_dbms
 brick_layer: 4
 runner_type: sql_sqlite
 concept:
-  problem_it_solves: How do banking database systems guarantee that a money transfer between two accounts never debits the
-    sender without crediting the receiver? Under ACID Atomicity ('all-or-nothing'), a transaction must either complete all
-    operations or abort completely. If the sender's account has insufficient funds, the transaction rolls back, leaving all
-    balances unchanged.
-  brute_force: Executing two separate un-fenced UPDATE statements across network calls without transaction boundaries, risking
-    balance loss if the network crashes between queries.
+  problem_it_solves: How do banking database systems guarantee that a money transfer
+    between two accounts never debits the sender without crediting the receiver? Under
+    ACID Atomicity ('all-or-nothing'), a transaction must either complete all operations
+    or abort completely. If the sender's account has insufficient funds, the transaction
+    rolls back, leaving all balances unchanged.
+  brute_force: Executing two separate un-fenced UPDATE statements across network calls
+    without transaction boundaries, risking balance loss if the network crashes between
+    queries.
   brute_force_complexity: Severe data corruption and phantom money loss.
-  key_insight: 'A transaction evaluates preconditions atomically: if the sender balance check passes, both balances adjust;
-    otherwise, neither balance changes and the transaction reports a rollback.'
-  real_world: UPI peer-to-peer transfers, Stripe wallet payouts, and banking ledger debits.
+  key_insight: 'A transaction evaluates preconditions atomically: if the sender balance
+    check passes, both balances adjust; otherwise, neither balance changes and the
+    transaction reports a rollback.'
+  real_world: UPI peer-to-peer transfers, Stripe wallet payouts, and banking ledger
+    debits.
 statement:
-  clean: "Write a SQL query to simulate an atomic money transfer transaction between accounts:\nTransfer `200` units from\
-    \ Account `1` (`Aarav`) to Account `2` (`Priya`).\n\nTable schema:\n```sql\nCREATE TABLE Accounts (\n    id INTEGER PRIMARY\
-    \ KEY,\n    owner TEXT,\n    balance INTEGER\n);\n```\n\nTransaction Rules:\n1. Verify whether Account `1` has at least\
-    \ `200` units: `(SELECT balance FROM Accounts WHERE id = 1) >= 200`.\n2. If sufficient funds exist, the transaction COMMITS:\n\
-    \   - Account `1` balance decreases by `200`.\n   - Account `2` balance increases by `200`.\n   - Status column is `'COMMITTED'`.\n\
-    3. If insufficient funds exist, the transaction ROLLS BACK:\n   - All account balances remain unchanged.\n   - Status\
-    \ column is `'ROLLEDBACK'`.\n\nReturn columns: `id`, `owner`, `balance`, `status` ordered by `id` ascending."
+  clean: "Write a SQL query to simulate an atomic money transfer transaction between\
+    \ accounts:\nTransfer `200` units from Account `1` (`Aarav`) to Account `2` (`Priya`).\n\
+    \nTable schema:\n```sql\nCREATE TABLE Accounts (\n    id INTEGER PRIMARY KEY,\n\
+    \    owner TEXT,\n    balance INTEGER\n);\n```\n\nTransaction Rules:\n1. Verify\
+    \ whether Account `1` has at least `200` units: `(SELECT balance FROM Accounts\
+    \ WHERE id = 1) >= 200`.\n2. If sufficient funds exist, the transaction COMMITS:\n\
+    \   - Account `1` balance decreases by `200`.\n   - Account `2` balance increases\
+    \ by `200`.\n   - Status column is `'COMMITTED'`.\n3. If insufficient funds exist,\
+    \ the transaction ROLLS BACK:\n   - All account balances remain unchanged.\n \
+    \  - Status column is `'ROLLEDBACK'`.\n\nReturn columns: `id`, `owner`, `balance`,\
+    \ `status` ordered by `id` ascending."
   oa_story: '**PayLoop Core Banking Engine — Uncommitted Ledger Recovery**
 
 
-    During peak UPI transaction hours, network drops between PayLoop''s switch and partner bank servers severed connections
-    midway through wallet debits. Because legacy scripts lacked atomic rollback checks, sender balances were debited but receiver
-    accounts never received funds.
+    During peak UPI transaction hours, network drops between PayLoop''s switch and
+    partner bank servers severed connections midway through wallet debits. Because
+    legacy scripts lacked atomic rollback checks, sender balances were debited but
+    receiver accounts never received funds.
 
 
-    Implement this SQL transaction simulation to model how ACID atomicity enforces all-or-nothing balance transfers and preserves
-    ledger consistency.'
+    Implement this SQL transaction simulation to model how ACID atomicity enforces
+    all-or-nothing balance transfers and preserves ledger consistency.'
   trigger_keywords:
   - atomic money transfer transaction
   - Accounts
   - ROLLEDBACK
   examples:
-  - input: 'Accounts: [(1, ''Aarav'', 1000), (2, ''Priya'', 500)], transfer 200 from 1 to 2'
+  - input: 'Accounts: [(1, ''Aarav'', 1000), (2, ''Priya'', 500)], transfer 200 from
+      1 to 2'
     output: '[(1, ''Aarav'', 800, ''COMMITTED''), (2, ''Priya'', 700, ''COMMITTED'')]'
-    explanation: 'Aarav has 1000 >= 200, so transfer commits: Aarav becomes 800, Priya becomes 700.'
+    explanation: 'Aarav has 1000 >= 200, so transfer commits: Aarav becomes 800, Priya
+      becomes 700.'
   constraints:
   - Accounts table contains between 2 and 1000 rows
   - balance >= 0
 constraint_quiz:
-  prompt: What does the 'A' (Atomicity) in ACID guarantee during a multi-row database transaction?
+  prompt: What does the 'A' (Atomicity) in ACID guarantee during a multi-row database
+    transaction?
   options:
-  - Either all SQL modifications in the transaction succeed and commit, or all are completely undone (rolled back)
+  - Either all SQL modifications in the transaction succeed and commit, or all are
+    completely undone (rolled back)
   - Transactions execute on only one CPU core
   - Transactions run in zero nanoseconds
   - Data is compressed using gzip
   answer: 0
-  explanation: 'Atomicity ensures all-or-nothing execution: if any statement in the transaction fails or aborts, all prior
-    changes made within the transaction are rolled back.'
+  explanation: 'Atomicity ensures all-or-nothing execution: if any statement in the
+    transaction fails or aborts, all prior changes made within the transaction are
+    rolled back.'
 pattern_quiz:
-  prompt: How does a SQL CASE statement simulate conditional transaction execution in a single query?
+  prompt: How does a SQL CASE statement simulate conditional transaction execution
+    in a single query?
   options:
-  - By checking the subquery predicate `(SELECT balance FROM Accounts WHERE id = 1) >= 200` inside the CASE expression
+  - By checking the subquery predicate `(SELECT balance FROM Accounts WHERE id = 1)
+    >= 200` inside the CASE expression
   - By creating an asynchronous thread in SQLite
   - By dropping the table on error
   - By converting integer balances to floating-point numbers
   answer: 0
-  explanation: Evaluating the sender balance check in the outer CASE branch determines whether to apply the balance shift
-    or keep the original balance untouched.
-schema_sql: "CREATE TABLE Accounts (\n    id INTEGER PRIMARY KEY,\n    owner TEXT,\n    balance INTEGER\n);"
-seed_sql: "INSERT INTO Accounts VALUES\n    (1, 'Aarav', 1000),\n    (2, 'Priya', 500),\n    (3, 'Vikram', 300);"
+  explanation: Evaluating the sender balance check in the outer CASE branch determines
+    whether to apply the balance shift or keep the original balance untouched.
+schema_sql: "CREATE TABLE Accounts (\n    id INTEGER PRIMARY KEY,\n    owner TEXT,\n\
+  \    balance INTEGER\n);"
+seed_sql: "INSERT INTO Accounts VALUES\n    (1, 'Aarav', 1000),\n    (2, 'Priya',\
+  \ 500),\n    (3, 'Vikram', 300);"
 function:
   name: execute_sql
   params: []
   returns: any
   compare: exact
-starter_code: "-- Write your SQL query below to simulate atomic transfer of 200 from id 1 to id 2\nSELECT\n    id,\n    owner,\n\
-  \    balance,\n    'COMMITTED' AS status\nFROM Accounts\nORDER BY id;\n"
+starter_code: "-- Write your SQL query below to simulate atomic transfer of 200 from\
+  \ id 1 to id 2\nSELECT\n    id,\n    owner,\n    balance,\n    'COMMITTED' AS status\n\
+  FROM Accounts\nORDER BY id;\n"
 tests:
 - args: []
   expected:
@@ -121,8 +140,8 @@ drills:
   function:
     name: execute_sql
     params: []
-  starter_code: 'SELECT id, CASE WHEN id = 1 THEN balance - 200 WHEN id = 2 THEN balance + 200 ELSE balance END AS balance
-    FROM Accounts ORDER BY id;
+  starter_code: 'SELECT id, CASE WHEN id = 1 THEN balance - 200 WHEN id = 2 THEN balance
+    + 200 ELSE balance END AS balance FROM Accounts ORDER BY id;
 
     '
   tests:
@@ -134,8 +153,8 @@ drills:
       - 700
     - - 3
       - 300
-  solution: 'SELECT id, CASE WHEN id = 1 THEN balance - 200 WHEN id = 2 THEN balance + 200 ELSE balance END AS balance FROM
-    Accounts ORDER BY id;
+  solution: 'SELECT id, CASE WHEN id = 1 THEN balance - 200 WHEN id = 2 THEN balance
+    + 200 ELSE balance END AS balance FROM Accounts ORDER BY id;
 
     '
   hint: Use CASE WHEN id = 1 ... WHEN id = 2 ... ELSE balance END.
@@ -146,22 +165,24 @@ drills:
   function:
     name: execute_sql
     params: []
-  starter_code: 'SELECT CASE WHEN (SELECT balance FROM Accounts WHERE id = 1) >= 200 THEN ''COMMITTED'' ELSE ''ROLLEDBACK''
-    END AS status;
+  starter_code: 'SELECT CASE WHEN (SELECT balance FROM Accounts WHERE id = 1) >= 200
+    THEN ''COMMITTED'' ELSE ''ROLLEDBACK'' END AS status;
 
     '
   tests:
   - args: []
     expected:
     - - COMMITTED
-  solution: 'SELECT CASE WHEN (SELECT balance FROM Accounts WHERE id = 1) >= 200 THEN ''COMMITTED'' ELSE ''ROLLEDBACK'' END
-    AS status;
+  solution: 'SELECT CASE WHEN (SELECT balance FROM Accounts WHERE id = 1) >= 200 THEN
+    ''COMMITTED'' ELSE ''ROLLEDBACK'' END AS status;
 
     '
   hint: Return COMMITTED or ROLLEDBACK.
 hints:
-- Use `(SELECT balance FROM Accounts WHERE id = 1) >= 200` to test if Account 1 has sufficient funds.
-- In the `balance` expression, wrap the id checks inside a condition that tests the sender balance.
+- Use `(SELECT balance FROM Accounts WHERE id = 1) >= 200` to test if Account 1 has
+  sufficient funds.
+- In the `balance` expression, wrap the id checks inside a condition that tests the
+  sender balance.
 - '| # Pseudocode Blueprint
 
   | SELECT id, owner,
@@ -176,33 +197,41 @@ hints:
 
   |   ELSE balance END AS balance,
 
-  |   CASE WHEN sender_balance >= 200 THEN ''COMMITTED'' ELSE ''ROLLEDBACK'' END AS status
+  |   CASE WHEN sender_balance >= 200 THEN ''COMMITTED'' ELSE ''ROLLEDBACK'' END AS
+  status
 
   | FROM Accounts ORDER BY id;'
 solution:
-  code: "SELECT\n    id,\n    owner,\n    CASE\n        WHEN (SELECT balance FROM Accounts WHERE id = 1) >= 200 THEN\n   \
-    \         CASE\n                WHEN id = 1 THEN balance - 200\n                WHEN id = 2 THEN balance + 200\n     \
-    \           ELSE balance\n            END\n        ELSE balance\n    END AS balance,\n    CASE\n        WHEN (SELECT balance\
-    \ FROM Accounts WHERE id = 1) >= 200 THEN 'COMMITTED'\n        ELSE 'ROLLEDBACK'\n    END AS status\nFROM Accounts\nORDER\
-    \ BY id;\n"
-  explanation: 'The query checks the precondition: Account 1 must have at least 200 units. If true, Account 1 is decremented
-    by 200 and Account 2 is incremented by 200, outputting ''COMMITTED''. If Account 1 has less than 200, balances remain
-    untouched and status reports ''ROLLEDBACK'', simulating atomic all-or-nothing execution.'
+  code: "SELECT\n    id,\n    owner,\n    CASE\n        WHEN (SELECT balance FROM\
+    \ Accounts WHERE id = 1) >= 200 THEN\n            CASE\n                WHEN id\
+    \ = 1 THEN balance - 200\n                WHEN id = 2 THEN balance + 200\n   \
+    \             ELSE balance\n            END\n        ELSE balance\n    END AS\
+    \ balance,\n    CASE\n        WHEN (SELECT balance FROM Accounts WHERE id = 1)\
+    \ >= 200 THEN 'COMMITTED'\n        ELSE 'ROLLEDBACK'\n    END AS status\nFROM\
+    \ Accounts\nORDER BY id;\n"
+  explanation: 'The query checks the precondition: Account 1 must have at least 200
+    units. If true, Account 1 is decremented by 200 and Account 2 is incremented by
+    200, outputting ''COMMITTED''. If Account 1 has less than 200, balances remain
+    untouched and status reports ''ROLLEDBACK'', simulating atomic all-or-nothing
+    execution.'
   time: O(N) single scan of Accounts table
   space: O(1) memory overhead
-pitch_script: '**(Clarify)** "We need to simulate an atomic bank transfer of 200 units from Account 1 to Account 2, committing
-  if the sender has sufficient funds, or rolling back without mutating balances if funds are insufficient."
+pitch_script: '**(Clarify)** "We need to simulate an atomic bank transfer of 200 units
+  from Account 1 to Account 2, committing if the sender has sufficient funds, or rolling
+  back without mutating balances if funds are insufficient."
 
 
-  **(Brute force)** "Executing separate UPDATE statements without an atomic check risks negative balances or orphaned debits
-  if a crash occurs between statements."
+  **(Brute force)** "Executing separate UPDATE statements without an atomic check
+  risks negative balances or orphaned debits if a crash occurs between statements."
 
 
-  **(Trigger)** "Simulating all-or-nothing transfer preconditions with a status outcome signals ACID atomicity modeling."
+  **(Trigger)** "Simulating all-or-nothing transfer preconditions with a status outcome
+  signals ACID atomicity modeling."
 
 
-  **(Optimal)** "We evaluate `(SELECT balance FROM Accounts WHERE id = 1) >= 200`. In the balance column, if sufficient funds
-  exist, we subtract 200 from id 1 and add 200 to id 2. Otherwise, we leave the balance unchanged. The status column similarly
+  **(Optimal)** "We evaluate `(SELECT balance FROM Accounts WHERE id = 1) >= 200`.
+  In the balance column, if sufficient funds exist, we subtract 200 from id 1 and
+  add 200 to id 2. Otherwise, we leave the balance unchanged. The status column similarly
   reports COMMITTED or ROLLEDBACK."
 
 
@@ -210,8 +239,268 @@ pitch_script: '**(Clarify)** "We need to simulate an atomic bank transfer of 200
 twist:
   lc: 9322
   title: Optimistic Locking & Lost Update Prevention
-  why: Once atomicity is guaranteed, concurrent transactions updating the same row require optimistic locking to prevent lost
-    updates.
+  why: Once atomicity is guaranteed, concurrent transactions updating the same row
+    require optimistic locking to prevent lost updates.
 viz:
   title: ACID Transaction State Pipeline
   type: sql_pipeline
+journey:
+- id: w25_s1_split_brain_transfers
+  title: The Split-Brain Money Transfer & Atomicity
+  subtitle: Why multi-step ledger updates require all-or-nothing execution boundaries
+  scenario: 'Transferring ₹200 from Aarav to Priya requires two distinct operations:
+    UPDATE Accounts SET balance = balance - 200 WHERE id = 1 and UPDATE Accounts SET
+    balance = balance + 200 WHERE id = 2. What happens if the network drops between
+    statement 1 and statement 2?'
+  mechanism: Without an explicit transaction boundary, each SQL update commits independently.
+    A failure halfway through debits the sender while never crediting the recipient,
+    creating phantom balance loss.
+  prediction:
+    prompt: If the power cuts off between two unfenced UPDATE statements during a
+      bank transfer, what state is the ledger left in after reboot?
+    choices:
+    - id: opt_a
+      label: 'Corrupted state: the sender has lost ₹200, the recipient never received
+        it, and total money in the system has decreased.'
+      explanation: Correct! Unfenced operations violate Atomicity, leaving partial
+        side-effects in storage.
+      is_correct: true
+    - id: opt_b
+      label: The database automatically detects the intent and completes statement
+        2 upon reboot.
+      explanation: Impossible! Databases have no magical knowledge of subsequent intended
+        queries.
+      is_correct: false
+    - id: opt_c
+      label: The database rolls back statement 1 automatically even without a transaction
+        block.
+      explanation: Incorrect! In autocommit mode, statement 1 committed durably to
+        disk.
+      is_correct: false
+    revealed_explanation: 'ACID Atomicity guarantees that a set of operations executes
+      as an indivisible unit: either all succeed and commit, or all abort and roll
+      back.'
+  controls:
+  - id: simulate_crash_between_statements
+    label: Inject Crash Mid-Transfer
+    type: toggle
+    default: true
+    description: Simulate power loss between debit and credit queries
+  - id: wrap_in_transaction
+    label: Wrap in BEGIN ... COMMIT Block
+    type: toggle
+    default: false
+    description: Enforce atomic rollback boundaries
+  visualizer_type: sql_pipeline
+  visualizer_config:
+    title: Atomic Money Transfer Ledger
+- id: w25_s2_wal_crash_recovery
+  title: Atomicity & The Write-Ahead Log (WAL) Crash Recovery
+  subtitle: How relational databases survive sudden power loss without losing committed
+    transactions
+  scenario: How does a relational database ensure it never loses a committed transaction
+    even if the operating system crashes seconds later?
+  mechanism: 'Write-Ahead Logging (WAL): Before dirty 8KB heap pages are flushed to
+    slow disk tables, changes are appended sequentially to the WAL log file. On reboot
+    after a crash, the recovery process performs REDO for all committed transactions
+    and UNDO for any uncommitted transactions.'
+  prediction:
+    prompt: Why does a database write to the WAL on disk before modifying the actual
+      table heap pages?
+    choices:
+    - id: opt_a
+      label: Sequential disk writes to WAL are orders of magnitude faster than random
+        writes to scattered table pages, ensuring durability with minimal latency.
+      explanation: Correct! Appending sequential log records guarantees durability
+        without stalling on random disk seeks.
+      is_correct: true
+    - id: opt_b
+      label: WAL files are stored in cloud object storage, not on physical disks.
+      explanation: Incorrect! WAL logs are written to high-speed local NVMe or SSD
+        storage.
+      is_correct: false
+    - id: opt_c
+      label: The database cannot modify heap pages until the operating system restarts.
+      explanation: Incorrect! Buffer pool pages are modified in RAM continuously.
+      is_correct: false
+    revealed_explanation: WAL logging enables both high-throughput writes and rock-solid
+      crash recovery.
+  controls:
+  - id: wal_sync_commit
+    label: Synchronous Commit (fsync to disk)
+    type: toggle
+    default: true
+    description: Wait for physical disk flush before returning success
+  visualizer_type: sql_pipeline
+  visualizer_config:
+    title: Write-Ahead Log (WAL) Engine
+- id: w25_s3_dirty_reads_isolation
+  title: 'Isolation Levels: Dirty Reads vs Non-Repeatable Reads'
+  subtitle: Understanding the 4 ANSI SQL isolation levels and read phenomena
+  scenario: Transaction A transfers money and updates balance to ₹800. Transaction
+    B reads the ₹800. Then Transaction A encounters an error and ROLLS BACK. What
+    did Transaction B just see?
+  mechanism: A Dirty Read occurs when a transaction reads uncommitted changes from
+    another transaction. Under READ COMMITTED (PostgreSQL default), transactions only
+    read rows that have been officially committed. Under REPEATABLE READ, a transaction
+    sees a snapshot of the database as of the transaction start time.
+  prediction:
+    prompt: Under READ COMMITTED, can a transaction read row X, have another transaction
+      modify and commit row X, and then read row X again and see different values?
+    choices:
+    - id: opt_a
+      label: Yes! That is the definition of a Non-Repeatable Read, which is permitted
+        in Read Committed isolation.
+      explanation: Correct! In Read Committed, each SELECT statement takes a fresh
+        snapshot of committed data.
+      is_correct: true
+    - id: opt_b
+      label: No, Read Committed prevents all concurrent row changes.
+      explanation: Misconception! Read Committed only prevents reading UNCOMMITTED
+        data.
+      is_correct: false
+    - id: opt_c
+      label: Yes, but only if the row is a foreign key.
+      explanation: Incorrect! Non-repeatable reads apply to any table column.
+      is_correct: false
+    revealed_explanation: Read Committed balances high concurrency with dirty-read
+      prevention, while Repeatable Read provides consistent point-in-time snapshots.
+  controls:
+  - id: isolation_tier
+    label: Transaction Isolation Level
+    type: select
+    default: READ_COMMITTED
+    options:
+    - READ_UNCOMMITTED
+    - READ_COMMITTED
+    - REPEATABLE_READ
+    - SERIALIZABLE
+    description: Select isolation level to evaluate concurrent visibility phenomena
+  visualizer_type: sql_pipeline
+  visualizer_config:
+    title: Isolation Levels & Read Anomalies
+- id: w25_s4_lost_updates_for_update
+  title: The Lost Update Anomaly & Row-Level Locking (FOR UPDATE)
+  subtitle: How concurrent read-modify-write patterns overwrite each other without
+    locks
+  scenario: Two concurrent customers click "Buy Last Ticket". Both read tickets =
+    1. Both compute tickets - 1 = 0. Both execute UPDATE tickets = 0. Two tickets
+    were sold, but only one existed in inventory!
+  mechanism: The Lost Update anomaly occurs under concurrent read-modify-write patterns.
+    In PostgreSQL, using SELECT ... FOR UPDATE acquires an exclusive row-level write
+    lock, forcing Transaction 2 to block until Transaction 1 commits.
+  prediction:
+    prompt: How does SELECT * FROM inventory WHERE id = 1 FOR UPDATE prevent two concurrent
+      checkouts from overselling inventory?
+    choices:
+    - id: opt_a
+      label: It locks the physical row in the buffer pool, forcing concurrent transactions
+        trying to lock or update the same row to wait in a queue.
+      explanation: Correct! Row-level exclusive locks serialize concurrent updates
+        on contested rows.
+      is_correct: true
+    - id: opt_b
+      label: It locks the entire database server, pausing all read queries across
+        all tables.
+      explanation: Incorrect! Row-level locking locks only the filtered rows, allowing
+        other tables to operate at full speed.
+      is_correct: false
+    - id: opt_c
+      label: It cancels the second user's credit card transaction immediately.
+      explanation: Incorrect! The second transaction waits for the lock; it can then
+        observe tickets = 0 and fail gracefully.
+      is_correct: false
+    revealed_explanation: Pessimistic row locking (FOR UPDATE) is the standard SQL
+      mechanism for eliminating Lost Updates in high-concurrency checkouts.
+  controls:
+  - id: use_pessimistic_locking
+    label: Use SELECT ... FOR UPDATE
+    type: toggle
+    default: true
+    description: Acquire exclusive row-level lock on account records
+  visualizer_type: sql_pipeline
+  visualizer_config:
+    title: Row-Level Locking & Lost Updates
+- id: w25_s5_write_skew_serializable
+  title: Write Skew & Serializable Snapshot Isolation (SSI)
+  subtitle: 'The on-call doctor paradox: why constraints break even when rows do not
+    overlap'
+  scenario: Two doctors are on call. Hospital policy requires at least one doctor
+    on call. Both doctors check out concurrently. Both see that the other is active.
+    Both check out. Zero doctors are on call!
+  mechanism: Write Skew occurs when two transactions read overlapping datasets, satisfy
+    a constraint, and then modify non-overlapping rows that mutually violate the constraint.
+    Only SERIALIZABLE isolation detects read-write conflict dependencies (rw-antidependencies)
+    and aborts one transaction.
+  prediction:
+    prompt: Why does standard Repeatable Read (Snapshot Isolation) fail to prevent
+      the two doctors on-call dilemma?
+    choices:
+    - id: opt_a
+      label: Because each doctor modifies their OWN row, neither transaction experiences
+        a row-level write conflict, yet the global business invariant is violated.
+      explanation: Correct! Snapshot isolation detects write-write conflicts on identical
+        rows, not cross-row semantic invariants.
+      is_correct: true
+    - id: opt_b
+      label: Because doctor schedules are stored in NoSQL databases.
+      explanation: Incorrect! Write skew is a classical relational database anomaly.
+      is_correct: false
+    - id: opt_c
+      label: Because transactions cannot read other transactions' user IDs.
+      explanation: Incorrect! Both transactions could read all rows; they simply wrote
+        to different rows.
+      is_correct: false
+    revealed_explanation: Serializable Snapshot Isolation (SSI) in PostgreSQL tracks
+      dependency cycles to guarantee absolute serializability without locking entire
+      tables.
+  controls:
+  - id: enable_serializable_ssi
+    label: Enable SERIALIZABLE Isolation (SSI)
+    type: toggle
+    default: true
+    description: Detect read-write conflict graph cycles and abort colliding transactions
+  visualizer_type: sql_pipeline
+  visualizer_config:
+    title: Write Skew & SSI Dependency Graph
+- id: w25_s6_transfer_challenge
+  title: 'Transfer Challenge: Atomic Money Transfer Transaction with Rollback'
+  subtitle: Implement the conditional balance transfer with atomic rollback in SQL
+  scenario: 'Write a SQL query to simulate an atomic money transfer transaction between
+    accounts: Transfer 200 units from Account 1 (Aarav) to Account 2 (Priya). Verify
+    whether Account 1 has at least 200 units. If sufficient, update both balances
+    and report COMMITTED. If insufficient, leave all balances untouched and report
+    ROLLEDBACK.'
+  mechanism: The query evaluates the balance condition atomically, updating balances
+    only when the invariant holds and tagging status accordingly.
+  prediction:
+    prompt: When Aarav has balance 100 and Priya has 500, what status and balances
+      are returned after a transfer attempt of 200 units?
+    choices:
+    - id: opt_a
+      label: 'Status ROLLEDBACK: Aarav remains 100, Priya remains 500.'
+      explanation: Correct! 100 < 200, so insufficient funds triggers a complete atomic
+        rollback.
+      is_correct: true
+    - id: opt_b
+      label: 'Status COMMITTED: Aarav becomes -100, Priya becomes 700.'
+      explanation: Incorrect! Negative balances violate banking invariants.
+      is_correct: false
+    - id: opt_c
+      label: 'Status COMMITTED: Aarav becomes 0, Priya becomes 600.'
+      explanation: Incorrect! Partial debit violates atomicity.
+      is_correct: false
+    revealed_explanation: Atomicity ensures that ledger consistency is preserved under
+      all edge conditions.
+  controls:
+  - id: sender_initial_balance
+    label: Sender Initial Balance
+    type: slider
+    default: 1000
+    min: 0
+    max: 2000
+    step: 100
+    description: Adjust sender balance above or below transfer threshold (200)
+  visualizer_type: sql_pipeline
+  visualizer_config:
+    title: SQL Transaction Execution Runner

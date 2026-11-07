@@ -147,10 +147,12 @@ flowchart TD
 - [x] **Network Visualizer Enhancement:** Updated [`NetworkPacketFlowVisualizer.tsx`](file:///home/suhas/Desktop/DSA/frontend/src/components/visualizers/NetworkPacketFlowVisualizer.tsx) to automatically route between DNS hierarchical resolution and TCP 3-way handshake based on active configuration and step state.
 - [x] **End-to-End Pipeline Verification:** Full internet ingress pipeline connected: **DNS Resolution (W40) ➔ TCP Handshake (W41) ➔ HTTP Request Lifecycle (W20) ➔ Redis Rate Limiting (W34)**. Backend pytest (32/32) and frontend production build (3.23s) verified.
 
-### Phase 3: Storage, ACID & Caching (Worlds 24, 25, 26, 39)
+### Phase 3: Storage, ACID & Caching (COMPLETED & VERIFIED)
 
-- [ ] Wire `storage_engine` with Redis Cache-Aside & Stampede Mutex (W39).
-- [ ] Wire B-Tree 8KB page visualizer (W24) and ACID transaction isolation anomalies (W25).
+- [x] **World 17 Specification & Content:** Published [`docs/rfc/W17_DBMS_STORAGE.md`](file:///home/suhas/Desktop/DSA/docs/rfc/W17_DBMS_STORAGE.md) and populated [`content/questions/17-dbms-storage/heap-pages-and-scans.yaml`](file:///home/suhas/Desktop/DSA/content/questions/17-dbms-storage/heap-pages-and-scans.yaml) with 6 organic POE stages covering 8KB slotted disk blocks, physical `ctid` addressing, buffer pool cache pollution, B-Tree fanouts, and skip scans.
+- [x] **World 25 Specification & Content:** Published [`docs/rfc/W25_TRANSACTIONS_ACID.md`](file:///home/suhas/Desktop/DSA/docs/rfc/W25_TRANSACTIONS_ACID.md) and populated [`content/questions/25-transactions-acid/sql-acid-money-transfer.yaml`](file:///home/suhas/Desktop/DSA/content/questions/25-transactions-acid/sql-acid-money-transfer.yaml) with 6 organic POE stages covering WAL redo/undo logging, isolation anomalies (Dirty Reads, Non-Repeatable Reads), `SELECT ... FOR UPDATE` row locks, and Write Skew SSI graphs.
+- [x] **World 39 Specification & Content:** Published [`docs/rfc/W39_REDIS_CACHING.md`](file:///home/suhas/Desktop/DSA/docs/rfc/W39_REDIS_CACHING.md) and populated [`content/questions/39-redis-caching/redis-cache-stampede-mutex.yaml`](file:///home/suhas/Desktop/DSA/content/questions/39-redis-caching/redis-cache-stampede-mutex.yaml) with 6 organic POE stages on Cache-Aside lazy loading, TTL expiration, Thundering Herd connection pool crashes, single-flight mutex locks (`SET NX EX`), and DB transactional invariants.
+- [x] **Storage Visualizer Integration:** Connected `CacheRelationalVisualizer` and `SQLPipelineVisualizer` with Mode A simulation parameters. Backend pytest (32/32) and frontend production build (3.98s) verified.
 
 ### Phase 4: Runtime, Concurrency & Memory (Worlds 19, 27, 42, 13)
 

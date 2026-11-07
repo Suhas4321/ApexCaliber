@@ -3,289 +3,604 @@ lc: 9301
 citadel_id: sql_dbms
 brick_layer: 1
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    "Why does running SELECT * FROM logs WHERE user_id = 999 take 15 seconds on an unindexed table even when returning only 1 row?"
-    Relational databases do not store rows as text lines in a flat file. PostgreSQL and SQLite organize data into fixed-size
-    disk blocks (typically 8KB Heap Pages). Without an index, the storage engine has no idea which page holds the record,
-    forcing an exhaustive Sequential Table Scan that loads every single 8KB disk block into RAM buffer pool memory.
-  brute_force: >-
-    Executing unindexed `WHERE` queries across massive tables. The database reads gigabytes of raw disk blocks from storage,
-    saturating disk I/O channels and blowing out database cache hit ratios.
+  problem_it_solves: '"Why does running SELECT * FROM logs WHERE user_id = 999 take
+    15 seconds on an unindexed table even when returning only 1 row?" Relational databases
+    do not store rows as text lines in a flat file. PostgreSQL and SQLite organize
+    data into fixed-size disk blocks (typically 8KB Heap Pages). Without an index,
+    the storage engine has no idea which page holds the record, forcing an exhaustive
+    Sequential Table Scan that loads every single 8KB disk block into RAM buffer pool
+    memory.'
+  brute_force: Executing unindexed `WHERE` queries across massive tables. The database
+    reads gigabytes of raw disk blocks from storage, saturating disk I/O channels
+    and blowing out database cache hit ratios.
   brute_force_complexity: O(N) disk page reads — reading millions of 8KB blocks.
-  key_insight: >-
-    Rows inside 8KB heap pages are addressed by physical Tuple IDs (`ctid`: page number, item index).
-    An index is an auxiliary sorted structure mapping search keys directly to `ctid` pointers,
-    allowing the database to read exactly 1 disk page instead of scanning thousands.
-  real_world: >-
-    Suhas's DynamoDB to PostgreSQL migration (reducing latency from 200ms to 20ms by eliminating full-table scans with indexed lookups),
-    and diagnosing PostgreSQL `EXPLAIN ANALYZE` reports showing `Seq Scan on large_table`.
-
+  key_insight: 'Rows inside 8KB heap pages are addressed by physical Tuple IDs (`ctid`:
+    page number, item index). An index is an auxiliary sorted structure mapping search
+    keys directly to `ctid` pointers, allowing the database to read exactly 1 disk
+    page instead of scanning thousands.'
+  real_world: Suhas's DynamoDB to PostgreSQL migration (reducing latency from 200ms
+    to 20ms by eliminating full-table scans with indexed lookups), and diagnosing
+    PostgreSQL `EXPLAIN ANALYZE` reports showing `Seq Scan on large_table`.
 statement:
-  clean: |
-    Implement a database disk page storage simulator using 8kb heap pages:
-    `simulate_heap_scan(records: list[dict], page_capacity: int, search_id: int) -> dict`.
-    
-    Given a list of database records where each record contains `{"id": int, "data": str}`:
-    1. Organize the records sequentially into fixed-size disk heap pages, where each page holds at most `page_capacity` records.
-       - Page indices start at 0.
-       - A record's physical tuple identifier `ctid` is a 2-element tuple: `(page_index, slot_index)`.
-    2. Simulate an unindexed Sequential Table Scan searching for the record where `id == search_id`:
-       - The storage engine scans pages sequentially starting from page 0.
-       - For each page, it scans the slots from 0 to `page_capacity - 1`.
-       - If the target `search_id` is found, the scan halts immediately on that page.
-    3. Return a dictionary containing:
-       - `total_pages`: total number of allocated pages (0 if records is empty).
-       - `pages_scanned`: number of disk pages loaded into memory before the target was found or table exhausted.
-       - `found`: boolean indicating if the record was located.
-       - `ctid`: the `[page_index, slot_index]` if found, otherwise `null`.
-  oa_story: |
-    **PostgreSQL Storage Engine — Buffer Pool Diagnostic**
-    
-    After migrating our test execution ledger from DynamoDB to PostgreSQL, query latency plummeted from 200ms to 20ms.
-    However, an unindexed status query began triggering high disk I/O alerts during QA test runs.
-    The DBA determined that the database was reading 1,200 8KB disk pages from NVMe storage on every request because
+  clean: "Implement a database disk page storage simulator using 8kb heap pages:\n\
+    `simulate_heap_scan(records: list[dict], page_capacity: int, search_id: int) ->\
+    \ dict`.\n\nGiven a list of database records where each record contains `{\"id\"\
+    : int, \"data\": str}`:\n1. Organize the records sequentially into fixed-size\
+    \ disk heap pages, where each page holds at most `page_capacity` records.\n  \
+    \ - Page indices start at 0.\n   - A record's physical tuple identifier `ctid`\
+    \ is a 2-element tuple: `(page_index, slot_index)`.\n2. Simulate an unindexed\
+    \ Sequential Table Scan searching for the record where `id == search_id`:\n  \
+    \ - The storage engine scans pages sequentially starting from page 0.\n   - For\
+    \ each page, it scans the slots from 0 to `page_capacity - 1`.\n   - If the target\
+    \ `search_id` is found, the scan halts immediately on that page.\n3. Return a\
+    \ dictionary containing:\n   - `total_pages`: total number of allocated pages\
+    \ (0 if records is empty).\n   - `pages_scanned`: number of disk pages loaded\
+    \ into memory before the target was found or table exhausted.\n   - `found`: boolean\
+    \ indicating if the record was located.\n   - `ctid`: the `[page_index, slot_index]`\
+    \ if found, otherwise `null`.\n"
+  oa_story: '**PostgreSQL Storage Engine — Buffer Pool Diagnostic**
+
+
+    After migrating our test execution ledger from DynamoDB to PostgreSQL, query latency
+    plummeted from 200ms to 20ms.
+
+    However, an unindexed status query began triggering high disk I/O alerts during
+    QA test runs.
+
+    The DBA determined that the database was reading 1,200 8KB disk pages from NVMe
+    storage on every request because
+
     it was performing a Full Table Scan.
-    
-    Build this physical heap page simulator to demonstrate how page-packing and sequential scans operate at the disk block layer.
-  trigger_keywords: ["8kb heap pages", "simulate_heap_scan", "records"]
+
+
+    Build this physical heap page simulator to demonstrate how page-packing and sequential
+    scans operate at the disk block layer.
+
+    '
+  trigger_keywords:
+  - 8kb heap pages
+  - simulate_heap_scan
+  - records
   examples:
-    - input: "records = [{'id': 1, 'data': 'A'}, {'id': 2, 'data': 'B'}, {'id': 3, 'data': 'C'}], page_capacity = 2, search_id = 3"
-      output: "{'total_pages': 2, 'pages_scanned': 2, 'found': True, 'ctid': [1, 0]}"
-      explanation: "Page 0 has ids [1, 2], Page 1 has id [3]. Found on Page 1 slot 0 after scanning 2 pages."
-    - input: "records = [{'id': 1, 'data': 'A'}], page_capacity = 2, search_id = 99"
-      output: "{'total_pages': 1, 'pages_scanned': 1, 'found': False, 'ctid': null}"
-      explanation: "Scanned all pages, target not found."
+  - input: 'records = [{''id'': 1, ''data'': ''A''}, {''id'': 2, ''data'': ''B''},
+      {''id'': 3, ''data'': ''C''}], page_capacity = 2, search_id = 3'
+    output: '{''total_pages'': 2, ''pages_scanned'': 2, ''found'': True, ''ctid'':
+      [1, 0]}'
+    explanation: Page 0 has ids [1, 2], Page 1 has id [3]. Found on Page 1 slot 0
+      after scanning 2 pages.
+  - input: 'records = [{''id'': 1, ''data'': ''A''}], page_capacity = 2, search_id
+      = 99'
+    output: '{''total_pages'': 1, ''pages_scanned'': 1, ''found'': False, ''ctid'':
+      null}'
+    explanation: Scanned all pages, target not found.
   constraints:
-    - "records contains between 0 and 10,000 items"
-    - "page_capacity >= 1"
-
+  - records contains between 0 and 10,000 items
+  - page_capacity >= 1
 constraint_quiz:
-  prompt: >-
-    In PostgreSQL, what does a physical Tuple ID (`ctid`) such as `(42, 7)` represent?
+  prompt: In PostgreSQL, what does a physical Tuple ID (`ctid`) such as `(42, 7)`
+    represent?
   options:
-    - "Transaction ID 42 and timestamp 7"
-    - "Heap Page Block 42 and Line Pointer / Slot 7 within that page"
-    - "User ID 42 and table ID 7"
-    - "B-Tree depth 42 and offset 7"
+  - Transaction ID 42 and timestamp 7
+  - Heap Page Block 42 and Line Pointer / Slot 7 within that page
+  - User ID 42 and table ID 7
+  - B-Tree depth 42 and offset 7
   answer: 1
-  explanation: >-
-    In PostgreSQL internals, `ctid` points directly to the physical disk location: (block_number, tuple_index).
-
+  explanation: 'In PostgreSQL internals, `ctid` points directly to the physical disk
+    location: (block_number, tuple_index).'
 pattern_quiz:
   prompt: What is the typical default disk page size in PostgreSQL and MySQL InnoDB?
   options:
-    - "8KB in PostgreSQL, 16KB in InnoDB"
-    - "1MB in both"
-    - "512 bytes"
-    - "64KB"
+  - 8KB in PostgreSQL, 16KB in InnoDB
+  - 1MB in both
+  - 512 bytes
+  - 64KB
   answer: 0
-  explanation: >-
-    PostgreSQL allocates 8KB heap pages by default, while MySQL InnoDB uses 16KB pages.
-
+  explanation: PostgreSQL allocates 8KB heap pages by default, while MySQL InnoDB
+    uses 16KB pages.
 function:
   name: simulate_heap_scan
   params:
-    - {name: records}
-    - {name: page_capacity}
-    - {name: search_id}
-
-starter_code: |
-  class Solution:
-      def simulate_heap_scan(self, records: list[dict], page_capacity: int, search_id: int) -> dict:
-          pass
-
+  - name: records
+  - name: page_capacity
+  - name: search_id
+starter_code: "class Solution:\n    def simulate_heap_scan(self, records: list[dict],\
+  \ page_capacity: int, search_id: int) -> dict:\n        pass\n"
 tests:
-  - args:
-      - [
-          {"id": 10, "data": "Alpha"},
-          {"id": 20, "data": "Beta"},
-          {"id": 30, "data": "Gamma"},
-          {"id": 40, "data": "Delta"}
-        ]
-      - 2
-      - 30
-    expected:
-      total_pages: 2
-      pages_scanned: 2
-      found: true
-      ctid: [1, 0]
-  - args:
-      - [
-          {"id": 1, "data": "X"},
-          {"id": 2, "data": "Y"}
-        ]
-      - 5
-      - 2
-    expected:
-      total_pages: 1
-      pages_scanned: 1
-      found: true
-      ctid: [0, 1]
-  - args:
-      - []
-      - 4
-      - 99
-    expected:
-      total_pages: 0
-      pages_scanned: 0
-      found: false
-      ctid: null
-  - args:
-      - [
-          {"id": 100, "data": "Run1"},
-          {"id": 101, "data": "Run2"},
-          {"id": 102, "data": "Run3"}
-        ]
-      - 2
-      - 999
-    expected:
-      total_pages: 2
-      pages_scanned: 2
-      found: false
-      ctid: null
-
+- args:
+  - - id: 10
+      data: Alpha
+    - id: 20
+      data: Beta
+    - id: 30
+      data: Gamma
+    - id: 40
+      data: Delta
+  - 2
+  - 30
+  expected:
+    total_pages: 2
+    pages_scanned: 2
+    found: true
+    ctid:
+    - 1
+    - 0
+- args:
+  - - id: 1
+      data: X
+    - id: 2
+      data: Y
+  - 5
+  - 2
+  expected:
+    total_pages: 1
+    pages_scanned: 1
+    found: true
+    ctid:
+    - 0
+    - 1
+- args:
+  - []
+  - 4
+  - 99
+  expected:
+    total_pages: 0
+    pages_scanned: 0
+    found: false
+    ctid: null
+- args:
+  - - id: 100
+      data: Run1
+    - id: 101
+      data: Run2
+    - id: 102
+      data: Run3
+  - 2
+  - 999
+  expected:
+    total_pages: 2
+    pages_scanned: 2
+    found: false
+    ctid: null
 visualize_test: 0
-
 drills:
-  - title: Page count calculation
-    skill: setup
-    goal: Compute ceil(N / capacity) without math.ceil.
-    instructions: |
-      Return total pages needed to hold `n` records with `capacity` per page.
-    function:
-      name: calc_page_count
-      params: [{name: n}, {name: capacity}]
-    starter_code: |
-      class Solution:
-          def calc_page_count(self, n: int, capacity: int) -> int:
-              pass
-    tests:
-      - {args: [5, 2], expected: 3}
-      - {args: [4, 2], expected: 2}
-      - {args: [0, 2], expected: 0}
-    solution: |
-      class Solution:
-          def calc_page_count(self, n: int, capacity: int) -> int:
-              if n == 0:
-                  return 0
-              return (n + capacity - 1) // capacity
-    hint: "Use `(n + capacity - 1) // capacity`."
+- title: Page count calculation
+  skill: setup
+  goal: Compute ceil(N / capacity) without math.ceil.
+  instructions: 'Return total pages needed to hold `n` records with `capacity` per
+    page.
 
-  - title: Calculate tuple ctid coordinates
-    skill: core
-    goal: Compute page and slot from index.
-    instructions: |
-      Given record index `i` and `capacity`, return `[i // capacity, i % capacity]`.
-    function:
-      name: get_ctid
-      params: [{name: i}, {name: capacity}]
-    starter_code: |
-      class Solution:
-          def get_ctid(self, i: int, capacity: int) -> list[int]:
-              pass
-    tests:
-      - {args: [3, 2], expected: [1, 1]}
-      - {args: [0, 5], expected: [0, 0]}
-    solution: |
-      class Solution:
-          def get_ctid(self, i: int, capacity: int) -> list[int]:
-              return [i // capacity, i % capacity]
-    hint: "Use `[i // capacity, i % capacity]`."
+    '
+  function:
+    name: calc_page_count
+    params:
+    - name: n
+    - name: capacity
+  starter_code: "class Solution:\n    def calc_page_count(self, n: int, capacity:\
+    \ int) -> int:\n        pass\n"
+  tests:
+  - args:
+    - 5
+    - 2
+    expected: 3
+  - args:
+    - 4
+    - 2
+    expected: 2
+  - args:
+    - 0
+    - 2
+    expected: 0
+  solution: "class Solution:\n    def calc_page_count(self, n: int, capacity: int)\
+    \ -> int:\n        if n == 0:\n            return 0\n        return (n + capacity\
+    \ - 1) // capacity\n"
+  hint: Use `(n + capacity - 1) // capacity`.
+- title: Calculate tuple ctid coordinates
+  skill: core
+  goal: Compute page and slot from index.
+  instructions: 'Given record index `i` and `capacity`, return `[i // capacity, i
+    % capacity]`.
 
-  - title: Early exit scan simulation
-    skill: edge
-    goal: Stop scan immediately when target found.
-    instructions: |
-      Find index of `target` in `nums`. Return index if found, else -1.
-    function:
-      name: linear_find
-      params: [{name: nums}, {name: target}]
-    starter_code: |
-      class Solution:
-          def linear_find(self, nums: list[int], target: int) -> int:
-              pass
-    tests:
-      - {args: [[10, 20, 30], 20], expected: 1}
-      - {args: [[10], 99], expected: -1}
-    solution: |
-      class Solution:
-          def linear_find(self, nums: list[int], target: int) -> int:
-              for idx, x in enumerate(nums):
-                  if x == target:
-                      return idx
-              return -1
-    hint: "Loop with enumerate and return early."
+    '
+  function:
+    name: get_ctid
+    params:
+    - name: i
+    - name: capacity
+  starter_code: "class Solution:\n    def get_ctid(self, i: int, capacity: int) ->\
+    \ list[int]:\n        pass\n"
+  tests:
+  - args:
+    - 3
+    - 2
+    expected:
+    - 1
+    - 1
+  - args:
+    - 0
+    - 5
+    expected:
+    - 0
+    - 0
+  solution: "class Solution:\n    def get_ctid(self, i: int, capacity: int) -> list[int]:\n\
+    \        return [i // capacity, i % capacity]\n"
+  hint: Use `[i // capacity, i % capacity]`.
+- title: Early exit scan simulation
+  skill: edge
+  goal: Stop scan immediately when target found.
+  instructions: 'Find index of `target` in `nums`. Return index if found, else -1.
 
+    '
+  function:
+    name: linear_find
+    params:
+    - name: nums
+    - name: target
+  starter_code: "class Solution:\n    def linear_find(self, nums: list[int], target:\
+    \ int) -> int:\n        pass\n"
+  tests:
+  - args:
+    - - 10
+      - 20
+      - 30
+    - 20
+    expected: 1
+  - args:
+    - - 10
+    - 99
+    expected: -1
+  solution: "class Solution:\n    def linear_find(self, nums: list[int], target: int)\
+    \ -> int:\n        for idx, x in enumerate(nums):\n            if x == target:\n\
+    \                return idx\n        return -1\n"
+  hint: Loop with enumerate and return early.
 hints:
-  - "If `records` is empty, return total_pages: 0, pages_scanned: 0, found: False, ctid: None."
-  - "Divide records into chunks of size `page_capacity`."
-  - "Scan page by page: if `search_id` is found in page `p` at slot `s`, pages_scanned is `p + 1` and ctid is `[p, s]`."
-
+- 'If `records` is empty, return total_pages: 0, pages_scanned: 0, found: False, ctid:
+  None.'
+- Divide records into chunks of size `page_capacity`.
+- 'Scan page by page: if `search_id` is found in page `p` at slot `s`, pages_scanned
+  is `p + 1` and ctid is `[p, s]`.'
 solution:
-  code: |
-    class Solution:
-        def simulate_heap_scan(self, records: list[dict], page_capacity: int, search_id: int) -> dict:
-            if not records:
-                return {
-                    "total_pages": 0,
-                    "pages_scanned": 0,
-                    "found": False,
-                    "ctid": None,
-                }
+  code: "class Solution:\n    def simulate_heap_scan(self, records: list[dict], page_capacity:\
+    \ int, search_id: int) -> dict:\n        if not records:\n            return {\n\
+    \                \"total_pages\": 0,\n                \"pages_scanned\": 0,\n\
+    \                \"found\": False,\n                \"ctid\": None,\n        \
+    \    }\n\n        total_pages = (len(records) + page_capacity - 1) // page_capacity\n\
+    \n        pages_scanned = 0\n        found = False\n        target_ctid = None\n\
+    \n        for page_idx in range(total_pages):\n            pages_scanned += 1\n\
+    \            start = page_idx * page_capacity\n            page_records = records[start\
+    \ : start + page_capacity]\n\n            for slot_idx, rec in enumerate(page_records):\n\
+    \                if rec[\"id\"] == search_id:\n                    found = True\n\
+    \                    target_ctid = [page_idx, slot_idx]\n                    break\n\
+    \n            if found:\n                break\n\n        return {\n         \
+    \   \"total_pages\": total_pages,\n            \"pages_scanned\": pages_scanned,\n\
+    \            \"found\": found,\n            \"ctid\": target_ctid,\n        }\n"
+  explanation: 'The simulator mirrors database buffer pool mechanics. Records are
+    chunked into 8KB page blocks.
 
-            total_pages = (len(records) + page_capacity - 1) // page_capacity
-
-            pages_scanned = 0
-            found = False
-            target_ctid = None
-
-            for page_idx in range(total_pages):
-                pages_scanned += 1
-                start = page_idx * page_capacity
-                page_records = records[start : start + page_capacity]
-
-                for slot_idx, rec in enumerate(page_records):
-                    if rec["id"] == search_id:
-                        found = True
-                        target_ctid = [page_idx, slot_idx]
-                        break
-
-                if found:
-                    break
-
-            return {
-                "total_pages": total_pages,
-                "pages_scanned": pages_scanned,
-                "found": found,
-                "ctid": target_ctid,
-            }
-  explanation: |
-    The simulator mirrors database buffer pool mechanics. Records are chunked into 8KB page blocks.
     A sequential table scan iterates through pages starting at page 0.
+
     Loading a page into memory increments `pages_scanned`.
-    
-    If an item matches `search_id`, the scan halts immediately, returning the physical `ctid = [page, slot]`.
-    If unindexed, searching for a non-existent key forces the engine to read every single page into memory.
+
+
+    If an item matches `search_id`, the scan halts immediately, returning the physical
+    `ctid = [page, slot]`.
+
+    If unindexed, searching for a non-existent key forces the engine to read every
+    single page into memory.
+
+    '
   time: O(N) worst case when searching unindexed heap pages
   space: O(1) auxiliary working memory
+pitch_script: '**(Clarify)** "We need to simulate physical 8KB heap page storage and
+  an unindexed sequential table scan, returning total allocated pages, pages read
+  into RAM, and the tuple ID coordinates."
 
-pitch_script: |
-  **(Clarify)** "We need to simulate physical 8KB heap page storage and an unindexed sequential table scan, returning total allocated pages, pages read into RAM, and the tuple ID coordinates."
 
-  **(Basement Insight)** "Databases execute disk I/O in fixed block chunks (8KB heap pages in PostgreSQL). A row's physical address is its `ctid` (page number, slot). Without an index, the storage engine must fetch every page from disk into the buffer cache sequentially."
+  **(Basement Insight)** "Databases execute disk I/O in fixed block chunks (8KB heap
+  pages in PostgreSQL). A row''s physical address is its `ctid` (page number, slot).
+  Without an index, the storage engine must fetch every page from disk into the buffer
+  cache sequentially."
 
-  **(Solution)** "We partition records into pages of size `page_capacity`. We simulate the sequential scan by inspecting page by page, tracking `pages_scanned`. When the target ID matches, we record `[page_idx, slot_idx]` and break early."
 
-  **(Complexity)** "Runs in O(N) time across N records, using O(1) auxiliary space beyond input records."
+  **(Solution)** "We partition records into pages of size `page_capacity`. We simulate
+  the sequential scan by inspecting page by page, tracking `pages_scanned`. When the
+  target ID matches, we record `[page_idx, slot_idx]` and break early."
 
+
+  **(Complexity)** "Runs in O(N) time across N records, using O(1) auxiliary space
+  beyond input records."
+
+  '
 twist:
   lc: 9302
   title: Buffer Pool LRU Eviction Simulation
-  why: >-
-    When physical RAM can only hold 100 pages, reading 1,000 pages during a sequential scan evicts hot cached pages.
-    PostgreSQL uses a 256KB ring buffer for large sequential scans to prevent buffer pool cache poisoning.
-
+  why: When physical RAM can only hold 100 pages, reading 1,000 pages during a sequential
+    scan evicts hot cached pages. PostgreSQL uses a 256KB ring buffer for large sequential
+    scans to prevent buffer pool cache poisoning.
 viz:
-  title: "8KB Heap Page Disk Storage Engine"
+  title: 8KB Heap Page Disk Storage Engine
+journey:
+- id: w17_s1_flat_file_illusion
+  title: The Flat File Illusion & The 8KB Disk Block Boundary
+  subtitle: Why relational databases cannot read or write individual bytes directly
+    to disk
+  scenario: When storing 10,000,000 user rows, why can't a database engine read and
+    write individual bytes directly to disk like a simple text file?
+  mechanism: Physical storage devices (NVMe SSDs and HDDs) operate in discrete physical
+    blocks. Databases organize data into fixed-size Pages (typically 8KB). A database
+    engine cannot read less than one full 8KB page from disk at a time.
+  prediction:
+    prompt: If a row is 100 bytes in size and you query for 1 row on an unindexed
+      table, how much physical disk data must the storage engine load into RAM?
+    choices:
+    - id: opt_a
+      label: At least 8KB (one complete disk page), and potentially every single 8KB
+        page in the table if unindexed.
+      explanation: Correct! Database I/O is strictly page-oriented; the storage engine
+        reads complete 8KB blocks into the buffer pool.
+      is_correct: true
+    - id: opt_b
+      label: Exactly 100 bytes, because modern SSDs support byte-level addressing.
+      explanation: Misconception! SSD block controllers transfer data in pages (typically
+        4KB to 16KB), never individual bytes.
+      is_correct: false
+    - id: opt_c
+      label: 0 bytes, because SQL queries execute directly on the hardware disk controller.
+      explanation: Incorrect! The database process must load pages into CPU RAM to
+        evaluate WHERE filters.
+      is_correct: false
+    revealed_explanation: Relational databases are page-buffered storage engines.
+      All I/O occurs at the granularity of fixed 8KB disk blocks.
+  controls:
+  - id: table_rows
+    label: Table Record Count
+    type: slider
+    default: 1000
+    min: 100
+    max: 10000
+    step: 100
+    description: Simulate number of records stored in disk pages
+  - id: page_capacity
+    label: Records per 8KB Page
+    type: slider
+    default: 10
+    min: 2
+    max: 50
+    step: 2
+    description: Number of row slots accommodated per physical page
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 8KB Disk Heap Page Layout
+- id: w17_s2_slotted_pages_ctid
+  title: Slotted Heap Pages & Physical Tuple IDs (ctid)
+  subtitle: How databases address variable-length records without scanning from the
+    start of the page
+  scenario: Inside an 8KB disk page, rows can be variable-length strings. How does
+    the storage engine locate a row within a page without scanning from the top?
+  mechanism: 'Slotted page architecture: The page header holds an array of item pointers
+    (offsets). Tuples grow upward from the bottom of the page. Every row has a physical
+    address called a Tuple ID: ctid = (page_number, slot_index).'
+  prediction:
+    prompt: What happens to a row's physical ctid in PostgreSQL when you execute an
+      UPDATE that increases its text size beyond remaining page space?
+    choices:
+    - id: opt_a
+      label: Because the row cannot fit in the existing page, MVCC inserts the new
+        row version into another page, changing its ctid.
+      explanation: Correct! In PostgreSQL, updates write a new tuple version, which
+        frequently moves to a new page with a new ctid.
+      is_correct: true
+    - id: opt_b
+      label: The row's ctid is an immutable primary key that can never change under
+        any circumstance.
+      explanation: Misconception! ctid is a physical storage coordinate, not a logical
+        primary key.
+      is_correct: false
+    - id: opt_c
+      label: The operating system expands the 8KB page to 16KB dynamically on disk.
+      explanation: Incorrect! Database page sizes are fixed at compile time (typically
+        8KB).
+      is_correct: false
+    revealed_explanation: Physical tuple addresses (ctid) represent volatile block
+      coordinates, which is why indexes point to ctids rather than physical byte offsets.
+  controls:
+  - id: variable_text_size_bytes
+    label: Record Text Payload Size (Bytes)
+    type: slider
+    default: 256
+    min: 64
+    max: 2048
+    step: 64
+    description: Simulate tuple payload expansion triggering page overflow
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Slotted Page Header & Offsets
+- id: w17_s3_seq_scans_buffer_pool
+  title: Sequential Table Scans & Buffer Pool Eviction
+  subtitle: Why an unindexed query pollutes RAM and slows down unrelated application
+    queries
+  scenario: What happens to the database buffer pool cache when a developer runs an
+    unindexed query across a 50GB table?
+  mechanism: The storage engine loads Page 0, Page 1, Page 2... into the shared buffer
+    pool in RAM. Hot cache pages (like frequently queried user profiles) are evicted
+    to make room for cold pages read during the sequential scan, causing a global
+    latency spike across all application queries.
+  prediction:
+    prompt: Why does a Sequential Scan on an unindexed table hurt other completely
+      unrelated queries running on the same database?
+    choices:
+    - id: opt_a
+      label: The sequential scan floods the shared buffer pool cache with single-use
+        pages, evicting hot cached data and forcing other queries to read from slow
+        disk.
+      explanation: Correct! Cache pollution degrades buffer pool hit ratios across
+        the entire database.
+      is_correct: true
+    - id: opt_b
+      label: Sequential scans lock the entire operating system kernel.
+      explanation: Incorrect! Sequential scans run in user-space DBMS processes.
+      is_correct: false
+    - id: opt_c
+      label: Unindexed queries consume all available TCP network sockets.
+      explanation: Incorrect! Socket counts are unrelated to internal table scanning.
+      is_correct: false
+    revealed_explanation: 'Buffer pool pollution from unindexed full table scans is
+      the #1 cause of sudden database I/O saturation.'
+  controls:
+  - id: buffer_pool_capacity_pages
+    label: Buffer Pool Size (Pages)
+    type: slider
+    default: 50
+    min: 10
+    max: 200
+    step: 10
+    description: Available RAM buffer pool frame capacity
+  - id: unindexed_scan_active
+    label: Execute Full Sequential Scan
+    type: toggle
+    default: true
+    description: Toggle full-table sequential scan vs indexed lookup
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Buffer Pool Cache Eviction
+- id: w17_s4_btree_direct_seeks
+  title: B-Tree Indexes & O(log N) Direct Page Traversal
+  subtitle: How auxiliary trees turn 500,000 page scans into 3 direct page reads
+  scenario: How does an index avoid scanning thousands of 8KB disk pages?
+  mechanism: A B-Tree index is an auxiliary sorted tree where leaf nodes store (indexed_value,
+    ctid). The database traverses root -> internal branch -> leaf page in O(log N)
+    page reads (typically 3 to 4 I/O operations), and then fetches the exact single
+    heap page using the ctid.
+  prediction:
+    prompt: For a table with 10,000,000 rows across 500,000 heap pages, how many disk
+      page reads does a B-Tree index lookup require to find a single user?
+    choices:
+    - id: opt_a
+      label: Approximately 3 to 4 page reads (tree height + 1 heap page read).
+      explanation: Correct! B-Tree fanouts of 100+ allow searching millions of keys
+        in 3 to 4 logarithmic hops.
+      is_correct: true
+    - id: opt_b
+      label: Approximately 250,000 page reads (half the table).
+      explanation: Misconception! 250,000 reads is the average cost of an unindexed
+        sequential scan.
+      is_correct: false
+    - id: opt_c
+      label: Exactly 1 page read for all table sizes.
+      explanation: Incorrect! The index tree itself has internal branch pages that
+        must be traversed.
+      is_correct: false
+    revealed_explanation: High-fanout B-Trees ensure that even multi-terabyte tables
+      can locate any key with fewer than 5 physical page reads.
+  controls:
+  - id: btree_fanout
+    label: B-Tree Node Fanout
+    type: slider
+    default: 100
+    min: 10
+    max: 500
+    step: 10
+    description: Number of pointer keys per index branch page
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: B-Tree Index Traversal
+- id: w17_s5_composite_leftmost_prefix
+  title: 'Composite Indexes: Leftmost Prefix & Skip Scans'
+  subtitle: Why querying on the second column alone challenges the query planner
+  scenario: You create an index on (country, signup_date, user_id). A query filters
+    on signup_date only. Does the database use the index?
+  mechanism: 'Traditional leftmost prefix rule: B-Trees sort lexicographically by
+    the first column. Without country, the index cannot be traversed in a single logarithmic
+    seek. However, modern engines (PostgreSQL/SQLite) can perform an Index Skip Scan
+    if the leading column has low cardinality.'
+  prediction:
+    prompt: When querying on (signup_date = '2026-01-01') against an index (country,
+      signup_date), why is the query planner reluctant to use a standard B-Tree seek?
+    choices:
+    - id: opt_a
+      label: Because the B-Tree is sorted first by country; records with that date
+        are scattered across every country branch, preventing a single contiguous
+        range scan.
+      explanation: Correct! Without the leading column, matching records are dispersed
+        across independent subtrees.
+      is_correct: true
+    - id: opt_b
+      label: Because dates cannot be stored in B-Tree data structures.
+      explanation: Incorrect! B-Trees can index dates, numbers, strings, and UUIDs.
+      is_correct: false
+    - id: opt_c
+      label: Because composite indexes only support single-column equality checks.
+      explanation: Incorrect! Composite indexes excel at multi-column range queries
+        when following leftmost order.
+      is_correct: false
+    revealed_explanation: Understanding leftmost prefix semantics ensures developers
+      design composite indexes that match real production query filters.
+  controls:
+  - id: leading_col_cardinality
+    label: Country Column Distinct Values
+    type: slider
+    default: 5
+    min: 2
+    max: 50
+    step: 1
+    description: Low cardinality enables skip-scans; high cardinality forces sequential
+      table scans
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Composite Index Prefix Matrix
+- id: w17_s6_transfer_challenge
+  title: 'Transfer Challenge: In-Memory Slotted Heap Page Scanner'
+  subtitle: Implement the physical page partitioning and sequential scanner in Python
+  scenario: 'Build a disk storage engine simulator in Python: pack records into fixed-capacity
+    8KB pages, assign physical ctid = (page, slot) coordinates, simulate sequential
+    scan page I/O, and measure page access efficiency.'
+  mechanism: The scanner organizes records into pages of page_capacity. It simulates
+    sequential I/O by loading page 0, page 1... until search_id is matched or the
+    table is exhausted.
+  prediction:
+    prompt: When searching for record id=45 in a table with page_capacity=10, which
+      physical page index and slot index does the scanner find it in?
+    choices:
+    - id: opt_a
+      label: Page 4, Slot 5 (ctid = [4, 5]).
+      explanation: Correct! 45 // 10 = 4 (page index) and 45 % 10 = 5 (slot index).
+      is_correct: true
+    - id: opt_b
+      label: Page 5, Slot 4.
+      explanation: Incorrect! Page index is determined by integer division.
+      is_correct: false
+    - id: opt_c
+      label: Page 0, Slot 45.
+      explanation: Incorrect! Each page holds at most 10 records.
+      is_correct: false
+    revealed_explanation: Physical ctid arithmetic directly connects logical query
+      execution with disk block layout.
+  controls:
+  - id: target_search_id
+    label: Target Record ID
+    type: slider
+    default: 45
+    min: 0
+    max: 99
+    step: 1
+    description: Search target to measure pages scanned before termination
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Heap Scanner Production Runner
+  lab_starter_code: "class Solution:\n    def simulate_heap_scan(self, records: list[dict],\
+    \ page_capacity: int, search_id: int) -> dict:\n        # Implement 8KB Slotted\
+    \ Heap Page Scanner\n        pass\n"
+  lab_solution: "class Solution:\n    def simulate_heap_scan(self, records: list[dict],\
+    \ page_capacity: int, search_id: int) -> dict:\n        if not records:\n    \
+    \        return {\"total_pages\": 0, \"pages_scanned\": 0, \"found\": False, \"\
+    ctid\": None}\n\n        # Partition records into pages\n        pages = []\n\
+    \        for i in range(0, len(records), page_capacity):\n            pages.append(records[i:i\
+    \ + page_capacity])\n\n        total_pages = len(pages)\n        pages_scanned\
+    \ = 0\n        found = False\n        ctid = None\n\n        for page_idx, page\
+    \ in enumerate(pages):\n            pages_scanned += 1\n            for slot_idx,\
+    \ record in enumerate(page):\n                if record[\"id\"] == search_id:\n\
+    \                    found = True\n                    ctid = [page_idx, slot_idx]\n\
+    \                    break\n            if found:\n                break\n\n \
+    \       return {\n            \"total_pages\": total_pages,\n            \"pages_scanned\"\
+    : pages_scanned,\n            \"found\": found,\n            \"ctid\": ctid,\n\
+    \        }\n"
