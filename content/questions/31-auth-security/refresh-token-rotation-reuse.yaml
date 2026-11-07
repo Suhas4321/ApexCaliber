@@ -4,77 +4,95 @@ citadel_id: backend_apis
 brick_layer: 2
 runner_type: python_practical
 concept:
-  problem_it_solves: If an attacker steals a client's long-lived refresh token from browser localStorage, how does the auth
-    server prevent ongoing unauthorized access? In OAuth 2.0 Refresh Token Rotation (RTR), every time a refresh token is used
-    to issue a new access token, the old refresh token is invalidated and a single-use replacement is returned. If an attacker
-    attempts to replay a previously used refresh token, the server immediately detects Token Reuse — revoking the entire user
-    session.
-  brute_force: Reusing static refresh tokens for 30 days without rotation, allowing compromised tokens to access accounts
-    undetected.
+  problem_it_solves: "If an attacker steals a client's long-lived refresh token from\
+    \ browser localStorage, how does the auth server prevent ongoing unauthorized\
+    \ access? In OAuth 2.0 Refresh Token Rotation (RTR), every time a refresh token\
+    \ is used to issue a new access token, the old refresh token is invalidated and\
+    \ a single-use replacement is returned. If an attacker attempts to replay a previously\
+    \ used refresh token, the server immediately detects Token Reuse \u2014 revoking\
+    \ the entire user session."
+  brute_force: Reusing static refresh tokens for 30 days without rotation, allowing
+    compromised tokens to access accounts undetected.
   brute_force_complexity: Indefinite account compromise until manual password reset.
-  key_insight: 'Maintain an active token and a history of used tokens in the session record. If a presented token appears
-    in `used_tokens`, a replay attack is underway: mark the entire session revoked immediately.'
-  real_world: Auth0 Refresh Token Rotation, Supabase auth token rotation, and Google OAuth 2.0 token revocation.
+  key_insight: 'Maintain an active token and a history of used tokens in the session
+    record. If a presented token appears in `used_tokens`, a replay attack is underway:
+    mark the entire session revoked immediately.'
+  real_world: Auth0 Refresh Token Rotation, Supabase auth token rotation, and Google
+    OAuth 2.0 token revocation.
 statement:
-  clean: "Implement an OAuth 2.0 refresh token rotation engine with replay attack detection:\n`rotate_refresh_token(presented_token:\
-    \ str, sessions_db: dict) -> dict`.\n\nInput:\n- `presented_token`: refresh token string submitted by client.\n- `sessions_db`:\
-    \ mutable dictionary representing the user's session record:\n  `{\"session_id\": str, \"active_token\": str, \"used_tokens\"\
-    : list[str], \"revoked\": bool}`.\n\nRotation Protocol:\n1. Revocation Check:\n   - If `sessions_db.get(\"revoked\")`\
-    \ is True:\n     return `{\"success\": False, \"error\": \"session_revoked\", \"status_code\": 401}`.\n2. Replay Attack\
-    \ Detection (Token Reuse):\n   - If `presented_token` in `sessions_db[\"used_tokens\"]`:\n     A previously spent token\
-    \ was re-submitted!\n     Set `sessions_db[\"revoked\"] = True` immediately to protect the user.\n     return `{\"success\"\
-    : False, \"error\": \"token_reuse_detected\", \"session_revoked\": True, \"status_code\": 401}`.\n3. Token Validation:\n\
-    \   - If `presented_token != sessions_db.get(\"active_token\")`:\n     return `{\"success\": False, \"error\": \"token_not_found\"\
-    , \"status_code\": 404}`.\n4. Token Rotation (Success):\n   - Move `presented_token` into `used_tokens`: `sessions_db[\"\
-    used_tokens\"].append(presented_token)`.\n   - Issue new single-use refresh token: `new_active = f\"rt_rot_{len(sessions_db['used_tokens'])}_{presented_token[-4:]}\"\
-    `.\n   - Update active token: `sessions_db[\"active_token\"] = new_active`.\n   - Issue new access token: `new_access\
-    \ = f\"at_user_gen_{len(sessions_db['used_tokens'])}\"`.\n   - Return `{\"success\": True, \"new_access_token\": new_access,\
-    \ \"new_refresh_token\": new_active, \"status_code\": 200}`."
-  oa_story: '**BharatPay Merchant Portal — Token Hijacking Incident**
-
-
-    A merchant''s laptop was infected with malware that extracted cached refresh tokens from Chrome application storage. Days
-    later, the attacker presented a spent refresh token to the auth service.
-
-
-    Because the legacy system lacked rotation tracking, it reissued access tokens to the hacker. Implement this Refresh Token
-    Rotation engine to detect token reuse and immediately revoke compromised sessions.'
+  clean: "Implement an OAuth 2.0 refresh token rotation engine with replay attack\
+    \ detection:\n`rotate_refresh_token(presented_token: str, sessions_db: dict) ->\
+    \ dict`.\n\nInput:\n- `presented_token`: refresh token string submitted by client.\n\
+    - `sessions_db`: mutable dictionary representing the user's session record:\n\
+    \  `{\"session_id\": str, \"active_token\": str, \"used_tokens\": list[str], \"\
+    revoked\": bool}`.\n\nRotation Protocol:\n1. Revocation Check:\n   - If `sessions_db.get(\"\
+    revoked\")` is True:\n     return `{\"success\": False, \"error\": \"session_revoked\"\
+    , \"status_code\": 401}`.\n2. Replay Attack Detection (Token Reuse):\n   - If\
+    \ `presented_token` in `sessions_db[\"used_tokens\"]`:\n     A previously spent\
+    \ token was re-submitted!\n     Set `sessions_db[\"revoked\"] = True` immediately\
+    \ to protect the user.\n     return `{\"success\": False, \"error\": \"token_reuse_detected\"\
+    , \"session_revoked\": True, \"status_code\": 401}`.\n3. Token Validation:\n \
+    \  - If `presented_token != sessions_db.get(\"active_token\")`:\n     return `{\"\
+    success\": False, \"error\": \"token_not_found\", \"status_code\": 404}`.\n4.\
+    \ Token Rotation (Success):\n   - Move `presented_token` into `used_tokens`: `sessions_db[\"\
+    used_tokens\"].append(presented_token)`.\n   - Issue new single-use refresh token:\
+    \ `new_active = f\"rt_rot_{len(sessions_db['used_tokens'])}_{presented_token[-4:]}\"\
+    `.\n   - Update active token: `sessions_db[\"active_token\"] = new_active`.\n\
+    \   - Issue new access token: `new_access = f\"at_user_gen_{len(sessions_db['used_tokens'])}\"\
+    `.\n   - Return `{\"success\": True, \"new_access_token\": new_access, \"new_refresh_token\"\
+    : new_active, \"status_code\": 200}`."
+  oa_story: "**BharatPay Merchant Portal \u2014 Token Hijacking Incident**\n\nA merchant's\
+    \ laptop was infected with malware that extracted cached refresh tokens from Chrome\
+    \ application storage. Days later, the attacker presented a spent refresh token\
+    \ to the auth service.\n\nBecause the legacy system lacked rotation tracking,\
+    \ it reissued access tokens to the hacker. Implement this Refresh Token Rotation\
+    \ engine to detect token reuse and immediately revoke compromised sessions."
   trigger_keywords:
   - refresh token rotation engine
   - rotate_refresh_token
   - token_reuse_detected
   examples:
-  - input: 'presented_token = "rt_init_1001", sessions_db = {"session_id": "s_1", "active_token": "rt_init_1001", "used_tokens":
-      [], "revoked": False}'
-    output: '{"success": True, "new_access_token": "at_user_gen_1", "new_refresh_token": "rt_rot_1_1001", "status_code": 200}'
-    explanation: 'Valid token exchange: issues new access and refresh tokens, archiving old token.'
-  - input: 'presented_token = "rt_init_1001", sessions_db = {"session_id": "s_1", "active_token": "rt_rot_1_1001", "used_tokens":
-      ["rt_init_1001"], "revoked": False}'
-    output: '{"success": False, "error": "token_reuse_detected", "session_revoked": True, "status_code": 401}'
+  - input: 'presented_token = "rt_init_1001", sessions_db = {"session_id": "s_1",
+      "active_token": "rt_init_1001", "used_tokens": [], "revoked": False}'
+    output: '{"success": True, "new_access_token": "at_user_gen_1", "new_refresh_token":
+      "rt_rot_1_1001", "status_code": 200}'
+    explanation: 'Valid token exchange: issues new access and refresh tokens, archiving
+      old token.'
+  - input: 'presented_token = "rt_init_1001", sessions_db = {"session_id": "s_1",
+      "active_token": "rt_rot_1_1001", "used_tokens": ["rt_init_1001"], "revoked":
+      False}'
+    output: '{"success": False, "error": "token_reuse_detected", "session_revoked":
+      True, "status_code": 401}'
     explanation: Token reuse detected! The session is immediately revoked.
   constraints:
   - presented_token is non-empty string
   - sessions_db contains session_id, active_token, used_tokens, revoked
 constraint_quiz:
-  prompt: Why does OAuth 2.0 mandate revoking the entire session when a previously used refresh token is presented?
+  prompt: Why does OAuth 2.0 mandate revoking the entire session when a previously
+    used refresh token is presented?
   options:
-  - Because either the legitimate user or an attacker is holding a duplicated token, indicating token leakage across the network
+  - Because either the legitimate user or an attacker is holding a duplicated token,
+    indicating token leakage across the network
   - Because refresh tokens consume excessive server RAM
   - Because Python dictionaries cannot store more than 10 tokens
   - To force users to update their browser version
   answer: 0
-  explanation: Under Refresh Token Rotation, every token is single-use. If an already-spent token is submitted, either the
-    legitimate client or an eavesdropper is out-of-sync due to theft, requiring immediate revocation.
+  explanation: Under Refresh Token Rotation, every token is single-use. If an already-spent
+    token is submitted, either the legitimate client or an eavesdropper is out-of-sync
+    due to theft, requiring immediate revocation.
 pattern_quiz:
-  prompt: What is the recommended lifespan combination for Access Tokens vs Refresh Tokens?
+  prompt: What is the recommended lifespan combination for Access Tokens vs Refresh
+    Tokens?
   options:
-  - Short-lived Access Tokens (10-15 minutes) and long-lived rotated Refresh Tokens (7-30 days)
+  - Short-lived Access Tokens (10-15 minutes) and long-lived rotated Refresh Tokens
+    (7-30 days)
   - Equal lifespans of 24 hours each
   - Long-lived Access Tokens (30 days) and short-lived Refresh Tokens (10 minutes)
   - No expiration on either token
   answer: 0
-  explanation: Short-lived access tokens limit exposure if leaked in memory, while rotated refresh tokens allow seamless background
-    renewal without prompting the user for credentials.
+  explanation: Short-lived access tokens limit exposure if leaked in memory, while
+    rotated refresh tokens allow seamless background renewal without prompting the
+    user for credentials.
 function:
   name: rotate_refresh_token
   params:
@@ -82,8 +100,8 @@ function:
   - name: sessions_db
   returns: any
   compare: exact
-starter_code: "class Solution:\n    def rotate_refresh_token(self, presented_token: str, sessions_db: dict) -> dict:\n   \
-  \     pass\n"
+starter_code: "class Solution:\n    def rotate_refresh_token(self, presented_token:\
+  \ str, sessions_db: dict) -> dict:\n        pass\n"
 tests:
 - args:
   - rt_init_1001
@@ -144,7 +162,8 @@ drills:
     name: drill_check_revoked
     params:
     - name: sessions_db
-  starter_code: "class Solution:\n    def drill_check_revoked(self, sessions_db: dict) -> bool:\n        pass\n"
+  starter_code: "class Solution:\n    def drill_check_revoked(self, sessions_db: dict)\
+    \ -> bool:\n        pass\n"
   tests:
   - args:
     - revoked: true
@@ -152,8 +171,8 @@ drills:
   - args:
     - revoked: false
     expected: false
-  solution: "class Solution:\n    def drill_check_revoked(self, sessions_db: dict) -> bool:\n        return bool(sessions_db.get(\"\
-    revoked\", False))\n"
+  solution: "class Solution:\n    def drill_check_revoked(self, sessions_db: dict)\
+    \ -> bool:\n        return bool(sessions_db.get(\"revoked\", False))\n"
   hint: Return `bool(sessions_db.get('revoked', False))`.
 - skill: core
   title: Detect token reuse
@@ -164,7 +183,8 @@ drills:
     params:
     - name: token
     - name: sessions_db
-  starter_code: "class Solution:\n    def drill_is_reused(self, token: str, sessions_db: dict) -> bool:\n        pass\n"
+  starter_code: "class Solution:\n    def drill_is_reused(self, token: str, sessions_db:\
+    \ dict) -> bool:\n        pass\n"
   tests:
   - args:
     - t1
@@ -178,8 +198,8 @@ drills:
       - t1
       - t0
     expected: false
-  solution: "class Solution:\n    def drill_is_reused(self, token: str, sessions_db: dict) -> bool:\n        return token\
-    \ in sessions_db.get(\"used_tokens\", [])\n"
+  solution: "class Solution:\n    def drill_is_reused(self, token: str, sessions_db:\
+    \ dict) -> bool:\n        return token in sessions_db.get(\"used_tokens\", [])\n"
   hint: Check `token in used_tokens`.
 - skill: edge
   title: Generate rotated token pair
@@ -190,7 +210,8 @@ drills:
     params:
     - name: count
     - name: suffix
-  starter_code: "class Solution:\n    def drill_new_tokens(self, count: int, suffix: str) -> list[str]:\n        pass\n"
+  starter_code: "class Solution:\n    def drill_new_tokens(self, count: int, suffix:\
+    \ str) -> list[str]:\n        pass\n"
   tests:
   - args:
     - 1
@@ -198,12 +219,14 @@ drills:
     expected:
     - at_user_gen_1
     - rt_rot_1_1001
-  solution: "class Solution:\n    def drill_new_tokens(self, count: int, suffix: str) -> list[str]:\n        return [f\"at_user_gen_{count}\"\
-    , f\"rt_rot_{count}_{suffix}\"]\n"
+  solution: "class Solution:\n    def drill_new_tokens(self, count: int, suffix: str)\
+    \ -> list[str]:\n        return [f\"at_user_gen_{count}\", f\"rt_rot_{count}_{suffix}\"\
+    ]\n"
   hint: Format strings using count and suffix.
 hints:
 - Check `sessions_db['revoked']` first; if True, return 401.
-- Check if `presented_token in sessions_db['used_tokens']`. If so, set `sessions_db['revoked'] = True` and return 401 token_reuse_detected.
+- Check if `presented_token in sessions_db['used_tokens']`. If so, set `sessions_db['revoked']
+  = True` and return 401 token_reuse_detected.
 - '| # Pseudocode Blueprint
 
   | if sessions_db.revoked: return 401 session_revoked
@@ -226,43 +249,341 @@ hints:
 
   | return 200, new_access, new_active'
 solution:
-  code: "class Solution:\n    def rotate_refresh_token(self, presented_token: str, sessions_db: dict) -> dict:\n        if\
-    \ sessions_db.get(\"revoked\", False):\n            return {\"success\": False, \"error\": \"session_revoked\", \"status_code\"\
-    : 401}\n\n        used = sessions_db.setdefault(\"used_tokens\", [])\n        if presented_token in used:\n          \
-    \  sessions_db[\"revoked\"] = True\n            return {\"success\": False, \"error\": \"token_reuse_detected\", \"session_revoked\"\
-    : True, \"status_code\": 401}\n\n        active = sessions_db.get(\"active_token\")\n        if presented_token != active:\n\
-    \            return {\"success\": False, \"error\": \"token_not_found\", \"status_code\": 404}\n\n        used.append(presented_token)\n\
-    \        new_active = f\"rt_rot_{len(used)}_{presented_token[-4:]}\"\n        sessions_db[\"active_token\"] = new_active\n\
-    \        new_access = f\"at_user_gen_{len(used)}\"\n\n        return {\n            \"success\": True,\n            \"\
-    new_access_token\": new_access,\n            \"new_refresh_token\": new_active,\n            \"status_code\": 200,\n \
-    \       }\n"
-  explanation: Refresh Token Rotation guarantees that each refresh token can only be exchanged once. If a token in the `used_tokens`
-    history is presented again, a replay attack has occurred. Setting `revoked = True` invalidates the entire session immediately,
-    protecting the account.
+  code: "class Solution:\n    def rotate_refresh_token(self, presented_token: str,\
+    \ sessions_db: dict) -> dict:\n        if sessions_db.get(\"revoked\", False):\n\
+    \            return {\"success\": False, \"error\": \"session_revoked\", \"status_code\"\
+    : 401}\n\n        used = sessions_db.setdefault(\"used_tokens\", [])\n       \
+    \ if presented_token in used:\n            sessions_db[\"revoked\"] = True\n \
+    \           return {\"success\": False, \"error\": \"token_reuse_detected\", \"\
+    session_revoked\": True, \"status_code\": 401}\n\n        active = sessions_db.get(\"\
+    active_token\")\n        if presented_token != active:\n            return {\"\
+    success\": False, \"error\": \"token_not_found\", \"status_code\": 404}\n\n  \
+    \      used.append(presented_token)\n        new_active = f\"rt_rot_{len(used)}_{presented_token[-4:]}\"\
+    \n        sessions_db[\"active_token\"] = new_active\n        new_access = f\"\
+    at_user_gen_{len(used)}\"\n\n        return {\n            \"success\": True,\n\
+    \            \"new_access_token\": new_access,\n            \"new_refresh_token\"\
+    : new_active,\n            \"status_code\": 200,\n        }\n"
+  explanation: Refresh Token Rotation guarantees that each refresh token can only
+    be exchanged once. If a token in the `used_tokens` history is presented again,
+    a replay attack has occurred. Setting `revoked = True` invalidates the entire
+    session immediately, protecting the account.
   time: O(U) where U is the count of used tokens in the session
   space: O(1) updates to session dictionary
-pitch_script: '**(Clarify)** "We need to simulate OAuth 2.0 Refresh Token Rotation, issuing single-use replacement tokens
-  and revoking the session if a used token is replayed."
+pitch_script: '**(Clarify)** "We need to simulate OAuth 2.0 Refresh Token Rotation,
+  issuing single-use replacement tokens and revoking the session if a used token is
+  replayed."
 
 
-  **(Brute force)** "Static refresh tokens without rotation allow intercepted credentials to maintain indefinite access to
-  user accounts."
+  **(Brute force)** "Static refresh tokens without rotation allow intercepted credentials
+  to maintain indefinite access to user accounts."
 
 
-  **(Trigger)** "Tracking single-use token lifecycle and detecting reuse signals OAuth 2.0 Refresh Token Rotation."
+  **(Trigger)** "Tracking single-use token lifecycle and detecting reuse signals OAuth
+  2.0 Refresh Token Rotation."
 
 
-  **(Optimal)** "We verify that the session is not revoked. If the presented token is found in the `used_tokens` list, we
-  detect token reuse and immediately revoke the session with HTTP 401. If the token matches the active token, we archive it
-  into `used_tokens`, issue a fresh access and refresh token pair, and return 200 OK."
+  **(Optimal)** "We verify that the session is not revoked. If the presented token
+  is found in the `used_tokens` list, we detect token reuse and immediately revoke
+  the session with HTTP 401. If the token matches the active token, we archive it
+  into `used_tokens`, issue a fresh access and refresh token pair, and return 200
+  OK."
 
 
   **(Complexity)** "Executes in O(U) time to check token history and O(1) space." '
 twist:
   lc: 9531
   title: HTTP 202 Accepted Asynchronous Job Polling with Exponential Backoff
-  why: Long-running auth or payment batch exports cannot be returned in a single response; the server returns 202 Accepted
-    while clients poll.
+  why: Long-running auth or payment batch exports cannot be returned in a single response;
+    the server returns 202 Accepted while clients poll.
 viz:
   title: OAuth 2.0 Token Rotation & Reuse Detection
   type: http_lifecycle
+journey:
+- id: w31_s1_stateless_vs_stateful
+  title: Stateless Access Tokens vs Stateful Refresh Tokens
+  subtitle: Why production systems separate quick authorization from session lifecycle
+  scenario: Why don't web and mobile applications simply give users an access token
+    that lasts for 1 year so they never have to log in again?
+  mechanism: 'Access tokens are stateless (JWTs): services verify their signature
+    locally using a public key without querying a central database. If an access token
+    were valid for 1 year, revoking access when a user is fired or their phone is
+    stolen would be impossible without creating a distributed blacklist that negates
+    the stateless performance benefits. Therefore, access tokens expire quickly (15
+    minutes), while a stateful refresh token stored in the database is used to request
+    new access tokens periodically.'
+  prediction:
+    prompt: If an API uses purely stateless JWT access tokens with a 6-month lifespan,
+      what security problem arises when an employee is terminated?
+    choices:
+    - id: opt_a
+      label: The terminated employee can continue using the token until expiration
+        because services verify the cryptographic signature locally without checking
+        employee employment status.
+      explanation: Correct! Stateless tokens cannot be revoked on the fly without
+        a centralized database check on every request.
+      is_correct: true
+    - id: opt_b
+      label: The server immediately revokes the JWT through hardware CPU memory invalidation.
+      explanation: Misconception! The cryptographic signature remains valid until
+        its exp claim timestamp.
+      is_correct: false
+    - id: opt_c
+      label: The JWT self-destructs after 10 API calls.
+      explanation: Nonsense! JWTs are static base64-encoded strings with no internal
+        counter mechanisms.
+      is_correct: false
+    revealed_explanation: Short-lived access tokens (15m) minimize the blast radius
+      of stolen tokens, while stateful refresh tokens provide centralized revocation
+      control.
+  controls:
+  - id: access_token_ttl_mins
+    label: Access Token Lifespan (Minutes)
+    type: slider
+    default: 15
+    min: 5
+    max: 120
+    step: 5
+    description: Stateless access token expiration time
+  - id: revocation_method
+    label: Revocation Mechanism
+    type: select
+    default: Stateful Database Check
+    options:
+    - Stateful Database Check
+    - Stateless Signature Only
+    - Distributed Redis Blocklist
+    description: How backend verifies user authorization status
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Stateless JWT Verification vs Stateful Session Check
+- id: w31_s2_token_theft_surface
+  title: 'The Attack Surface: Token Theft via XSS & Device Compromise'
+  subtitle: How malicious scripts exfiltrate static refresh tokens from browser storage
+  scenario: A malicious third-party script runs in a user's browser via Cross-Site
+    Scripting (XSS). It reads localStorage.getItem("refresh_token") and sends it to
+    an attacker's server. If the refresh token is static and valid for 30 days, what
+    can the attacker do?
+  mechanism: Because the server only checks if the token exists and is unexpired,
+    the attacker can silently generate new access tokens whenever they want for the
+    next 30 days. The legitimate user and the attacker operate side-by-side, completely
+    invisible to the backend.
+  prediction:
+    prompt: If an attacker steals a static, non-rotating refresh token, how long can
+      they maintain unauthorized access?
+    choices:
+    - id: opt_a
+      label: Until the token expires (e.g. 30 days) or the user manually changes their
+        password, because the auth server cannot distinguish legitimate requests from
+        attacker requests.
+      explanation: Correct! Static refresh tokens have no replay or theft detection;
+        any holder of the secret string is granted access.
+      is_correct: true
+    - id: opt_b
+      label: For only 1 request, because HTTP packets verify the user's physical fingerprint.
+      explanation: Incorrect! Standard HTTP requests carry no biological or physical
+        device proof.
+      is_correct: false
+    - id: opt_c
+      label: Never, because browsers encrypt all tokens with quantum encryption.
+      explanation: Nonsense! localStorage is plain text and accessible to any JavaScript
+        running in the origin.
+      is_correct: false
+    revealed_explanation: Static refresh tokens create an intolerable security vulnerability.
+      OAuth 2.0 introduced Refresh Token Rotation to detect and mitigate token theft.
+  controls:
+  - id: storage_medium
+    label: Client Storage Medium
+    type: select
+    default: Browser LocalStorage (Vulnerable to XSS)
+    options:
+    - Browser LocalStorage (Vulnerable to XSS)
+    - HttpOnly SameSite Cookie
+    - In-Memory JavaScript State
+    description: Client-side credential persistence strategy
+  - id: rotation_enabled
+    label: Refresh Token Rotation
+    type: toggle
+    default: false
+    description: Enable single-use rotation protocol
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: XSS Token Exfiltration Attack Vector
+- id: w31_s3_rtr_single_use_handoff
+  title: 'Refresh Token Rotation (RTR): Single-Use Token Handoff'
+  subtitle: Invalidating the old token and issuing a single-use successor on every
+    refresh
+  scenario: How does Refresh Token Rotation prevent stolen tokens from being reused
+    indefinitely?
+  mechanism: 'Every time a refresh token (e.g. RT_1) is submitted to /auth/refresh:
+    1. The server marks RT_1 as spent/used, 2. The server issues a brand new access
+    token AT_2 AND a brand new refresh token RT_2, 3. The client discards RT_1 and
+    stores RT_2. Every refresh token is strictly Single-Use.'
+  prediction:
+    prompt: What does the OAuth server do with the presented refresh token during
+      a successful rotation?
+    choices:
+    - id: opt_a
+      label: It moves the presented token into a spent/used list and returns a brand
+        new single-use refresh token alongside the new access token.
+      explanation: Correct! RTR ensures every refresh token can only be exchanged
+        once before being permanently invalidated.
+      is_correct: true
+    - id: opt_b
+      label: It extends the lifespan of the presented refresh token by 30 days.
+      explanation: Misconception! Extending lifespan is static token reuse, which
+        violates RTR.
+      is_correct: false
+    - id: opt_c
+      label: It deletes the user's password from the database.
+      explanation: Nonsense! Passwords are unaffected by session token rotation.
+      is_correct: false
+    revealed_explanation: By making each refresh token single-use, any attempt to
+      present the same token twice reveals that a security breach is underway.
+  controls:
+  - id: rotate_token
+    label: Execute Token Rotation
+    type: button
+    default: true
+    description: Advance token generation and invalidate previous token
+  - id: token_generation
+    label: Active Token Generation
+    type: select
+    default: Generation 1 (Initial Login)
+    options:
+    - Generation 1 (Initial Login)
+    - Generation 2 (First Refresh)
+    - Generation 3 (Second Refresh)
+    description: Current token lineage depth
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'RTR Token Lineage: RT_1 -> RT_2 -> RT_3'
+- id: w31_s4_token_reuse_detection
+  title: Token Reuse Detection & The Double-Spend Race Condition
+  subtitle: Detecting replay attacks when an already-spent token is presented
+  scenario: Suppose an attacker stole RT_1. The legitimate user uses RT_1 to rotate
+    to RT_2. Later, the attacker attempts to use RT_1. What happens?
+  mechanism: The server checks the session record and discovers that RT_1 is already
+    in used_tokens! This is Token Reuse. Because a spent token was re-submitted, an
+    active replay attack is underway. The server immediately sets revoked = True on
+    the entire session record to protect the user.
+  prediction:
+    prompt: When an auth server receives a refresh token that is already marked as
+      "used", what does this indicate?
+    choices:
+    - id: opt_a
+      label: 'Token reuse (replay attack): either an attacker is presenting a stolen
+        spent token, or a legitimate user was overtaken by an attacker who rotated
+        their token first.'
+      explanation: Correct! Since tokens are single-use, receiving a used token is
+        mathematical proof that two entities hold copies of the token.
+      is_correct: true
+    - id: opt_b
+      label: A temporary network glitch that should be ignored and retried.
+      explanation: Dangerous misconception! Ignoring reuse allows attackers to mint
+        valid access tokens undetected.
+      is_correct: false
+    - id: opt_c
+      label: The client's clock is running 5 minutes fast.
+      explanation: Incorrect! Clock skew does not cause token reuse in database audit
+        logs.
+      is_correct: false
+    revealed_explanation: 'Token reuse detection is the core superpower of Refresh
+      Token Rotation: it transforms passive theft into an active, detectable alarm.'
+  controls:
+  - id: attack_sequence
+    label: Replay Attack Sequence
+    type: select
+    default: Legitimate User Rotates First (Attacker Replays Old)
+    options:
+    - Legitimate User Rotates First (Attacker Replays Old)
+    - Attacker Rotates First (User Replays Old)
+    description: Simulated order of token submission
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Token Reuse Alarm: Spent Token Replay Detected'
+- id: w31_s5_family_revocation_killswitch
+  title: 'Token Family Revocation: The Security Killswitch'
+  subtitle: Why the auth server invalidates all active tokens in the compromised family
+  scenario: When Token Reuse is detected on a spent refresh token, why must the server
+    revoke the ENTIRE session rather than just rejecting the reused token?
+  mechanism: If the attacker managed to rotate the token first, the attacker currently
+    holds the legitimate active token, while the real user holds the spent token!
+    If the server merely rejected the spent token, the real user would be locked out
+    while the attacker maintained persistent access. By invalidating the entire family,
+    both the attacker and user are booted, and the user is prompted for MFA.
+  prediction:
+    prompt: Why does Refresh Token Rotation revoke the ENTIRE session rather than
+      just rejecting the reused token?
+    choices:
+    - id: opt_a
+      label: If the attacker already rotated the token earlier, rejecting only the
+        spent token would leave the attacker with the valid active token; revoking
+        the entire family cuts off the attacker immediately.
+      explanation: Correct! The server cannot distinguish which entity is the attacker;
+        invalidating the entire lineage guarantees the breach is terminated.
+      is_correct: true
+    - id: opt_b
+      label: Because databases cannot delete single rows without truncating tables.
+      explanation: Nonsense! SQL supports granular row-level updates.
+      is_correct: false
+    - id: opt_c
+      label: To force the user to pay a penalty fee.
+      explanation: Irrelevant! Family revocation is a pure security safeguard.
+      is_correct: false
+    revealed_explanation: Family Revocation guarantees that regardless of who rotated
+      first, the compromise is cleanly terminated and the account is secured.
+  controls:
+  - id: security_action
+    label: Enforce Security Policy
+    type: select
+    default: Nuclear Family Revocation (Revoke All)
+    options:
+    - Nuclear Family Revocation (Revoke All)
+    - Naive Rejection (Reject Spent Only)
+    description: System response to detected token reuse
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Token Family Revocation Killswitch
+- id: w31_s6_transfer_challenge
+  title: 'Transfer Challenge: OAuth 2.0 RTR Security Engine'
+  subtitle: Build the full refresh token rotation and replay detector
+  scenario: 'Implement `rotate_refresh_token(presented_token: str, sessions_db: dict)
+    -> dict` according to OAuth 2.0 Refresh Token Rotation standards.'
+  mechanism: '1. Check revocation: if sessions_db.get("revoked") is True -> 401 session_revoked.
+    2. Replay detection: if presented_token in sessions_db["used_tokens"] -> mark
+    revoked=True and return 401 token_reuse_detected. 3. Token check: if presented_token
+    != sessions_db.get("active_token") -> 404 token_not_found. 4. Rotation: archive
+    old token to used_tokens, issue new active and access tokens, return 200.'
+  prediction:
+    prompt: Given sessions_db with used_tokens=["rt_init_1001"] and active_token="rt_rot_1_1001",
+      what happens if a client presents "rt_init_1001"?
+    choices:
+    - id: opt_a
+      label: '{"success": False, "error": "token_reuse_detected", "session_revoked":
+        True, "status_code": 401}'
+      explanation: Correct! The presented token is in used_tokens; the session is
+        immediately marked revoked and 401 is returned.
+      is_correct: true
+    - id: opt_b
+      label: '{"success": True, "status_code": 200}'
+      explanation: Incorrect! Accepting spent tokens permits replay attacks.
+      is_correct: false
+    - id: opt_c
+      label: '{"error": "token_not_found", "status_code": 404}'
+      explanation: Incorrect! The token was found in used_tokens, triggering replay
+        detection rather than not-found.
+      is_correct: false
+    revealed_explanation: Implement the rotation engine in the code editor below and
+      verify against all test cases.
+  controls:
+  - id: run_verification
+    label: Run Full RTR Test Suite
+    type: button
+    default: true
+    description: Verify valid rotation, replay detection, revoked session rejection,
+      and token not found
+  lab_starter_code: "class Solution:\n    def rotate_refresh_token(self, presented_token:\
+    \ str, sessions_db: dict) -> dict:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: OAuth 2.0 RTR Security Engine Sandbox

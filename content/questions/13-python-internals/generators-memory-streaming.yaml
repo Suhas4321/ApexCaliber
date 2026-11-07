@@ -3,245 +3,572 @@ lc: 9202
 citadel_id: python_data
 brick_layer: 2
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    "How do we process a 10GB log file on a server with only 1GB of RAM?" Calling .readlines() or loading
-    everything into a list attempts to allocate all 10GB at once on the heap, instantly triggering an Out-Of-Memory (OOM)
-    kill from the OS kernel. Generators using yield retain O(1) memory overhead by producing one item at a time.
-  brute_force: >-
-    Reading the entire file into a massive list, running a list comprehension to filter errors, and running
-    another comprehension to parse strings into dicts. This creates multiple redundant 10GB intermediate lists.
-  brute_force_complexity: O(N) time, O(N) memory — fails with OOM when N exceeds physical RAM.
-  key_insight: >-
-    A generator function freezes its local stack frame at the `yield` expression and yields control back to the caller.
-    By chaining generator pipelines (read line -> filter 5xx -> parse json), each record moves through the entire pipeline
-    before the next line is read from disk, consuming O(1) working memory.
-  real_world: >-
-    Large-scale log ingestion in Datadog or ELK pipelines, streaming large CSV/Parquet dumps in data engineering,
-    and streaming tokens from LLMs (OpenAI, Anthropic, Gemini) via server-sent events (SSE).
-
+  problem_it_solves: '"How do we process a 10GB log file on a server with only 1GB
+    of RAM?" Calling .readlines() or loading everything into a list attempts to allocate
+    all 10GB at once on the heap, instantly triggering an Out-Of-Memory (OOM) kill
+    from the OS kernel. Generators using yield retain O(1) memory overhead by producing
+    one item at a time.'
+  brute_force: Reading the entire file into a massive list, running a list comprehension
+    to filter errors, and running another comprehension to parse strings into dicts.
+    This creates multiple redundant 10GB intermediate lists.
+  brute_force_complexity: "O(N) time, O(N) memory \u2014 fails with OOM when N exceeds\
+    \ physical RAM."
+  key_insight: A generator function freezes its local stack frame at the `yield` expression
+    and yields control back to the caller. By chaining generator pipelines (read line
+    -> filter 5xx -> parse json), each record moves through the entire pipeline before
+    the next line is read from disk, consuming O(1) working memory.
+  real_world: Large-scale log ingestion in Datadog or ELK pipelines, streaming large
+    CSV/Parquet dumps in data engineering, and streaming tokens from LLMs (OpenAI,
+    Anthropic, Gemini) via server-sent events (SSE).
 statement:
-  clean: |
-    Implement an error log streaming parser `parse_error_logs(raw_lines: list[str]) -> list[dict]`.
-    
-    In a high-throughput backend, raw web logs arrive in the format:
-    `"TIMESTAMP STATUS_CODE PATH LATENCY_MS"` (e.g. `"2026-10-15T10:00:00 500 /api/v1/predict 142"`).
-    
-    You need to build a generator streaming pipeline that:
-    1. Iterates over each log line.
-    2. Strips whitespace and skips empty lines.
-    3. Identifies lines where `STATUS_CODE` is a 5xx server error (`500 <= int(STATUS_CODE) <= 599`).
-    4. Parses these matching lines into a dictionary:
-       `{"status": int, "path": str, "latency": int}`.
-    5. Returns the collected list of parsed error dictionaries in chronological order.
-  oa_story: |
-    **FitLabs ZeroGPU Pipeline — Memory Crash Recovery**
-    
-    During peak traffic for virtual try-on models, our inference gateway began crashing with OS kernel OOM kills.
-    An engineer had written an analytics utility that read the entire 20GB daily access log into memory using
-    `logs = file.readlines()`, exhausting all RAM on the monitoring node.
-    
-    Refactor this parser into a lazy generator-driven pipeline that processes lines sequentially without
-    accumulating intermediate string arrays in memory.
-  trigger_keywords: ["generator streaming", "parse_error_logs", "raw_lines"]
+  clean: "Implement an error log streaming parser `parse_error_logs(raw_lines: list[str])\
+    \ -> list[dict]`.\n\nIn a high-throughput backend, raw web logs arrive in the\
+    \ format:\n`\"TIMESTAMP STATUS_CODE PATH LATENCY_MS\"` (e.g. `\"2026-10-15T10:00:00\
+    \ 500 /api/v1/predict 142\"`).\n\nYou need to build a generator streaming pipeline\
+    \ that:\n1. Iterates over each log line.\n2. Strips whitespace and skips empty\
+    \ lines.\n3. Identifies lines where `STATUS_CODE` is a 5xx server error (`500\
+    \ <= int(STATUS_CODE) <= 599`).\n4. Parses these matching lines into a dictionary:\n\
+    \   `{\"status\": int, \"path\": str, \"latency\": int}`.\n5. Returns the collected\
+    \ list of parsed error dictionaries in chronological order.\n"
+  oa_story: "**FitLabs ZeroGPU Pipeline \u2014 Memory Crash Recovery**\n\nDuring peak\
+    \ traffic for virtual try-on models, our inference gateway began crashing with\
+    \ OS kernel OOM kills.\nAn engineer had written an analytics utility that read\
+    \ the entire 20GB daily access log into memory using\n`logs = file.readlines()`,\
+    \ exhausting all RAM on the monitoring node.\n\nRefactor this parser into a lazy\
+    \ generator-driven pipeline that processes lines sequentially without\naccumulating\
+    \ intermediate string arrays in memory.\n"
+  trigger_keywords:
+  - generator streaming
+  - parse_error_logs
+  - raw_lines
   examples:
-    - input: "raw_lines = ['2026-10-15T10:00:00 200 /health 5', '2026-10-15T10:00:01 500 /api/try-on 1250']"
-      output: "[{'status': 500, 'path': '/api/try-on', 'latency': 1250}]"
-      explanation: "Only the 500 error line is captured and parsed."
-    - input: "raw_lines = ['2026-10-15T10:00:02 503 /api/model 3200', '', '2026-10-15T10:00:03 404 /unknown 12']"
-      output: "[{'status': 503, 'path': '/api/model', 'latency': 3200}]"
-      explanation: "The 503 line is included; empty line and 404 client error are skipped."
+  - input: raw_lines = ['2026-10-15T10:00:00 200 /health 5', '2026-10-15T10:00:01
+      500 /api/try-on 1250']
+    output: '[{''status'': 500, ''path'': ''/api/try-on'', ''latency'': 1250}]'
+    explanation: Only the 500 error line is captured and parsed.
+  - input: raw_lines = ['2026-10-15T10:00:02 503 /api/model 3200', '', '2026-10-15T10:00:03
+      404 /unknown 12']
+    output: '[{''status'': 503, ''path'': ''/api/model'', ''latency'': 3200}]'
+    explanation: The 503 line is included; empty line and 404 client error are skipped.
   constraints:
-    - "raw_lines contains between 0 and 10^5 string records"
-    - "valid lines contain 4 whitespace-separated tokens"
-
+  - raw_lines contains between 0 and 10^5 string records
+  - valid lines contain 4 whitespace-separated tokens
 constraint_quiz:
-  prompt: >-
-    What is the space complexity of a Python generator that yields items one-by-one from an iterator?
+  prompt: What is the space complexity of a Python generator that yields items one-by-one
+    from an iterator?
   options:
-    - "O(N) where N is total items"
-    - "O(1) auxiliary memory"
-    - "O(N^2) memory"
-    - "O(log N) memory"
+  - O(N) where N is total items
+  - O(1) auxiliary memory
+  - O(N^2) memory
+  - O(log N) memory
   answer: 1
-  explanation: >-
-    Generators retain only their current execution frame on the heap, producing items on demand with O(1) space.
-
+  explanation: Generators retain only their current execution frame on the heap, producing
+    items on demand with O(1) space.
 pattern_quiz:
   prompt: Which Python keyword transforms a standard function into a generator iterator?
   options:
-    - "return"
-    - "yield"
-    - "async"
-    - "lambda"
+  - return
+  - yield
+  - async
+  - lambda
   answer: 1
-  explanation: >-
-    The presence of the `yield` keyword in a function body transforms it into a generator function.
-
+  explanation: The presence of the `yield` keyword in a function body transforms it
+    into a generator function.
 function:
   name: parse_error_logs
   params:
-    - {name: raw_lines}
-
-starter_code: |
-  class Solution:
-      def parse_error_logs(self, raw_lines: list[str]) -> list[dict]:
-          pass
-
+  - name: raw_lines
+starter_code: "class Solution:\n    def parse_error_logs(self, raw_lines: list[str])\
+  \ -> list[dict]:\n        pass\n"
 tests:
-  - args:
-      - [
-          "2026-10-15T10:00:00 200 /api/v1/health 4",
-          "2026-10-15T10:00:01 500 /api/v1/predict 142",
-          "2026-10-15T10:00:02 504 /api/v1/generate 5000",
-          "2026-10-15T10:00:03 200 /api/v1/metrics 10"
-        ]
-    expected:
-      - {"status": 500, "path": "/api/v1/predict", "latency": 142}
-      - {"status": 504, "path": "/api/v1/generate", "latency": 5000}
-  - args:
-      - [
-          "2026-10-15T11:00:00 404 /missing 2",
-          "2026-10-15T11:00:01 401 /auth 8"
-        ]
-    expected: []
-  - args:
-      - []
-    expected: []
-  - args:
-      - [
-          "",
-          "   ",
-          "2026-10-15T12:00:00 502 /gateway 890"
-        ]
-    expected:
-      - {"status": 502, "path": "/gateway", "latency": 890}
-
+- args:
+  - - 2026-10-15T10:00:00 200 /api/v1/health 4
+    - 2026-10-15T10:00:01 500 /api/v1/predict 142
+    - 2026-10-15T10:00:02 504 /api/v1/generate 5000
+    - 2026-10-15T10:00:03 200 /api/v1/metrics 10
+  expected:
+  - status: 500
+    path: /api/v1/predict
+    latency: 142
+  - status: 504
+    path: /api/v1/generate
+    latency: 5000
+- args:
+  - - 2026-10-15T11:00:00 404 /missing 2
+    - 2026-10-15T11:00:01 401 /auth 8
+  expected: []
+- args:
+  - []
+  expected: []
+- args:
+  - - ''
+    - '   '
+    - 2026-10-15T12:00:00 502 /gateway 890
+  expected:
+  - status: 502
+    path: /gateway
+    latency: 890
 visualize_test: 0
-
 drills:
-  - title: Filter with yield
-    skill: setup
-    goal: Write a simple generator that yields only numbers meeting a threshold.
-    instructions: |
-      Return a list of all numbers in `nums` that are >= `threshold`.
-    function:
-      name: filter_ge
-      params: [{name: nums}, {name: threshold}]
-    starter_code: |
-      class Solution:
-          def filter_ge(self, nums: list[int], threshold: int) -> list[int]:
-              pass
-    tests:
-      - {args: [[100, 500, 200, 503], 500], expected: [500, 503]}
-      - {args: [[200, 201, 204], 300], expected: []}
-      - {args: [[], 100], expected: []}
-    solution: |
-      class Solution:
-          def filter_ge(self, nums: list[int], threshold: int) -> list[int]:
-              def _gen():
-                  for x in nums:
-                      if x >= threshold:
-                          yield x
-              return list(_gen())
-    hint: "Use `yield x` inside the loop and wrap the generator in `list()`."
+- title: Filter with yield
+  skill: setup
+  goal: Write a simple generator that yields only numbers meeting a threshold.
+  instructions: 'Return a list of all numbers in `nums` that are >= `threshold`.
 
-  - title: Parse single line token
-    skill: core
-    goal: Extract typed values from a structured log line.
-    instructions: |
-      Given a line `"TIME STATUS PATH LATENCY"`, return a dict `{"status": int(STATUS), "latency": int(LATENCY)}`.
-    function:
-      name: parse_line_metrics
-      params: [{name: line}]
-    starter_code: |
-      class Solution:
-          def parse_line_metrics(self, line: str) -> dict:
-              pass
-    tests:
-      - {args: ["2026-10-15T10:00:00 500 /api/run 450"], expected: {"status": 500, "latency": 450}}
-      - {args: ["2026-10-15T10:00:01 200 /ping 1"], expected: {"status": 200, "latency": 1}}
-    solution: |
-      class Solution:
-          def parse_line_metrics(self, line: str) -> dict:
-              parts = line.strip().split()
-              return {"status": int(parts[1]), "latency": int(parts[3])}
-    hint: "Use line.strip().split() and convert indices 1 and 3 to int."
+    '
+  function:
+    name: filter_ge
+    params:
+    - name: nums
+    - name: threshold
+  starter_code: "class Solution:\n    def filter_ge(self, nums: list[int], threshold:\
+    \ int) -> list[int]:\n        pass\n"
+  tests:
+  - args:
+    - - 100
+      - 500
+      - 200
+      - 503
+    - 500
+    expected:
+    - 500
+    - 503
+  - args:
+    - - 200
+      - 201
+      - 204
+    - 300
+    expected: []
+  - args:
+    - []
+    - 100
+    expected: []
+  solution: "class Solution:\n    def filter_ge(self, nums: list[int], threshold:\
+    \ int) -> list[int]:\n        def _gen():\n            for x in nums:\n      \
+    \          if x >= threshold:\n                    yield x\n        return list(_gen())\n"
+  hint: Use `yield x` inside the loop and wrap the generator in `list()`.
+- title: Parse single line token
+  skill: core
+  goal: Extract typed values from a structured log line.
+  instructions: 'Given a line `"TIME STATUS PATH LATENCY"`, return a dict `{"status":
+    int(STATUS), "latency": int(LATENCY)}`.
 
-  - title: Lazy batch chunking
-    skill: edge
-    goal: Yield fixed-size batches from an iterator.
-    instructions: |
-      Group items into sublists of size `k` (the last sublist may have fewer than `k` items).
-    function:
-      name: chunk_list
-      params: [{name: items}, {name: k}]
-    starter_code: |
-      class Solution:
-          def chunk_list(self, items: list[int], k: int) -> list[list[int]]:
-              pass
-    tests:
-      - {args: [[1, 2, 3, 4, 5], 2], expected: [[1, 2], [3, 4], [5]]}
-      - {args: [[1, 2], 3], expected: [[1, 2]]}
-      - {args: [[], 2], expected: []}
-    solution: |
-      class Solution:
-          def chunk_list(self, items: list[int], k: int) -> list[list[int]]:
-              res = []
-              for i in range(0, len(items), k):
-                  res.append(items[i : i + k])
-              return res
-    hint: "Use range(0, len(items), k) to slice items[i:i+k]."
+    '
+  function:
+    name: parse_line_metrics
+    params:
+    - name: line
+  starter_code: "class Solution:\n    def parse_line_metrics(self, line: str) -> dict:\n\
+    \        pass\n"
+  tests:
+  - args:
+    - 2026-10-15T10:00:00 500 /api/run 450
+    expected:
+      status: 500
+      latency: 450
+  - args:
+    - 2026-10-15T10:00:01 200 /ping 1
+    expected:
+      status: 200
+      latency: 1
+  solution: "class Solution:\n    def parse_line_metrics(self, line: str) -> dict:\n\
+    \        parts = line.strip().split()\n        return {\"status\": int(parts[1]),\
+    \ \"latency\": int(parts[3])}\n"
+  hint: Use line.strip().split() and convert indices 1 and 3 to int.
+- title: Lazy batch chunking
+  skill: edge
+  goal: Yield fixed-size batches from an iterator.
+  instructions: 'Group items into sublists of size `k` (the last sublist may have
+    fewer than `k` items).
 
+    '
+  function:
+    name: chunk_list
+    params:
+    - name: items
+    - name: k
+  starter_code: "class Solution:\n    def chunk_list(self, items: list[int], k: int)\
+    \ -> list[list[int]]:\n        pass\n"
+  tests:
+  - args:
+    - - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    - 2
+    expected:
+    - - 1
+      - 2
+    - - 3
+      - 4
+    - - 5
+  - args:
+    - - 1
+      - 2
+    - 3
+    expected:
+    - - 1
+      - 2
+  - args:
+    - []
+    - 2
+    expected: []
+  solution: "class Solution:\n    def chunk_list(self, items: list[int], k: int) ->\
+    \ list[list[int]]:\n        res = []\n        for i in range(0, len(items), k):\n\
+    \            res.append(items[i : i + k])\n        return res\n"
+  hint: Use range(0, len(items), k) to slice items[i:i+k].
 hints:
-  - "Split each line with `.strip().split()` and verify it has 4 tokens."
-  - "Check if 500 <= int(tokens[1]) <= 599."
-  - "Create a generator function that yields parsed dicts, then collect into a list."
-
+- Split each line with `.strip().split()` and verify it has 4 tokens.
+- Check if 500 <= int(tokens[1]) <= 599.
+- Create a generator function that yields parsed dicts, then collect into a list.
 solution:
-  code: |
-    class Solution:
-        def parse_error_logs(self, raw_lines: list[str]) -> list[dict]:
-            def _stream_errors():
-                for raw in raw_lines:
-                    line = raw.strip()
-                    if not line:
-                        continue
-                    parts = line.split()
-                    if len(parts) != 4:
-                        continue
-                    status = int(parts[1])
-                    if 500 <= status <= 599:
-                        yield {
-                            "status": status,
-                            "path": parts[2],
-                            "latency": int(parts[3]),
-                        }
-            return list(_stream_errors())
-  explanation: |
-    The internal generator `_stream_errors` processes the incoming lines sequentially.
-    Empty strings and malformed records are cleanly ignored without raising uncaught exceptions.
-    Matching 5xx records are yielded lazily, decoupling the parsing mechanics from the downstream
+  code: "class Solution:\n    def parse_error_logs(self, raw_lines: list[str]) ->\
+    \ list[dict]:\n        def _stream_errors():\n            for raw in raw_lines:\n\
+    \                line = raw.strip()\n                if not line:\n          \
+    \          continue\n                parts = line.split()\n                if\
+    \ len(parts) != 4:\n                    continue\n                status = int(parts[1])\n\
+    \                if 500 <= status <= 599:\n                    yield {\n     \
+    \                   \"status\": status,\n                        \"path\": parts[2],\n\
+    \                        \"latency\": int(parts[3]),\n                    }\n\
+    \        return list(_stream_errors())\n"
+  explanation: 'The internal generator `_stream_errors` processes the incoming lines
+    sequentially.
+
+    Empty strings and malformed records are cleanly ignored without raising uncaught
+    exceptions.
+
+    Matching 5xx records are yielded lazily, decoupling the parsing mechanics from
+    the downstream
+
     consumption.
-  time: O(N) — each line is scanned and split once
+
+    '
+  time: "O(N) \u2014 each line is scanned and split once"
   space: O(K) where K is the number of 5xx errors returned
+pitch_script: '**(Clarify)** "We need to parse incoming log records, filter for 5xx
+  server errors, and return structured dictionaries with status, path, and latency."
 
-pitch_script: |
-  **(Clarify)** "We need to parse incoming log records, filter for 5xx server errors, and return structured dictionaries with status, path, and latency."
 
-  **(Basement Insight)** "When parsing large logs in Python, naive operations like `file.readlines()` allocate all records into a single gigantic list on the heap, triggering an OOM crash. By utilizing generators and `yield`, each record is evaluated lazily in O(1) auxiliary memory."
+  **(Basement Insight)** "When parsing large logs in Python, naive operations like
+  `file.readlines()` allocate all records into a single gigantic list on the heap,
+  triggering an OOM crash. By utilizing generators and `yield`, each record is evaluated
+  lazily in O(1) auxiliary memory."
 
-  **(Solution)** "We build a generator pipeline that cleans whitespace, skips non-conforming lines, checks `500 <= status <= 599`, and yields the parsed dictionary. In production, this generator can feed directly into a streaming Kafka publisher or SQLite batch insert."
 
-  **(Complexity)** "Time complexity is O(N) across N lines. Auxiliary memory is O(1) for the generator pipeline itself."
+  **(Solution)** "We build a generator pipeline that cleans whitespace, skips non-conforming
+  lines, checks `500 <= status <= 599`, and yields the parsed dictionary. In production,
+  this generator can feed directly into a streaming Kafka publisher or SQLite batch
+  insert."
 
+
+  **(Complexity)** "Time complexity is O(N) across N lines. Auxiliary memory is O(1)
+  for the generator pipeline itself."
+
+  '
 twist:
   lc: 9203
   title: Sliding Window Token Aggregation over Log Streams
-  why: >-
-    Instead of simply collecting errors, calculate a rolling 5-minute error rate over the stream.
-    Requires combining a generator stream with a deque sliding window.
-
+  why: Instead of simply collecting errors, calculate a rolling 5-minute error rate
+    over the stream. Requires combining a generator stream with a deque sliding window.
 viz:
-  title: "Generator Execution Pipeline"
+  title: Generator Execution Pipeline
+journey:
+- id: w13_s1_pyobject_overhead
+  title: PyObject Overhead & Why Python Consumes More RAM Than C
+  subtitle: The 28-byte integer structure and pointer indirection overhead
+  scenario: In C, an array of 1,000,000 64-bit integers takes exactly 8MB of RAM (10^6
+    * 8 bytes). In Python, a list of 1,000,000 integers takes over 36MB. Why?
+  mechanism: Every integer in CPython is a full PyLongObject structure containing
+    ob_refcnt (8 bytes), ob_type pointer (8 bytes), ob_size (8 bytes), and a digit
+    array (4+ bytes), totaling 28 bytes per int! The PyListObject is an array of 8-byte
+    pointers pointing to these distinct heap allocations. Thus, eager collections
+    suffer a massive memory amplification factor.
+  prediction:
+    prompt: How much heap memory does Python allocate for a list of 1,000,000 integers
+      compared to a contiguous C array?
+    choices:
+    - id: opt_a
+      label: Around 4x to 5x more memory (~36MB to 40MB vs 8MB) due to 28-byte PyObject
+        headers and 8-byte pointer indirection for every single number.
+      explanation: Correct! Python objects carry reference counts, type metadata,
+        and pointer references that multiply memory consumption.
+      is_correct: true
+    - id: opt_b
+      label: Exactly the same (8MB) because all modern compilers optimize memory identically.
+      explanation: Misconception! Python is dynamically typed; each object requires
+        runtime type metadata and reference counting headers.
+      is_correct: false
+    - id: opt_c
+      label: Less memory (4MB) because Python automatically compresses lists.
+      explanation: Incorrect! Standard Python lists do not compress data; they store
+        arrays of pointers to heap objects.
+      is_correct: false
+    revealed_explanation: PyObject memory overhead explains why materializing millions
+      of items into standard Python lists rapidly exhausts system RAM.
+  controls:
+  - id: element_count
+    label: Element Count
+    type: slider
+    default: 1000000
+    min: 100000
+    max: 5000000
+    step: 100000
+    description: Simulated number of integers stored
+  - id: data_structure
+    label: Data Structure
+    type: select
+    default: Python List of Ints
+    options:
+    - Python List of Ints
+    - NumPy Contiguous C Array
+    - Python Generator
+    description: Storage representation in physical memory
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: PyLongObject Memory Layout vs Contiguous C Buffer
+- id: w13_s2_eager_materialization_danger
+  title: 'Eager Materialization: The Danger of readlines() and Lists'
+  subtitle: How loading 10GB log files triggers the Linux kernel OOM killer
+  scenario: 'You need to filter 5xx errors from a 10GB access log file on a server
+    with 2GB of physical RAM. You run: errors = [line for line in open("log.txt").readlines()
+    if "500" in line]. What happens?'
+  mechanism: file.readlines() reads the entire 10GB file from disk into RAM at once,
+    allocating thousands of string PyObject instances. Then the list comprehension
+    creates a second list in memory. Because total memory demand exceeds physical
+    RAM and swap space, the Linux kernel OOM killer terminates the process immediately
+    with signal 9.
+  prediction:
+    prompt: What happens when an engineer calls .readlines() on a 10GB file on an
+      8GB RAM production machine?
+    choices:
+    - id: opt_a
+      label: The operating system runs out of physical memory and swap, triggering
+        an Out-Of-Memory (OOM) kill that terminates the process with signal 9.
+      explanation: Correct! readlines() attempts to eagerly buffer the entire file
+        in RAM, triggering an immediate kernel OOM kill.
+      is_correct: true
+    - id: opt_b
+      label: Python automatically pauses the code and downloads more RAM from the
+        cloud.
+      explanation: Nonsense! The operating system enforces hard memory limits.
+      is_correct: false
+    - id: opt_c
+      label: Python writes the overflow lines to CPU cache without performance loss.
+      explanation: Incorrect! CPU cache is tiny (a few megabytes) and cannot hold
+        gigabytes of data.
+      is_correct: false
+    revealed_explanation: Eager materialization scales memory as O(N). Production
+      data pipelines must never buffer unbounded datasets into memory lists.
+  controls:
+  - id: file_size_gb
+    label: Log File Size (GB)
+    type: slider
+    default: 10
+    min: 1
+    max: 30
+    step: 1
+    description: Size of log file on disk
+  - id: server_ram_gb
+    label: Available System RAM (GB)
+    type: slider
+    default: 8
+    min: 2
+    max: 16
+    step: 2
+    description: Physical hardware memory allocation
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Heap Allocation Surge vs Linux OOM Killer Threshold
+- id: w13_s3_generator_yield_state_machine
+  title: The Generator Function & yield Stack Suspension
+  subtitle: How CPython preserves execution frames for O(1) memory iteration
+  scenario: When Python encounters a function containing the yield keyword, how does
+    it differ from a standard function returning a list?
+  mechanism: Calling a generator function does not execute the body immediately; it
+    returns a generator object. When next() is called, the CPython interpreter executes
+    bytecode until it hits yield. It captures the current value, saves the frame's
+    execution state (instruction pointer, local variables), and yields control back
+    to the caller. On the next call, it resumes exactly where it stopped. Memory consumption
+    remains strictly O(1).
+  prediction:
+    prompt: When a Python function containing the yield keyword is invoked as gen
+      = my_func(), what happens?
+    choices:
+    - id: opt_a
+      label: The function does not run immediately; it returns a suspended generator
+        object without executing any loop iterations or allocating collections.
+      explanation: Correct! Generator functions return a suspended iterator object
+        immediately; execution begins only when next() is called.
+      is_correct: true
+    - id: opt_b
+      label: The entire function executes from start to end and returns a completed
+        list.
+      explanation: Misconception! If it executed eagerly, it would behave like a regular
+        function, defeating the purpose of yield.
+      is_correct: false
+    - id: opt_c
+      label: Python creates a background thread that executes the loop asynchronously.
+      explanation: Incorrect! Generators are single-threaded coroutine state machines,
+        not background threads.
+      is_correct: false
+    revealed_explanation: Generators turn function execution into an on-demand state
+      machine, enabling infinite or massive sequences to be consumed with zero memory
+      buildup.
+  controls:
+  - id: step_execution
+    label: Step Next (yield)
+    type: button
+    default: true
+    description: Advance generator to next yield point
+  - id: frame_inspection
+    label: Inspect Frame State
+    type: select
+    default: Instruction Pointer
+    options:
+    - Instruction Pointer
+    - Local Variables
+    - Heap Footprint
+    description: Examine CPython frame state machine
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: CPython Frame State Machine & yield Suspension
+- id: w13_s4_chained_generator_pipelines
+  title: Chained Generator Pipelines (Filter -> Transform -> Sink)
+  subtitle: Processing petabyte-scale data streams with constant working memory
+  scenario: How can we build an end-to-end log processing pipeline that reads a 100GB
+    log file, extracts 5xx errors, parses JSON, and computes average latency in 50MB
+    of RAM?
+  mechanism: 'Chain multiple generator expressions: raw_lines = (line for line in
+    open("log.txt")), error_lines = (l for l in raw_lines if " 500 " in l), parsed
+    = (parse_log(l) for l in error_lines). Each record flows through all 3 stages
+    individually in a "pull" architecture before the next line is read from disk,
+    maintaining strictly O(1) working memory.'
+  prediction:
+    prompt: In a chained generator pipeline (Reader -> Filter -> Parser), how many
+      log lines reside in RAM simultaneously?
+    choices:
+    - id: opt_a
+      label: Exactly 1 record at any instant; each record is read, filtered, and processed
+        before the next line is pulled from disk.
+      explanation: Correct! Chained generators operate as a pull pipeline where one
+        item at a time is demanded by the consumer.
+      is_correct: true
+    - id: opt_b
+      label: All 100GB of log lines are loaded in parallel into a thread pool.
+      explanation: Incorrect! There are no threads; execution is synchronous and lazy.
+      is_correct: false
+    - id: opt_c
+      label: Exactly 1,024 lines because Python requires power-of-two buffer sizes.
+      explanation: Misconception! While OS I/O buffers exist, application-level generator
+        pipelines process items one by one.
+      is_correct: false
+    revealed_explanation: Chained generator pipelines allow Python applications to
+      process datasets orders of magnitude larger than physical RAM with constant
+      memory overhead.
+  controls:
+  - id: pipeline_stages
+    label: Pipeline Stage Count
+    type: slider
+    default: 3
+    min: 1
+    max: 5
+    step: 1
+    description: Number of chained generator transformations
+  - id: pull_mode
+    label: Evaluation Mode
+    type: select
+    default: Lazy Pull Pipeline
+    options:
+    - Lazy Pull Pipeline
+    - Eager Intermediate Lists
+    description: Memory behavior of data flow
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Pipelined Generator Data Stream Flow
+- id: w13_s5_generator_lifecycle_stopiteration
+  title: 'Generator State Lifecycle: StopIteration & Resource Cleanup'
+  subtitle: How for-loops terminate and how finally blocks protect file descriptors
+  scenario: How does a for-loop know when a generator has finished, and how can resources
+    (such as open file descriptors) be cleaned up cleanly?
+  mechanism: 'When a generator reaches a return statement or the end of the code block,
+    CPython raises a StopIteration exception. The standard Python for-loop catches
+    this exception internally to terminate cleanly. If a generator is abandoned early,
+    calling gen.close() raises a GeneratorExit exception inside the suspended frame,
+    triggering any finally: cleanup blocks.'
+  prediction:
+    prompt: How does a standard Python "for item in generator:" loop determine when
+      the generator has exhausted all items?
+    choices:
+    - id: opt_a
+      label: The generator raises a StopIteration exception, which the for-loop catches
+        internally to exit cleanly.
+      explanation: 'Correct! Python iterators follow PEP 234: exhaustion is signaled
+        via the StopIteration exception.'
+      is_correct: true
+    - id: opt_b
+      label: The generator returns a special NULL pointer value.
+      explanation: Incorrect! Python uses exception-driven iteration protocols, not
+        NULL pointers.
+      is_correct: false
+    - id: opt_c
+      label: Python polls the operating system file descriptor table.
+      explanation: Nonsense! Iteration protocols are entirely internal to the Python
+        runtime.
+      is_correct: false
+    revealed_explanation: Understanding StopIteration and GeneratorExit ensures proper
+      exception handling and deterministic resource cleanup when streaming large datasets.
+  controls:
+  - id: lifecycle_action
+    label: Trigger Lifecycle Event
+    type: select
+    default: Normal Exhaustion
+    options:
+    - Normal Exhaustion
+    - Early Break (close)
+    - Unhandled Exception
+    description: Simulate generator termination scenarios
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Generator Lifecycle: yield -> StopIteration / GeneratorExit'
+- id: w13_s6_transfer_challenge
+  title: 'Transfer Challenge: Error Log Lazy Streaming Engine'
+  subtitle: Build the production streaming log parser with zero memory waste
+  scenario: 'Implement `parse_error_logs(raw_lines: list[str]) -> list[dict]` to parse
+    high-throughput logs without accumulating intermediate string arrays in memory.'
+  mechanism: 'Build a generator streaming pipeline that: 1. Iterates over each log
+    line, 2. Strips whitespace and skips empty lines, 3. Filters 5xx server errors
+    (500 <= status <= 599), 4. Parses lines into {"status": int, "path": str, "latency":
+    int}, and returns the collected results.'
+  prediction:
+    prompt: Given the line "2026-10-15T10:00:01 500 /api/try-on 1250", what dictionary
+      should be extracted?
+    choices:
+    - id: opt_a
+      label: '{"status": 500, "path": "/api/try-on", "latency": 1250}'
+      explanation: Correct! The timestamp is discarded, while status, path, and latency
+        are parsed with their correct numeric types.
+      is_correct: true
+    - id: opt_b
+      label: '{"status": "500", "path": "/api/try-on", "latency": "1250"}'
+      explanation: Incorrect! Status and latency must be parsed into integer values.
+      is_correct: false
+    - id: opt_c
+      label: '{"error": "500 Server Error"}'
+      explanation: Incorrect! The required schema keys are status, path, and latency.
+      is_correct: false
+    revealed_explanation: Implement the log parser in the code editor below using
+      lazy generator expressions and verify with all test cases.
+  controls:
+  - id: run_verification
+    label: Run Full Streaming Log Parser Tests
+    type: button
+    default: true
+    description: Execute test suite validating 5xx error filtering, empty line skipping,
+      and latency parsing
+  lab_starter_code: "class Solution:\n    def parse_error_logs(self, raw_lines: list[str])\
+    \ -> list[dict]:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Log Streaming Engine Sandbox
