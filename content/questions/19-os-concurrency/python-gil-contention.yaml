@@ -3,240 +3,582 @@ lc: 9402
 citadel_id: os_concurrency
 brick_layer: 2
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    "Why does running 8 Python threads on an 8-core CPU to compute prime numbers run SLOWER than a single thread?"
-    In CPython, memory management relies on reference counting (`Py_INCREF` and `Py_DECREF`).
-    To prevent multi-threaded race conditions on reference counts, CPython wraps the bytecode interpreter in a mutual exclusion lock:
-    the Global Interpreter Lock (GIL). Only one OS thread can execute Python bytecode at any moment.
-    Adding threads to a CPU-bound task introduces lock contention and context-switch thrashing without unlocking additional CPU cores.
-  brute_force: >-
-    Spawning `threading.Thread` or `concurrent.futures.ThreadPoolExecutor` for CPU-heavy tasks like image processing,
-    cryptography, or parsing giant XML trees.
-  brute_force_complexity: O(N) operations, but restricted to 1 CPU core and throttled by GIL contention.
-  key_insight: >-
-    When a thread performs I/O (waiting for network packets, database reads, or C extensions like NumPy/Pandas),
-    it voluntarily releases the GIL, allowing other threads to run.
-    For CPU-bound tasks, bypass the GIL by using `multiprocessing` or `ProcessPoolExecutor`, which spawns separate OS processes,
-    each with its own independent Python interpreter and GIL executing across distinct physical CPU cores.
-  real_world: >-
-    Drizz multi-process XML pruning across 4 cores, FitLabs image preprocessing, and FastAPI async I/O gateways.
-
+  problem_it_solves: '"Why does running 8 Python threads on an 8-core CPU to compute
+    prime numbers run SLOWER than a single thread?" In CPython, memory management
+    relies on reference counting (`Py_INCREF` and `Py_DECREF`). To prevent multi-threaded
+    race conditions on reference counts, CPython wraps the bytecode interpreter in
+    a mutual exclusion lock: the Global Interpreter Lock (GIL). Only one OS thread
+    can execute Python bytecode at any moment. Adding threads to a CPU-bound task
+    introduces lock contention and context-switch thrashing without unlocking additional
+    CPU cores.'
+  brute_force: Spawning `threading.Thread` or `concurrent.futures.ThreadPoolExecutor`
+    for CPU-heavy tasks like image processing, cryptography, or parsing giant XML
+    trees.
+  brute_force_complexity: O(N) operations, but restricted to 1 CPU core and throttled
+    by GIL contention.
+  key_insight: When a thread performs I/O (waiting for network packets, database reads,
+    or C extensions like NumPy/Pandas), it voluntarily releases the GIL, allowing
+    other threads to run. For CPU-bound tasks, bypass the GIL by using `multiprocessing`
+    or `ProcessPoolExecutor`, which spawns separate OS processes, each with its own
+    independent Python interpreter and GIL executing across distinct physical CPU
+    cores.
+  real_world: Drizz multi-process XML pruning across 4 cores, FitLabs image preprocessing,
+    and FastAPI async I/O gateways.
 statement:
-  clean: |
-    Implement an OS execution advisor to analyze python gil contention:
-    `classify_concurrency_workload(workload_type: str, worker_count: int) -> dict`.
-    
-    Given:
-    - `workload_type`: either `"cpu_bound"` (e.g. image processing, XML DOM pruning) or `"io_bound"` (e.g. LLM API calls, database queries).
-    - `worker_count`: the number of concurrent tasks to execute.
-    
-    Rules:
-    1. If `workload_type == "cpu_bound"`:
-       - `gil_contention`: `True` (threads will fight for the single interpreter lock).
-       - `recommended_runtime`: `"multiprocessing"` (spawn separate processes to utilize multiple cores).
-       - `core_utilization`: `worker_count` (each process executes on an isolated core).
-       - `summary`: `"CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use multiprocessing."`
-    2. If `workload_type == "io_bound"`:
-       - `gil_contention`: `False` (I/O operations release the GIL during socket waits).
-       - `recommended_runtime`: `"asyncio"` (efficient event loop cooperative multitasking).
-       - `core_utilization`: 1 (thousands of concurrent sockets handled on 1 thread).
-       - `summary`: `"I/O bound tasks release the GIL during network/disk wait. Use asyncio."`
-    3. If `workload_type` is unrecognized, return `{"error": f"Unknown workload: {workload_type}"}`.
-  oa_story: |
-    **Drizz Mobile Evaluation — 4-Core Worker Scaling**
-    
-    When testing 100 mobile UI paths, our pipeline performs two tasks: fetching remote device screenshots over HTTP (I/O-bound)
-    and parsing OCR XML trees with bounding-box intersection math (CPU-bound).
-    An engineer ran both on a 50-thread `ThreadPoolExecutor`, causing CPU-bound XML processing to freeze the entire application.
-    
-    Implement this concurrency analyzer to formally categorize workloads and enforce the right runtime strategy.
-  trigger_keywords: ["python gil contention", "classify_concurrency_workload", "workload_type"]
+  clean: "Implement an OS execution advisor to analyze python gil contention:\n`classify_concurrency_workload(workload_type:\
+    \ str, worker_count: int) -> dict`.\n\nGiven:\n- `workload_type`: either `\"cpu_bound\"\
+    ` (e.g. image processing, XML DOM pruning) or `\"io_bound\"` (e.g. LLM API calls,\
+    \ database queries).\n- `worker_count`: the number of concurrent tasks to execute.\n\
+    \nRules:\n1. If `workload_type == \"cpu_bound\"`:\n   - `gil_contention`: `True`\
+    \ (threads will fight for the single interpreter lock).\n   - `recommended_runtime`:\
+    \ `\"multiprocessing\"` (spawn separate processes to utilize multiple cores).\n\
+    \   - `core_utilization`: `worker_count` (each process executes on an isolated\
+    \ core).\n   - `summary`: `\"CPU-bound Python loops hold the GIL, serializing\
+    \ threads on 1 core. Use multiprocessing.\"`\n2. If `workload_type == \"io_bound\"\
+    `:\n   - `gil_contention`: `False` (I/O operations release the GIL during socket\
+    \ waits).\n   - `recommended_runtime`: `\"asyncio\"` (efficient event loop cooperative\
+    \ multitasking).\n   - `core_utilization`: 1 (thousands of concurrent sockets\
+    \ handled on 1 thread).\n   - `summary`: `\"I/O bound tasks release the GIL during\
+    \ network/disk wait. Use asyncio.\"`\n3. If `workload_type` is unrecognized, return\
+    \ `{\"error\": f\"Unknown workload: {workload_type}\"}`.\n"
+  oa_story: "**Drizz Mobile Evaluation \u2014 4-Core Worker Scaling**\n\nWhen testing\
+    \ 100 mobile UI paths, our pipeline performs two tasks: fetching remote device\
+    \ screenshots over HTTP (I/O-bound)\nand parsing OCR XML trees with bounding-box\
+    \ intersection math (CPU-bound).\nAn engineer ran both on a 50-thread `ThreadPoolExecutor`,\
+    \ causing CPU-bound XML processing to freeze the entire application.\n\nImplement\
+    \ this concurrency analyzer to formally categorize workloads and enforce the right\
+    \ runtime strategy.\n"
+  trigger_keywords:
+  - python gil contention
+  - classify_concurrency_workload
+  - workload_type
   examples:
-    - input: "workload_type = 'cpu_bound', worker_count = 4"
-      output: "{'gil_contention': True, 'recommended_runtime': 'multiprocessing', 'core_utilization': 4, 'summary': 'CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use multiprocessing.'}"
-      explanation: "CPU-bound tasks require multiprocessing to escape the GIL."
-    - input: "workload_type = 'io_bound', worker_count = 100"
-      output: "{'gil_contention': False, 'recommended_runtime': 'asyncio', 'core_utilization': 1, 'summary': 'I/O bound tasks release the GIL during network/disk wait. Use asyncio.'}"
-      explanation: "IO-bound tasks release the GIL during I/O waits, making asyncio ideal."
+  - input: workload_type = 'cpu_bound', worker_count = 4
+    output: '{''gil_contention'': True, ''recommended_runtime'': ''multiprocessing'',
+      ''core_utilization'': 4, ''summary'': ''CPU-bound Python loops hold the GIL,
+      serializing threads on 1 core. Use multiprocessing.''}'
+    explanation: CPU-bound tasks require multiprocessing to escape the GIL.
+  - input: workload_type = 'io_bound', worker_count = 100
+    output: '{''gil_contention'': False, ''recommended_runtime'': ''asyncio'', ''core_utilization'':
+      1, ''summary'': ''I/O bound tasks release the GIL during network/disk wait.
+      Use asyncio.''}'
+    explanation: IO-bound tasks release the GIL during I/O waits, making asyncio ideal.
   constraints:
-    - "worker_count >= 1"
-    - "workload_type is a string"
-
+  - worker_count >= 1
+  - workload_type is a string
 constraint_quiz:
-  prompt: >-
-    Why does CPython require the Global Interpreter Lock (GIL)?
+  prompt: Why does CPython require the Global Interpreter Lock (GIL)?
   options:
-    - "To protect internal reference counting memory management from concurrent thread corruption"
-    - "To make Python slow on purpose"
-    - "To force developers to use Java"
-    - "Because modern CPUs cannot run more than 1 thread"
+  - To protect internal reference counting memory management from concurrent thread
+    corruption
+  - To make Python slow on purpose
+  - To force developers to use Java
+  - Because modern CPUs cannot run more than 1 thread
   answer: 0
-  explanation: >-
-    CPython's reference counts (Py_INCREF/Py_DECREF) are not thread-safe; the GIL is a coarse-grained lock protecting interpreter state.
-
+  explanation: CPython's reference counts (Py_INCREF/Py_DECREF) are not thread-safe;
+    the GIL is a coarse-grained lock protecting interpreter state.
 pattern_quiz:
-  prompt: What Python module spawns independent processes with separate interpreters to achieve true multi-core parallelism?
+  prompt: What Python module spawns independent processes with separate interpreters
+    to achieve true multi-core parallelism?
   options:
-    - "multiprocessing"
-    - "threading"
-    - "asyncio"
-    - "queue"
+  - multiprocessing
+  - threading
+  - asyncio
+  - queue
   answer: 0
-  explanation: >-
-    `multiprocessing` spawns separate OS processes, bypassing the single-interpreter GIL limitation.
-
+  explanation: '`multiprocessing` spawns separate OS processes, bypassing the single-interpreter
+    GIL limitation.'
 function:
   name: classify_concurrency_workload
   params:
-    - {name: workload_type}
-    - {name: worker_count}
-
-starter_code: |
-  class Solution:
-      def classify_concurrency_workload(self, workload_type: str, worker_count: int) -> dict:
-          pass
-
+  - name: workload_type
+  - name: worker_count
+starter_code: "class Solution:\n    def classify_concurrency_workload(self, workload_type:\
+  \ str, worker_count: int) -> dict:\n        pass\n"
 tests:
-  - args: ["cpu_bound", 4]
-    expected:
-      gil_contention: true
-      recommended_runtime: "multiprocessing"
-      core_utilization: 4
-      summary: "CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use multiprocessing."
-  - args: ["io_bound", 50]
-    expected:
-      gil_contention: false
-      recommended_runtime: "asyncio"
-      core_utilization: 1
-      summary: "I/O bound tasks release the GIL during network/disk wait. Use asyncio."
-  - args: ["unknown", 2]
-    expected:
-      error: "Unknown workload: unknown"
-  - args: ["cpu_bound", 8]
-    expected:
-      gil_contention: true
-      recommended_runtime: "multiprocessing"
-      core_utilization: 8
-      summary: "CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use multiprocessing."
-
+- args:
+  - cpu_bound
+  - 4
+  expected:
+    gil_contention: true
+    recommended_runtime: multiprocessing
+    core_utilization: 4
+    summary: CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use
+      multiprocessing.
+- args:
+  - io_bound
+  - 50
+  expected:
+    gil_contention: false
+    recommended_runtime: asyncio
+    core_utilization: 1
+    summary: I/O bound tasks release the GIL during network/disk wait. Use asyncio.
+- args:
+  - unknown
+  - 2
+  expected:
+    error: 'Unknown workload: unknown'
+- args:
+  - cpu_bound
+  - 8
+  expected:
+    gil_contention: true
+    recommended_runtime: multiprocessing
+    core_utilization: 8
+    summary: CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use
+      multiprocessing.
 visualize_test: 0
-
 drills:
-  - title: Identify CPU-bound workload
-    skill: setup
-    goal: Detect if task is CPU-intensive.
-    instructions: |
-      Return `True` if `task_name` is in `['xml_pruning', 'image_resize', 'matrix_multiply']`, else `False`.
-    function:
-      name: is_cpu_bound
-      params: [{name: task_name}]
-    starter_code: |
-      class Solution:
-          def is_cpu_bound(self, task_name: str) -> bool:
-              pass
-    tests:
-      - {args: ["xml_pruning"], expected: true}
-      - {args: ["http_get"], expected: false}
-    solution: |
-      class Solution:
-          def is_cpu_bound(self, task_name: str) -> bool:
-              return task_name in {"xml_pruning", "image_resize", "matrix_multiply"}
-    hint: "Check membership in set of CPU-bound task names."
+- title: Identify CPU-bound workload
+  skill: setup
+  goal: Detect if task is CPU-intensive.
+  instructions: 'Return `True` if `task_name` is in `[''xml_pruning'', ''image_resize'',
+    ''matrix_multiply'']`, else `False`.
 
-  - title: Check GIL release during I/O
-    skill: core
-    goal: Return whether GIL is released.
-    instructions: |
-      Given `"io"`, return `True`, given `"cpu"`, return `False`.
-    function:
-      name: releases_gil
-      params: [{name: kind}]
-    starter_code: |
-      class Solution:
-          def releases_gil(self, kind: str) -> bool:
-              pass
-    tests:
-      - {args: ["io"], expected: true}
-      - {args: ["cpu"], expected: false}
-    solution: |
-      class Solution:
-          def releases_gil(self, kind: str) -> bool:
-              return kind == "io"
-    hint: "I/O releases the GIL; CPU-bound Python bytecode retains it."
+    '
+  function:
+    name: is_cpu_bound
+    params:
+    - name: task_name
+  starter_code: "class Solution:\n    def is_cpu_bound(self, task_name: str) -> bool:\n\
+    \        pass\n"
+  tests:
+  - args:
+    - xml_pruning
+    expected: true
+  - args:
+    - http_get
+    expected: false
+  solution: "class Solution:\n    def is_cpu_bound(self, task_name: str) -> bool:\n\
+    \        return task_name in {\"xml_pruning\", \"image_resize\", \"matrix_multiply\"\
+    }\n"
+  hint: Check membership in set of CPU-bound task names.
+- title: Check GIL release during I/O
+  skill: core
+  goal: Return whether GIL is released.
+  instructions: 'Given `"io"`, return `True`, given `"cpu"`, return `False`.
 
-  - title: Core allocation calculation
-    skill: edge
-    goal: Compute cores used based on runtime model.
-    instructions: |
-      If runtime is `"multiprocessing"`, return `workers`, else return `1`.
-    function:
-      name: cores_used
-      params: [{name: runtime}, {name: workers}]
-    starter_code: |
-      class Solution:
-          def cores_used(self, runtime: str, workers: int) -> int:
-              pass
-    tests:
-      - {args: ["multiprocessing", 4], expected: 4}
-      - {args: ["asyncio", 100], expected: 1}
-    solution: |
-      class Solution:
-          def cores_used(self, runtime: str, workers: int) -> int:
-              return workers if runtime == "multiprocessing" else 1
-    hint: "Return workers if runtime == 'multiprocessing' else 1."
+    '
+  function:
+    name: releases_gil
+    params:
+    - name: kind
+  starter_code: "class Solution:\n    def releases_gil(self, kind: str) -> bool:\n\
+    \        pass\n"
+  tests:
+  - args:
+    - io
+    expected: true
+  - args:
+    - cpu
+    expected: false
+  solution: "class Solution:\n    def releases_gil(self, kind: str) -> bool:\n   \
+    \     return kind == \"io\"\n"
+  hint: I/O releases the GIL; CPU-bound Python bytecode retains it.
+- title: Core allocation calculation
+  skill: edge
+  goal: Compute cores used based on runtime model.
+  instructions: 'If runtime is `"multiprocessing"`, return `workers`, else return
+    `1`.
 
+    '
+  function:
+    name: cores_used
+    params:
+    - name: runtime
+    - name: workers
+  starter_code: "class Solution:\n    def cores_used(self, runtime: str, workers:\
+    \ int) -> int:\n        pass\n"
+  tests:
+  - args:
+    - multiprocessing
+    - 4
+    expected: 4
+  - args:
+    - asyncio
+    - 100
+    expected: 1
+  solution: "class Solution:\n    def cores_used(self, runtime: str, workers: int)\
+    \ -> int:\n        return workers if runtime == \"multiprocessing\" else 1\n"
+  hint: Return workers if runtime == 'multiprocessing' else 1.
 hints:
-  - "Check `if workload_type == 'cpu_bound':`."
-  - "For CPU tasks: `gil_contention: True, recommended_runtime: 'multiprocessing', core_utilization: worker_count`."
-  - "For I/O tasks: `gil_contention: False, recommended_runtime: 'asyncio', core_utilization: 1`."
-
+- Check `if workload_type == 'cpu_bound':`.
+- 'For CPU tasks: `gil_contention: True, recommended_runtime: ''multiprocessing'',
+  core_utilization: worker_count`.'
+- 'For I/O tasks: `gil_contention: False, recommended_runtime: ''asyncio'', core_utilization:
+  1`.'
 solution:
-  code: |
-    class Solution:
-        def classify_concurrency_workload(self, workload_type: str, worker_count: int) -> dict:
-            if workload_type == "cpu_bound":
-                return {
-                    "gil_contention": True,
-                    "recommended_runtime": "multiprocessing",
-                    "core_utilization": worker_count,
-                    "summary": "CPU-bound Python loops hold the GIL, serializing threads on 1 core. Use multiprocessing.",
-                }
-            elif workload_type == "io_bound":
-                return {
-                    "gil_contention": False,
-                    "recommended_runtime": "asyncio",
-                    "core_utilization": 1,
-                    "summary": "I/O bound tasks release the GIL during network/disk wait. Use asyncio.",
-                }
-            else:
-                return {"error": f"Unknown workload: {workload_type}"}
-  explanation: |
-    In CPython, the Global Interpreter Lock prevents multiple threads from executing Python bytecode in parallel.
-    For CPU-bound tasks, threads serialize on a single core; spawning processes via `multiprocessing` bypasses
+  code: "class Solution:\n    def classify_concurrency_workload(self, workload_type:\
+    \ str, worker_count: int) -> dict:\n        if workload_type == \"cpu_bound\"\
+    :\n            return {\n                \"gil_contention\": True,\n         \
+    \       \"recommended_runtime\": \"multiprocessing\",\n                \"core_utilization\"\
+    : worker_count,\n                \"summary\": \"CPU-bound Python loops hold the\
+    \ GIL, serializing threads on 1 core. Use multiprocessing.\",\n            }\n\
+    \        elif workload_type == \"io_bound\":\n            return {\n         \
+    \       \"gil_contention\": False,\n                \"recommended_runtime\": \"\
+    asyncio\",\n                \"core_utilization\": 1,\n                \"summary\"\
+    : \"I/O bound tasks release the GIL during network/disk wait. Use asyncio.\",\n\
+    \            }\n        else:\n            return {\"error\": f\"Unknown workload:\
+    \ {workload_type}\"}\n"
+  explanation: 'In CPython, the Global Interpreter Lock prevents multiple threads
+    from executing Python bytecode in parallel.
+
+    For CPU-bound tasks, threads serialize on a single core; spawning processes via
+    `multiprocessing` bypasses
+
     the GIL to achieve true multi-core speedups.
-    
-    For I/O-bound tasks, threads and async tasks release the GIL while waiting on network sockets,
-    making single-threaded `asyncio` extremely fast and capable of managing 10,000+ connections with low memory overhead.
+
+
+    For I/O-bound tasks, threads and async tasks release the GIL while waiting on
+    network sockets,
+
+    making single-threaded `asyncio` extremely fast and capable of managing 10,000+
+    connections with low memory overhead.
+
+    '
   time: O(1) decision classification
   space: O(1) dictionary response
+pitch_script: '**(Clarify)** "We need to categorize workloads as CPU-bound or I/O-bound,
+  diagnosing GIL contention and recommending the optimal Python concurrency runtime."
 
-pitch_script: |
-  **(Clarify)** "We need to categorize workloads as CPU-bound or I/O-bound, diagnosing GIL contention and recommending the optimal Python concurrency runtime."
 
-  **(Basement Insight)** "CPython's GIL protects memory reference counts by restricting execution to one OS thread at any instant. For CPU-bound tasks, threading fails because threads contest the GIL on a single core. In contrast, during I/O operations, Python drops the GIL, allowing concurrent I/O progress."
+  **(Basement Insight)** "CPython''s GIL protects memory reference counts by restricting
+  execution to one OS thread at any instant. For CPU-bound tasks, threading fails
+  because threads contest the GIL on a single core. In contrast, during I/O operations,
+  Python drops the GIL, allowing concurrent I/O progress."
 
-  **(Solution)** "For CPU workloads, we recommend `multiprocessing` to run independent interpreters on multiple cores. For I/O workloads, we recommend `asyncio` to multiplex sockets on an event loop without OS thread switching overhead."
+
+  **(Solution)** "For CPU workloads, we recommend `multiprocessing` to run independent
+  interpreters on multiple cores. For I/O workloads, we recommend `asyncio` to multiplex
+  sockets on an event loop without OS thread switching overhead."
+
 
   **(Complexity)** "Executes in O(1) time and space."
 
+  '
 twist:
   lc: 9403
   title: Free-Threaded Python 3.13 (PEP 703)
-  why: >-
-    Python 3.13 introduces experimental free-threaded builds (--disable-gil) replacing the global lock
-    with mimalloc thread-safe memory allocation, allowing true multi-threaded CPU execution.
-
+  why: Python 3.13 introduces experimental free-threaded builds (--disable-gil) replacing
+    the global lock with mimalloc thread-safe memory allocation, allowing true multi-threaded
+    CPU execution.
 viz:
-  title: "Python GIL Contention Timeline"
+  title: Python GIL Contention Timeline
+journey:
+- id: w28_s1_refcounting_gil
+  title: CPython Reference Counting & The Need for the GIL
+  subtitle: Why Python wraps the bytecode interpreter in a global mutual exclusion
+    lock
+  scenario: In CPython, memory cleanup relies on reference counting (ob_refcnt, Py_INCREF,
+    Py_DECREF). Why does this necessitate the Global Interpreter Lock (GIL)?
+  mechanism: 'Incrementing and decrementing ob_refcnt is not atomic in standard C.
+    Without locking, two threads reading and updating ob_refcnt simultaneously cause
+    race conditions: an object with active references could have its refcount drop
+    to 0 and be freed prematurely (use-after-free vulnerability), or memory can be
+    leaked indefinitely. The GIL solves this globally by ensuring only one thread
+    executes bytecode at a time.'
+  prediction:
+    prompt: What happens if multiple native OS threads modify CPython object reference
+      counts concurrently without the GIL or atomic operations?
+    choices:
+    - id: opt_a
+      label: Race conditions corrupt ob_refcnt, triggering heap corruption, segmentation
+        faults, and use-after-free security vulnerabilities.
+      explanation: Correct! Reference counting without locks is not thread-safe; concurrent
+        access can cause memory corruption or crashes.
+      is_correct: true
+    - id: opt_b
+      label: CPython automatically converts all variables into atomic CPU registers
+        without overhead.
+      explanation: Misconception! Atomic CPU instructions on every increment/decrement
+        would add substantial performance overhead to single-threaded code.
+      is_correct: false
+    - id: opt_c
+      label: Python switches to Java's generational garbage collector automatically.
+      explanation: Incorrect! CPython is written in C and uses reference counting
+        paired with a cyclic garbage collector.
+      is_correct: false
+    revealed_explanation: The GIL was introduced in CPython to make single-threaded
+      execution fast and C extension integration simple, at the cost of serializing
+      multi-threaded bytecode execution.
+  controls:
+  - id: thread_count
+    label: OS Thread Count
+    type: slider
+    default: 4
+    min: 1
+    max: 8
+    step: 1
+    description: Number of native threads attempting to execute Python bytecode
+  - id: atomic_refcount
+    label: Atomic Refcounting Enabled
+    type: toggle
+    default: false
+    description: Use atomic instructions instead of GIL mutex
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: CPython PyObject Reference Counting & GIL Architecture
+- id: w28_s2_cpu_bound_threads
+  title: The CPU-Bound Multithreading Paradox (1 Core Ceiling)
+  subtitle: Why adding 8 threads to an 8-core CPU can make Python code run slower
+  scenario: You run a CPU-intensive mathematical loop (calculating prime numbers)
+    on an 8-core server. You split the workload across 8 threads using threading.Thread.
+    How does total wall-clock time compare to 1 thread?
+  mechanism: Because the GIL prevents simultaneous bytecode execution, all 8 threads
+    take turns acquiring the GIL, running for a switch interval (default 5ms), and
+    releasing it. The 8 threads must serialize onto a single CPU core. Furthermore,
+    OS thread context-switching overhead, cache thrashing, and lock contention make
+    the 8-thread run SLOWER than a single thread.
+  prediction:
+    prompt: How does running an intensive CPU-bound computation across 8 Python threads
+      compare to 1 Python thread on an 8-core machine?
+    choices:
+    - id: opt_a
+      label: The 8-thread program is actually slower or at best equal, utilizing only
+        100% of 1 core (out of 800%) due to GIL lock serialization and context switching.
+      explanation: Correct! All 8 threads fight for the single interpreter lock, wasting
+        CPU cycles in lock contention while executing on only 1 physical core.
+      is_correct: true
+    - id: opt_b
+      label: It runs 8x faster because modern OS schedulers bypass Python locks automatically.
+      explanation: Misconception! The OS kernel scheduler cannot bypass the GIL mutex
+        inside the CPython process.
+      is_correct: false
+    - id: opt_c
+      label: It utilizes 800% CPU capacity with zero context switching.
+      explanation: Incorrect! Pure Python bytecode cannot execute on multiple cores
+        concurrently within a single interpreter.
+      is_correct: false
+    revealed_explanation: Threading in Python does not provide multi-core parallelism
+      for CPU-bound tasks. In fact, thread contention adds overhead that degrades
+      performance.
+  controls:
+  - id: worker_count
+    label: Worker Threads
+    type: slider
+    default: 8
+    min: 1
+    max: 16
+    step: 1
+    description: Number of threads competing for single interpreter GIL
+  - id: task_workload
+    label: Workload Type
+    type: select
+    default: CPU-Bound
+    options:
+    - CPU-Bound
+    - I/O-Bound
+    description: Type of computational workload
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: GIL Lock Contention & Core Serialization Timeline
+- id: w28_s3_io_bound_release
+  title: I/O-Bound Workloads & Voluntary GIL Release
+  subtitle: Why threading and asyncio excel for networking and disk operations
+  scenario: You have 100 concurrent HTTP requests fetching device screenshots from
+    remote mobile testing farms. Each spends 95% of its time waiting for network packets.
+    If you use 100 threads, does the GIL block them?
+  mechanism: Before initiating blocking system calls (like recv(), select(), or disk
+    reads), CPython executes Py_BEGIN_ALLOW_THREADS, dropping the GIL. While Thread
+    1 waits on socket I/O, Thread 2 acquires the GIL and submits its request. Thus,
+    I/O-bound multithreading in Python achieves true concurrency.
+  prediction:
+    prompt: When a Python thread makes a blocking network socket call (e.g. requests.get()
+      or database query), what happens to the GIL?
+    choices:
+    - id: opt_a
+      label: The thread voluntarily releases the GIL before waiting on the socket,
+        allowing other threads to run Python code concurrently.
+      explanation: Correct! Standard library I/O calls drop the GIL during kernel
+        syscalls so other Python threads can execute.
+      is_correct: true
+    - id: opt_b
+      label: The thread holds the GIL until all data packets arrive, freezing all
+        other threads.
+      explanation: Misconception! If this were true, Python could not handle concurrent
+        web servers. The GIL is released during I/O waits.
+      is_correct: false
+    - id: opt_c
+      label: The GIL crashes because sockets are incompatible with Python bytecode.
+      explanation: Nonsense! Networking and sockets are fundamental capabilities of
+        Python.
+      is_correct: false
+    revealed_explanation: Because I/O releases the GIL, Python threads and asyncio
+      coroutines are exceptionally effective for high-concurrency network servers
+      and database clients.
+  controls:
+  - id: concurrent_requests
+    label: Concurrent Network Requests
+    type: slider
+    default: 50
+    min: 10
+    max: 200
+    step: 10
+    description: Number of concurrent HTTP calls in flight
+  - id: network_latency_ms
+    label: Network Round-Trip Latency (ms)
+    type: slider
+    default: 50
+    min: 10
+    max: 500
+    step: 10
+    description: Time spent in kernel socket wait outside the GIL
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'I/O Concurrency: Voluntary GIL Release & Overlapping Waits'
+- id: w28_s4_multiprocessing_vs_threading
+  title: Multiprocessing vs Threading vs Asyncio Architectural Trade-offs
+  subtitle: Choosing the right concurrency model for memory, IPC, and core utilization
+  scenario: 'Drizz Mobile needs to choose an architecture for: A) 1,000 concurrent
+    REST API calls, and B) 8-core OCR image edge detection. Which concurrency model
+    fits each?'
+  mechanism: 'asyncio: Single-threaded event loop utilizing non-blocking OS I/O primitives
+    (epoll/kqueue). Lowest memory footprint (~2KB per coroutine), ideal for massive
+    I/O concurrency. threading: Native OS threads (~8MB stack each). Good for I/O
+    when synchronous legacy libraries are required, but limited by GIL for CPU tasks.
+    multiprocessing: Spawns separate OS processes via fork/spawn. Each process has
+    its own Python interpreter and GIL, providing true multi-core CPU scaling, but
+    incurs memory duplication and IPC serialization overhead.'
+  prediction:
+    prompt: For an OCR image processing pipeline that needs to max out an 8-core CPU,
+      which concurrency primitive must be used in Python?
+    choices:
+    - id: opt_a
+      label: multiprocessing (or ProcessPoolExecutor), because each process has an
+        independent interpreter and GIL running across physical cores.
+      explanation: Correct! Spawning separate OS processes provides each worker with
+        its own Python interpreter and GIL, achieving true 8-core scaling.
+      is_correct: true
+    - id: opt_b
+      label: asyncio, because async code automatically runs on all CPU cores simultaneously.
+      explanation: Misconception! asyncio is strictly single-threaded; coroutines
+        run cooperatively on a single core.
+      is_correct: false
+    - id: opt_c
+      label: threading, because threads share memory without any overhead.
+      explanation: Incorrect! As demonstrated in Stage 2, CPU-bound threads in Python
+        serialize on 1 core due to the GIL.
+      is_correct: false
+    revealed_explanation: 'Architectural Rule: Use asyncio for high-throughput I/O;
+      use multiprocessing or external C extensions for CPU-bound multi-core workloads.'
+  controls:
+  - id: target_workload
+    label: Target Workload
+    type: select
+    default: CPU-Bound
+    options:
+    - CPU-Bound
+    - I/O-Bound
+    description: Select workload profile to evaluate architecture
+  - id: chosen_runtime
+    label: Selected Runtime
+    type: select
+    default: multiprocessing
+    options:
+    - multiprocessing
+    - threading
+    - asyncio
+    description: Concurrency model to evaluate
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Concurrency Decision Matrix: Memory vs Multi-Core Scaling'
+- id: w28_s5_free_threading_extensions
+  title: 'Bypassing the GIL: C Extensions & Python 3.13t Free-Threading'
+  subtitle: How NumPy releases the GIL and how PEP 703 eliminates the lock entirely
+  scenario: Modern data science libraries like NumPy, PyTorch, and Polars execute
+    matrix operations in parallel across all CPU cores without multiprocessing. How?
+    And what is Python 3.13t?
+  mechanism: '1. C Extensions: Operations like numpy.dot() drop the GIL at the C level
+    using Py_BEGIN_ALLOW_THREADS, execute parallel OpenMP/BLAS loops across all hardware
+    cores, and re-acquire the GIL before returning to Python. 2. PEP 703 Free-Threaded
+    Python (3.13t): Python 3.13 introduces an experimental build (--disable-gil) that
+    disables the GIL entirely, replacing coarse locking with mimalloc thread-safe
+    memory allocators, biased reference counting, and immortal objects.'
+  prediction:
+    prompt: How does NumPy run multi-threaded matrix multiplications across all CPU
+      cores in a standard Python process?
+    choices:
+    - id: opt_a
+      label: NumPy drops the GIL at the C level (Py_BEGIN_ALLOW_THREADS), executes
+        hardware-accelerated C/BLAS threads across all cores, and re-acquires the
+        GIL before returning.
+      explanation: Correct! Compiled C extensions can release the GIL during pure
+        computational loops, bypassing interpreter serialization.
+      is_correct: true
+    - id: opt_b
+      label: NumPy forces the Linux kernel to rewrite the Python bytecode interpreter
+        in assembly.
+      explanation: Incorrect! NumPy uses standard C API hooks provided by CPython
+        to release and re-acquire the GIL.
+      is_correct: false
+    - id: opt_c
+      label: NumPy runs inside a virtual machine that ignores CPU registers.
+      explanation: Nonsense! NumPy executes native compiled machine code optimized
+        for CPU SIMD/AVX instructions.
+      is_correct: false
+    revealed_explanation: When building high-performance Python systems, developers
+      either offload heavy computation to C/Rust extensions that release the GIL,
+      or deploy on free-threaded Python 3.13t.
+  controls:
+  - id: library_type
+    label: Implementation
+    type: select
+    default: NumPy C Extension
+    options:
+    - NumPy C Extension
+    - Pure Python Loop
+    description: Code implementation type
+  - id: python_runtime
+    label: CPython Runtime
+    type: select
+    default: CPython 3.12 (Standard GIL)
+    options:
+    - CPython 3.12 (Standard GIL)
+    - Python 3.13t (Free-Threaded No GIL)
+    description: Interpreter runtime configuration
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: C Extension GIL Release vs Free-Threaded PEP 703 Architecture
+- id: w28_s6_transfer_challenge
+  title: 'Transfer Challenge: OS Concurrency Workload Advisor'
+  subtitle: Build the automated concurrency classifier and scaling advisor
+  scenario: 'Implement `classify_concurrency_workload(workload_type: str, worker_count:
+    int) -> dict` to inspect workload characteristics and recommend the optimal runtime
+    strategy.'
+  mechanism: Detect CPU-bound vs I/O-bound workloads, determine GIL contention, compute
+    core utilization, and return architectural guidance.
+  prediction:
+    prompt: If workload_type is "cpu_bound" with worker_count = 4, what should the
+      concurrency advisor return?
+    choices:
+    - id: opt_a
+      label: 'gil_contention: True, recommended_runtime: "multiprocessing", core_utilization:
+        4, and summary explaining single-core GIL serialization.'
+      explanation: Correct! CPU-bound tasks require multiprocessing to escape the
+        GIL and utilize 4 independent cores.
+      is_correct: true
+    - id: opt_b
+      label: 'gil_contention: False, recommended_runtime: "asyncio", core_utilization:
+        1.'
+      explanation: Incorrect! That is the recommendation for I/O-bound workloads.
+      is_correct: false
+    - id: opt_c
+      label: 'recommended_runtime: "threading", core_utilization: 16.'
+      explanation: Incorrect! Threading on CPU-bound workloads suffers severe GIL
+        contention and utilizes only 1 core.
+      is_correct: false
+    revealed_explanation: Implement the workload classifier using the pre-loaded starter
+      below and verify against the test suite.
+  controls:
+  - id: run_verification
+    label: Run Full Concurrency Classifier Tests
+    type: button
+    default: true
+    description: Verify classifier handles cpu_bound, io_bound, worker scaling, and
+      error cases
+  lab_starter_code: "class Solution:\n    def classify_concurrency_workload(self,\
+    \ workload_type: str, worker_count: int) -> dict:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: OS Concurrency Advisor Sandbox

@@ -3,376 +3,632 @@ lc: 9431
 citadel_id: os_concurrency
 brick_layer: 1
 runner_type: python_practical
-
 concept:
-  problem_it_solves: >-
-    How can an operating system run programs requiring 32 GB of memory when the machine only has 8 GB of physical RAM?
-    Virtual memory decouples a program's logical address space from physical hardware memory.
-    The OS divides memory into fixed-size blocks called Pages (typically 4KB). Physical RAM is divided into matching Page Frames.
-    When a CPU executes an instruction referencing a page not currently resident in physical RAM, the Memory Management Unit (MMU)
-    triggers a hardware interrupt called a Page Fault.
-    If physical RAM is full, the OS must choose a victim page to evict to disk swap space.
-    If the page replacement policy is naive or the program's working set exceeds physical RAM, the system enters Thrashing:
-    the CPU spends 99% of its cycles waiting on disk I/O page swaps, freezing user applications.
-  brute_force: >-
-    Allocating contiguous physical RAM for entire processes without paging.
-    Multitasking becomes impossible once total process memory exceeds physical RAM limits, resulting in Out-Of-Memory (OOM) crashes.
+  problem_it_solves: 'How can an operating system run programs requiring 32 GB of
+    memory when the machine only has 8 GB of physical RAM? Virtual memory decouples
+    a program''s logical address space from physical hardware memory. The OS divides
+    memory into fixed-size blocks called Pages (typically 4KB). Physical RAM is divided
+    into matching Page Frames. When a CPU executes an instruction referencing a page
+    not currently resident in physical RAM, the Memory Management Unit (MMU) triggers
+    a hardware interrupt called a Page Fault. If physical RAM is full, the OS must
+    choose a victim page to evict to disk swap space. If the page replacement policy
+    is naive or the program''s working set exceeds physical RAM, the system enters
+    Thrashing: the CPU spends 99% of its cycles waiting on disk I/O page swaps, freezing
+    user applications.'
+  brute_force: Allocating contiguous physical RAM for entire processes without paging.
+    Multitasking becomes impossible once total process memory exceeds physical RAM
+    limits, resulting in Out-Of-Memory (OOM) crashes.
   brute_force_complexity: O(1) fatal allocation limit with zero overcommit capability.
-  key_insight: >-
-    1. Temporal Locality: Programs tend to access recently referenced memory pages repeatedly.
-    2. Least Recently Used (LRU) Eviction: When all page frames are occupied, evict the page that has not been accessed for the longest time.
-    3. Belady's Anomaly in FIFO: First-In First-Out eviction can paradoxically suffer MORE page faults when given MORE physical frames, whereas LRU is a stack algorithm immune to Belady's anomaly.
-  real_world: >-
-    Linux kernel kswapd daemon and page cache reclaim, database buffer pool management in PostgreSQL/MySQL InnoDB, and mobile app background freeze/eviction in iOS/Android.
-
+  key_insight: '1. Temporal Locality: Programs tend to access recently referenced
+    memory pages repeatedly. 2. Least Recently Used (LRU) Eviction: When all page
+    frames are occupied, evict the page that has not been accessed for the longest
+    time. 3. Belady''s Anomaly in FIFO: First-In First-Out eviction can paradoxically
+    suffer MORE page faults when given MORE physical frames, whereas LRU is a stack
+    algorithm immune to Belady''s anomaly.'
+  real_world: Linux kernel kswapd daemon and page cache reclaim, database buffer pool
+    management in PostgreSQL/MySQL InnoDB, and mobile app background freeze/eviction
+    in iOS/Android.
 statement:
-  clean: |
-    Implement an **OS Virtual Memory Page Replacement Engine**:
-    `simulate_page_replacement(capacity: int, pages: list[int], algorithm: str) -> dict`.
-
-    ### Memory Model
-    - `capacity`: Number of physical page frames available in RAM (`int >= 1`).
-    - `pages`: Sequence of virtual page numbers accessed by the CPU (e.g. `[7, 0, 1, 2, 0, 3, 0, 4]`).
-    - `algorithm`: Either `"FIFO"` or `"LRU"`.
-
-    ### Execution Rules:
-    1. Initialize:
-       - `frames: list[int] = []` (current pages loaded in physical RAM)
-       - `page_faults: int = 0` (counter of page faults requiring disk fetch)
-       - `page_hits: int = 0` (counter of references already in RAM)
-       - `evictions: list[int] = []` (list of victim page numbers evicted from RAM)
-       - `frame_snapshots: list[list[int]] = []` (snapshot of `list(frames)` after each page access)
-    2. For each `p` in `pages`:
-       - If `p in frames`:
-         - Increment `page_hits += 1`.
-         - **For LRU**: Update recency by moving `p` to the most-recently-used position (remove `p` and append `p` to back).
-         - **For FIFO**: Do NOT modify frame ordering on hit.
-       - If `p not in frames`:
-         - Increment `page_faults += 1`.
-         - If `len(frames) < capacity`:
-           - There is an empty frame: append `p` to `frames`.
-         - If `len(frames) == capacity`:
-           - Evict victim page:
-             - The victim is the front element: `victim = frames.pop(0)`.
-             - Record `evictions.append(victim)`.
-             - Insert new page: `frames.append(p)`.
-       - Record `frame_snapshots.append(list(frames))`.
-    3. Return a telemetry summary dictionary:
-       - `"page_faults"`: int
-       - `"page_hits"`: int
-       - `"hit_rate_pct"`: float rounded to 2 decimal places (`(page_hits / len(pages) * 100)` if len(pages) > 0 else 0.0)
-       - `"evictions"`: list[int]
-       - `"final_frames"`: list[int]
-       - `"frame_snapshots"`: list[list[int]]
-
-  oa_story: |
-    **Zerodha Kite Trading Terminal — High-Frequency Memory Thrashing**
-
-    During market opening volatility, Zerodha's trading engine allocated massive historical tick buffers.
-    Physical RAM filled completely. Because the server used a naive FIFO page replacement policy,
-    the OS entered severe Thrashing: kernel page-fault interrupts overwhelmed the CPU,
-    causing order placement latencies to spike from 15 milliseconds to 12 seconds.
-
-    Implement this Virtual Memory Page Replacement simulator to compare FIFO vs LRU eviction and prove how temporal locality reduces page faults by 40%+.
-
+  clean: "Implement an **OS Virtual Memory Page Replacement Engine**:\n`simulate_page_replacement(capacity:\
+    \ int, pages: list[int], algorithm: str) -> dict`.\n\n### Memory Model\n- `capacity`:\
+    \ Number of physical page frames available in RAM (`int >= 1`).\n- `pages`: Sequence\
+    \ of virtual page numbers accessed by the CPU (e.g. `[7, 0, 1, 2, 0, 3, 0, 4]`).\n\
+    - `algorithm`: Either `\"FIFO\"` or `\"LRU\"`.\n\n### Execution Rules:\n1. Initialize:\n\
+    \   - `frames: list[int] = []` (current pages loaded in physical RAM)\n   - `page_faults:\
+    \ int = 0` (counter of page faults requiring disk fetch)\n   - `page_hits: int\
+    \ = 0` (counter of references already in RAM)\n   - `evictions: list[int] = []`\
+    \ (list of victim page numbers evicted from RAM)\n   - `frame_snapshots: list[list[int]]\
+    \ = []` (snapshot of `list(frames)` after each page access)\n2. For each `p` in\
+    \ `pages`:\n   - If `p in frames`:\n     - Increment `page_hits += 1`.\n     -\
+    \ **For LRU**: Update recency by moving `p` to the most-recently-used position\
+    \ (remove `p` and append `p` to back).\n     - **For FIFO**: Do NOT modify frame\
+    \ ordering on hit.\n   - If `p not in frames`:\n     - Increment `page_faults\
+    \ += 1`.\n     - If `len(frames) < capacity`:\n       - There is an empty frame:\
+    \ append `p` to `frames`.\n     - If `len(frames) == capacity`:\n       - Evict\
+    \ victim page:\n         - The victim is the front element: `victim = frames.pop(0)`.\n\
+    \         - Record `evictions.append(victim)`.\n         - Insert new page: `frames.append(p)`.\n\
+    \   - Record `frame_snapshots.append(list(frames))`.\n3. Return a telemetry summary\
+    \ dictionary:\n   - `\"page_faults\"`: int\n   - `\"page_hits\"`: int\n   - `\"\
+    hit_rate_pct\"`: float rounded to 2 decimal places (`(page_hits / len(pages) *\
+    \ 100)` if len(pages) > 0 else 0.0)\n   - `\"evictions\"`: list[int]\n   - `\"\
+    final_frames\"`: list[int]\n   - `\"frame_snapshots\"`: list[list[int]]\n"
+  oa_story: "**Zerodha Kite Trading Terminal \u2014 High-Frequency Memory Thrashing**\n\
+    \nDuring market opening volatility, Zerodha's trading engine allocated massive\
+    \ historical tick buffers.\nPhysical RAM filled completely. Because the server\
+    \ used a naive FIFO page replacement policy,\nthe OS entered severe Thrashing:\
+    \ kernel page-fault interrupts overwhelmed the CPU,\ncausing order placement latencies\
+    \ to spike from 15 milliseconds to 12 seconds.\n\nImplement this Virtual Memory\
+    \ Page Replacement simulator to compare FIFO vs LRU eviction and prove how temporal\
+    \ locality reduces page faults by 40%+.\n"
   trigger_keywords:
-    - Page Replacement
-    - simulate_page_replacement
-    - page_faults
-    - hit_rate_pct
-    - final_frames
-
+  - Page Replacement
+  - simulate_page_replacement
+  - page_faults
+  - hit_rate_pct
+  - final_frames
   examples:
-    - input: 'capacity = 3, pages = [1, 2, 3, 1, 4], algorithm = "LRU"'
-      output: '{"page_faults: 4, "page_hits": 1, "hit_rate_pct": 20.0, "evictions": [2], "final_frames": [3, 1, 4]}'
-      explanation: "Pages 1, 2, 3 load. Page 1 hits and becomes MRU (frames: [2, 3, 1]). Page 4 causes fault: evicts LRU page 2."
-    - input: 'capacity = 2, pages = [1, 2, 1, 2], algorithm = "FIFO"'
-      output: '{"page_faults": 2, "page_hits": 2, "hit_rate_pct": 50.0, "evictions": [], "final_frames": [1, 2]}'
-      explanation: "Initial loads fault; subsequent references hit in RAM."
-
+  - input: capacity = 3, pages = [1, 2, 3, 1, 4], algorithm = "LRU"
+    output: '{"page_faults: 4, "page_hits": 1, "hit_rate_pct": 20.0, "evictions":
+      [2], "final_frames": [3, 1, 4]}'
+    explanation: 'Pages 1, 2, 3 load. Page 1 hits and becomes MRU (frames: [2, 3,
+      1]). Page 4 causes fault: evicts LRU page 2.'
+  - input: capacity = 2, pages = [1, 2, 1, 2], algorithm = "FIFO"
+    output: '{"page_faults": 2, "page_hits": 2, "hit_rate_pct": 50.0, "evictions":
+      [], "final_frames": [1, 2]}'
+    explanation: Initial loads fault; subsequent references hit in RAM.
   constraints:
-    - "1 <= capacity <= 50"
-    - "0 <= len(pages) <= 1000"
-    - "algorithm in ['FIFO', 'LRU']"
-
+  - 1 <= capacity <= 50
+  - 0 <= len(pages) <= 1000
+  - algorithm in ['FIFO', 'LRU']
 constraint_quiz:
-  prompt: "What is Belady's Anomaly and which page replacement algorithm is vulnerable to it?"
+  prompt: What is Belady's Anomaly and which page replacement algorithm is vulnerable
+    to it?
   options:
-    - "Belady's Anomaly is when increasing the number of physical page frames results in MORE page faults; FIFO is vulnerable, whereas LRU is immune"
-    - "Belady's Anomaly is a CPU cache line false sharing bug in multi-threaded C++"
-    - "Belady's Anomaly is an infinite loop in Dijkstra's shortest path algorithm"
-    - "Belady's Anomaly occurs only when virtual memory is disabled"
+  - Belady's Anomaly is when increasing the number of physical page frames results
+    in MORE page faults; FIFO is vulnerable, whereas LRU is immune
+  - Belady's Anomaly is a CPU cache line false sharing bug in multi-threaded C++
+  - Belady's Anomaly is an infinite loop in Dijkstra's shortest path algorithm
+  - Belady's Anomaly occurs only when virtual memory is disabled
   answer: 0
-  explanation: "FIFO eviction does not consider access frequency or recency. In specific page reference strings, giving a FIFO system 4 frames instead of 3 can paradoxically increase total page faults. LRU is a stack algorithm and is mathematically immune to Belady's Anomaly."
-
+  explanation: FIFO eviction does not consider access frequency or recency. In specific
+    page reference strings, giving a FIFO system 4 frames instead of 3 can paradoxically
+    increase total page faults. LRU is a stack algorithm and is mathematically immune
+    to Belady's Anomaly.
 pattern_quiz:
-  prompt: "What hardware component accelerates virtual-to-physical address translation to prevent double memory lookups per instruction?"
+  prompt: What hardware component accelerates virtual-to-physical address translation
+    to prevent double memory lookups per instruction?
   options:
-    - "The Translation Lookaside Buffer (TLB), an on-chip associative cache of recent page table translations"
-    - "The Hard Drive disk swap partition"
-    - "The GPU shader core"
-    - "The BIOS battery"
+  - The Translation Lookaside Buffer (TLB), an on-chip associative cache of recent
+    page table translations
+  - The Hard Drive disk swap partition
+  - The GPU shader core
+  - The BIOS battery
   answer: 0
-  explanation: "Without the TLB (Translation Lookaside Buffer), every memory reference would require at least two memory lookups (one for the page table, one for the data). A TLB hit resolves virtual-to-physical translations in sub-nanosecond hardware time."
-
+  explanation: Without the TLB (Translation Lookaside Buffer), every memory reference
+    would require at least two memory lookups (one for the page table, one for the
+    data). A TLB hit resolves virtual-to-physical translations in sub-nanosecond hardware
+    time.
 function:
   name: simulate_page_replacement
   params:
-    - name: capacity
-      type: any
-    - name: pages
-      type: any
-    - name: algorithm
-      type: any
+  - name: capacity
+    type: any
+  - name: pages
+    type: any
+  - name: algorithm
+    type: any
   returns: any
   compare: exact
-
-starter_code: |
-  class Solution:
-      def simulate_page_replacement(self, capacity: int, pages: list[int], algorithm: str) -> dict:
-          pass
-
+starter_code: "class Solution:\n    def simulate_page_replacement(self, capacity:\
+  \ int, pages: list[int], algorithm: str) -> dict:\n        pass\n"
 tests:
-  - args:
-      - 3
-      - - 7
-        - 0
-        - 1
-        - 2
-        - 0
-        - 3
-      - LRU
-    expected:
-      page_faults: 5
-      page_hits: 1
-      hit_rate_pct: 16.67
-      evictions:
-        - 7
-        - 1
-      final_frames:
-        - 2
-        - 0
-        - 3
-      frame_snapshots:
-        - - 7
-        - - 7
-          - 0
-        - - 7
-          - 0
-          - 1
-        - - 0
-          - 1
-          - 2
-        - - 1
-          - 2
-          - 0
-        - - 2
-          - 0
-          - 3
-    note: LRU eviction with hits and recency updates
-
-  - args:
+- args:
+  - 3
+  - - 7
+    - 0
+    - 1
+    - 2
+    - 0
+    - 3
+  - LRU
+  expected:
+    page_faults: 5
+    page_hits: 1
+    hit_rate_pct: 16.67
+    evictions:
+    - 7
+    - 1
+    final_frames:
+    - 2
+    - 0
+    - 3
+    frame_snapshots:
+    - - 7
+    - - 7
+      - 0
+    - - 7
+      - 0
+      - 1
+    - - 0
+      - 1
       - 2
-      - - 1
-        - 2
-        - 3
-        - 1
-      - FIFO
-    expected:
-      page_faults: 4
-      page_hits: 0
-      hit_rate_pct: 0.0
-      evictions:
-        - 1
-        - 2
-      final_frames:
-        - 3
-        - 1
-      frame_snapshots:
-        - - 1
-        - - 1
-          - 2
-        - - 2
-          - 3
-        - - 3
-          - 1
-    note: FIFO sequential eviction
-
-  - args:
+    - - 1
+      - 2
+      - 0
+    - - 2
+      - 0
       - 3
-      - []
-      - LRU
-    expected:
-      page_faults: 0
-      page_hits: 0
-      hit_rate_pct: 0.0
-      evictions: []
-      final_frames: []
-      frame_snapshots: []
-    note: Empty pages edge case
-
+  note: LRU eviction with hits and recency updates
+- args:
+  - 2
+  - - 1
+    - 2
+    - 3
+    - 1
+  - FIFO
+  expected:
+    page_faults: 4
+    page_hits: 0
+    hit_rate_pct: 0.0
+    evictions:
+    - 1
+    - 2
+    final_frames:
+    - 3
+    - 1
+    frame_snapshots:
+    - - 1
+    - - 1
+      - 2
+    - - 2
+      - 3
+    - - 3
+      - 1
+  note: FIFO sequential eviction
+- args:
+  - 3
+  - []
+  - LRU
+  expected:
+    page_faults: 0
+    page_hits: 0
+    hit_rate_pct: 0.0
+    evictions: []
+    final_frames: []
+    frame_snapshots: []
+  note: Empty pages edge case
 visualize_test: 0
-
 drills:
-  - skill: setup
-    title: Check if page is resident in frames
-    goal: Identify page hit vs fault.
-    instructions: Return True if `p in frames`, else False.
-    function:
-      name: drill_is_hit
-      params:
-        - name: frames
-        - name: p
-    starter_code: |
-      class Solution:
-          def drill_is_hit(self, frames: list, p: int) -> bool:
-              pass
-    tests:
-      - args:
-          - - 1
-            - 2
-            - 3
-          - 2
-        expected: true
-      - args:
-          - - 1
-            - 2
-          - 5
-        expected: false
-    solution: |
-      class Solution:
-          def drill_is_hit(self, frames: list, p: int) -> bool:
-              return p in frames
-    hint: Return `p in frames`.
-
-  - skill: core
-    title: Update LRU recency on hit
-    goal: Move hit page to the back of the frames list.
-    instructions: Remove `p` from `frames` and append `p` to the end.
-    function:
-      name: drill_update_lru
-      params:
-        - name: frames
-        - name: p
-    starter_code: |
-      class Solution:
-          def drill_update_lru(self, frames: list, p: int) -> list:
-              pass
-    tests:
-      - args:
-          - - 1
-            - 2
-            - 3
-          - 2
-        expected:
-          - 1
-          - 3
-          - 2
-      - args:
-          - - 10
-            - 20
-          - 10
-        expected:
-          - 20
-          - 10
-    solution: |
-      class Solution:
-          def drill_update_lru(self, frames: list, p: int) -> list:
-              frames.remove(p)
-              frames.append(p)
-              return frames
-    hint: "Use `frames.remove(p)` then `frames.append(p)`."
-
-  - skill: edge
-    title: Evict oldest victim page
-    goal: Remove and return the front element of the frames list.
-    instructions: Pop and return `frames.pop(0)`.
-    function:
-      name: drill_evict_front
-      params:
-        - name: frames
-    starter_code: |
-      class Solution:
-          def drill_evict_front(self, frames: list) -> int:
-              pass
-    tests:
-      - args:
-          - - 7
-            - 0
-            - 1
-        expected: 7
-      - args:
-          - - 99
-        expected: 99
-    solution: |
-      class Solution:
-          def drill_evict_front(self, frames: list) -> int:
-              return frames.pop(0)
-    hint: Return `frames.pop(0)`.
-
+- skill: setup
+  title: Check if page is resident in frames
+  goal: Identify page hit vs fault.
+  instructions: Return True if `p in frames`, else False.
+  function:
+    name: drill_is_hit
+    params:
+    - name: frames
+    - name: p
+  starter_code: "class Solution:\n    def drill_is_hit(self, frames: list, p: int)\
+    \ -> bool:\n        pass\n"
+  tests:
+  - args:
+    - - 1
+      - 2
+      - 3
+    - 2
+    expected: true
+  - args:
+    - - 1
+      - 2
+    - 5
+    expected: false
+  solution: "class Solution:\n    def drill_is_hit(self, frames: list, p: int) ->\
+    \ bool:\n        return p in frames\n"
+  hint: Return `p in frames`.
+- skill: core
+  title: Update LRU recency on hit
+  goal: Move hit page to the back of the frames list.
+  instructions: Remove `p` from `frames` and append `p` to the end.
+  function:
+    name: drill_update_lru
+    params:
+    - name: frames
+    - name: p
+  starter_code: "class Solution:\n    def drill_update_lru(self, frames: list, p:\
+    \ int) -> list:\n        pass\n"
+  tests:
+  - args:
+    - - 1
+      - 2
+      - 3
+    - 2
+    expected:
+    - 1
+    - 3
+    - 2
+  - args:
+    - - 10
+      - 20
+    - 10
+    expected:
+    - 20
+    - 10
+  solution: "class Solution:\n    def drill_update_lru(self, frames: list, p: int)\
+    \ -> list:\n        frames.remove(p)\n        frames.append(p)\n        return\
+    \ frames\n"
+  hint: Use `frames.remove(p)` then `frames.append(p)`.
+- skill: edge
+  title: Evict oldest victim page
+  goal: Remove and return the front element of the frames list.
+  instructions: Pop and return `frames.pop(0)`.
+  function:
+    name: drill_evict_front
+    params:
+    - name: frames
+  starter_code: "class Solution:\n    def drill_evict_front(self, frames: list) ->\
+    \ int:\n        pass\n"
+  tests:
+  - args:
+    - - 7
+      - 0
+      - 1
+    expected: 7
+  - args:
+    - - 99
+    expected: 99
+  solution: "class Solution:\n    def drill_evict_front(self, frames: list) -> int:\n\
+    \        return frames.pop(0)\n"
+  hint: Return `frames.pop(0)`.
 hints:
-  - "Maintain `frames: list = []`, `page_faults = 0`, `page_hits = 0`, and `evictions: list = []`."
-  - "If page in frames: increment `page_hits`. If algorithm == 'LRU': remove and append page to update recency."
-  - "If page not in frames: increment `page_faults`. If len(frames) == capacity: evict oldest with `victim = frames.pop(0)` and record it. Append new page."
-
+- 'Maintain `frames: list = []`, `page_faults = 0`, `page_hits = 0`, and `evictions:
+  list = []`.'
+- 'If page in frames: increment `page_hits`. If algorithm == ''LRU'': remove and append
+  page to update recency.'
+- 'If page not in frames: increment `page_faults`. If len(frames) == capacity: evict
+  oldest with `victim = frames.pop(0)` and record it. Append new page.'
 solution:
-  code: |
-    class Solution:
-        def simulate_page_replacement(self, capacity: int, pages: list[int], algorithm: str) -> dict:
-            frames: list[int] = []
-            page_faults = 0
-            page_hits = 0
-            evictions: list[int] = []
-            frame_snapshots: list[list[int]] = []
-
-            for p in pages:
-                if p in frames:
-                    page_hits += 1
-                    if algorithm == "LRU":
-                        frames.remove(p)
-                        frames.append(p)
-                else:
-                    page_faults += 1
-                    if len(frames) == capacity:
-                        victim = frames.pop(0)
-                        evictions.append(victim)
-                    frames.append(p)
-                frame_snapshots.append(list(frames))
-
-            total = len(pages)
-            hit_rate = round((page_hits / total) * 100, 2) if total > 0 else 0.0
-
-            return {
-                "page_faults": page_faults,
-                "page_hits": page_hits,
-                "hit_rate_pct": hit_rate,
-                "evictions": evictions,
-                "final_frames": frames,
-                "frame_snapshots": frame_snapshots,
-            }
-  explanation: >-
-    Virtual memory paging divides logical memory into pages mapped to physical page frames. When all frames are full,
-    LRU exploits temporal locality by preserving recently accessed pages, whereas FIFO suffers from Belady's Anomaly.
-    Simulating page replacement quantifies cache efficiency and explains why working sets exceeding physical RAM cause Thrashing.
+  code: "class Solution:\n    def simulate_page_replacement(self, capacity: int, pages:\
+    \ list[int], algorithm: str) -> dict:\n        frames: list[int] = []\n      \
+    \  page_faults = 0\n        page_hits = 0\n        evictions: list[int] = []\n\
+    \        frame_snapshots: list[list[int]] = []\n\n        for p in pages:\n  \
+    \          if p in frames:\n                page_hits += 1\n                if\
+    \ algorithm == \"LRU\":\n                    frames.remove(p)\n              \
+    \      frames.append(p)\n            else:\n                page_faults += 1\n\
+    \                if len(frames) == capacity:\n                    victim = frames.pop(0)\n\
+    \                    evictions.append(victim)\n                frames.append(p)\n\
+    \            frame_snapshots.append(list(frames))\n\n        total = len(pages)\n\
+    \        hit_rate = round((page_hits / total) * 100, 2) if total > 0 else 0.0\n\
+    \n        return {\n            \"page_faults\": page_faults,\n            \"\
+    page_hits\": page_hits,\n            \"hit_rate_pct\": hit_rate,\n           \
+    \ \"evictions\": evictions,\n            \"final_frames\": frames,\n         \
+    \   \"frame_snapshots\": frame_snapshots,\n        }\n"
+  explanation: Virtual memory paging divides logical memory into pages mapped to physical
+    page frames. When all frames are full, LRU exploits temporal locality by preserving
+    recently accessed pages, whereas FIFO suffers from Belady's Anomaly. Simulating
+    page replacement quantifies cache efficiency and explains why working sets exceeding
+    physical RAM cause Thrashing.
   time: O(N * C) where N is memory references and C is frame capacity
   space: O(C) for resident frame memory
+pitch_script: '**(Clarify)** "We need to simulate an OS page replacement engine executing
+  FIFO or LRU policies to track page faults, page hits, and victim evictions under
+  constrained physical memory frames."
 
-pitch_script: |
-  **(Clarify)** "We need to simulate an OS page replacement engine executing FIFO or LRU policies to track page faults, page hits, and victim evictions under constrained physical memory frames."
 
-  **(Brute force)** "Without paging, memory must be allocated contiguously, causing OOM crashes when total workload exceeds hardware RAM."
+  **(Brute force)** "Without paging, memory must be allocated contiguously, causing
+  OOM crashes when total workload exceeds hardware RAM."
 
-  **(Trigger)** "Page faults, victim eviction, and frame capacity constraints signal Virtual Memory Page Replacement."
 
-  **(Optimal)** "We maintain a list of active page frames. On hit, we increment hits (and for LRU, update recency). On fault, we increment faults, evict the oldest frame from index 0 if full, and append the new page."
+  **(Trigger)** "Page faults, victim eviction, and frame capacity constraints signal
+  Virtual Memory Page Replacement."
 
-  **(Complexity)** "Executes in O(N * C) time and O(C) space where C is physical frame capacity."
 
+  **(Optimal)** "We maintain a list of active page frames. On hit, we increment hits
+  (and for LRU, update recency). On fault, we increment faults, evict the oldest frame
+  from index 0 if full, and append the new page."
+
+
+  **(Complexity)** "Executes in O(N * C) time and O(C) space where C is physical frame
+  capacity."
+
+  '
 twist:
   lc: 9406
   title: Context Switch Cost Model and TLB Flushes
-  why: When the OS switches between different processes, page tables change and the hardware TLB cache must be invalidated, increasing cache miss penalties.
-
+  why: When the OS switches between different processes, page tables change and the
+    hardware TLB cache must be invalidated, increasing cache miss penalties.
 viz:
   title: Virtual Memory Page Frames & Eviction
   type: memory_view
+journey:
+- id: w42_s1_address_space_illusion
+  title: The Virtual Memory Illusion & 4KB Page Boundaries
+  subtitle: How an operating system runs 32GB workloads on 8GB physical RAM
+  scenario: How can an operating system run programs requiring 32 GB of memory when
+    the machine only has 8 GB of physical RAM?
+  mechanism: Virtual memory decouples a process's logical address space from physical
+    hardware memory. The OS divides memory into fixed-size blocks called Pages (typically
+    4KB). Physical RAM is divided into matching Page Frames. The CPU Memory Management
+    Unit (MMU) uses Page Tables to translate virtual addresses to physical frames
+    dynamically.
+  prediction:
+    prompt: What happens when total allocated virtual memory across running processes
+      exceeds physical hardware RAM?
+    choices:
+    - id: opt_a
+      label: The OS transparently maps active pages into RAM frames and stores dormant
+        pages in disk swap space, triggering page faults when needed.
+      explanation: 'Correct! Virtual memory enables overcommit: active working sets
+        live in RAM, while inactive pages are swapped to disk.'
+      is_correct: true
+    - id: opt_b
+      label: The computer immediately crashes with hardware memory controller damage.
+      explanation: Misconception! Operating systems are designed to manage memory
+        overcommit safely via paging and disk swap.
+      is_correct: false
+    - id: opt_c
+      label: Virtual memory compresses physical RAM by 10x using lossless ZIP algorithms
+        inside the CPU.
+      explanation: Incorrect! While zswap/zram compressed caches exist, virtual memory
+        fundamentally relies on address space paging and swap backing.
+      is_correct: false
+    revealed_explanation: Virtual memory isolates processes and allows systems to
+      overcommit memory by keeping only the active working set resident in physical
+      RAM frames.
+  controls:
+  - id: physical_ram_gb
+    label: Physical RAM Capacity (GB)
+    type: slider
+    default: 8
+    min: 4
+    max: 64
+    step: 4
+    description: Total physical hardware memory installed
+  - id: virtual_process_size_gb
+    label: Total Virtual Allocated Memory (GB)
+    type: slider
+    default: 24
+    min: 4
+    max: 64
+    step: 4
+    description: Combined virtual address space of running processes
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: MMU Virtual Address Translation & Page Table
+- id: w42_s2_page_fault_trap
+  title: The Anatomy of a Page Fault Interrupt
+  subtitle: The 100,000x latency penalty when accessing non-resident pages
+  scenario: A CPU instruction attempts to read address 0x7FFF0040. The MMU consults
+    the page table entry and discovers the Present Bit is 0. What sequence unfolds?
+  mechanism: The MMU triggers a hardware Page Fault interrupt (interrupt vector 14
+    on x86). The CPU halts user execution, saves registers, switches to kernel mode,
+    initiates disk swap I/O to read the 4KB page into an empty RAM frame, updates
+    the Page Table entry with the frame number and Present Bit = 1, and resumes the
+    user process.
+  prediction:
+    prompt: Why is a page fault hundreds of thousands of times slower than a direct
+      physical RAM access?
+    choices:
+    - id: opt_a
+      label: "RAM latency is ~50-100 nanoseconds, whereas reading a missing page from\
+        \ disk swap takes ~100 microseconds (NVMe) to 10 milliseconds (HDD) \u2014\
+        \ a 100,000x gap."
+      explanation: Correct! Physical disk I/O introduces a massive mechanical or bus
+        latency penalty compared to direct CPU memory bus access.
+      is_correct: true
+    - id: opt_b
+      label: The CPU must reboot its memory controllers on every page fault.
+      explanation: Incorrect! The hardware memory controller remains running; the
+        delay is purely disk storage I/O and kernel interrupt handling.
+      is_correct: false
+    - id: opt_c
+      label: The operating system must recompile the entire binary from source code.
+      explanation: Nonsense! The binary is already compiled; only a 4KB chunk of machine
+        code or data needs to be transferred.
+      is_correct: false
+    revealed_explanation: Because disk swap I/O is 100,000x slower than RAM, an efficient
+      page replacement policy is critical to minimize page fault rates.
+  controls:
+  - id: storage_backing
+    label: Swap Storage Medium
+    type: select
+    default: NVMe SSD
+    options:
+    - Mechanical HDD (10ms)
+    - "NVMe SSD (100\u03BCs)"
+    - "ZRAM Compressed (2\u03BCs)"
+    description: Latency penalty incurred during page fault swap fetch
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Page Fault Interrupt Flow: User Mode to Kernel Trap'
+- id: w42_s3_beladys_anomaly_fifo
+  title: FIFO Eviction & Belady's Anomaly Paradox
+  subtitle: Why adding physical RAM can counter-intuitively increase page faults
+  scenario: First-In First-Out (FIFO) evicts the oldest page loaded into RAM. What
+    happens when you test the reference string [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5]
+    with 3 frames vs 4 frames?
+  mechanism: 'For this string, 3 frames produce 9 page faults. Increasing physical
+    RAM to 4 frames counter-intuitively produces 10 page faults! This is Belady''s
+    Anomaly: FIFO is not a stack algorithm, so the set of pages resident in k frames
+    is not always a subset of pages in k+1 frames.'
+  prediction:
+    prompt: When FIFO page replacement is used, what unexpected behavior can occur
+      if you allocate MORE physical RAM frames to a process?
+    choices:
+    - id: opt_a
+      label: 'Belady''s Anomaly: The number of page faults can paradoxically INCREASE
+        despite having more physical memory.'
+      explanation: Correct! Belady proved in 1969 that FIFO can evict recently needed
+        pages simply because they arrived earlier.
+      is_correct: true
+    - id: opt_b
+      label: CPU cache thrashing causes the CPU to lock its clock frequency permanently.
+      explanation: Incorrect! Belady's anomaly is an algorithmic property of FIFO,
+        not a hardware clock issue.
+      is_correct: false
+    - id: opt_c
+      label: Page faults always decrease linearly with frame count regardless of algorithm.
+      explanation: Misconception! FIFO violates monotonic decrease because it lacks
+        the stack inclusion property.
+      is_correct: false
+    revealed_explanation: FIFO fails to account for page access recency or frequency.
+      Belady's Anomaly proved that memory replacement algorithms must satisfy the
+      stack inclusion property.
+  controls:
+  - id: frame_capacity
+    label: Page Frame Count
+    type: slider
+    default: 3
+    min: 2
+    max: 6
+    step: 1
+    description: Number of physical memory frames allocated
+  - id: algorithm
+    label: Eviction Policy
+    type: select
+    default: FIFO
+    options:
+    - FIFO
+    - LRU
+    description: Algorithm chosen for victim selection
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: FIFO vs LRU Page Fault Comparison Matrix
+- id: w42_s4_lru_temporal_locality
+  title: Least Recently Used (LRU) & Temporal Locality
+  subtitle: Exploiting program execution patterns with stack inclusion guarantees
+  scenario: 'Real software exhibits strong temporal locality: memory pages accessed
+    recently are overwhelmingly likely to be accessed again soon. How does LRU exploit
+    this?'
+  mechanism: 'LRU tracks page access order. On a page hit, the accessed page moves
+    to the head (most recently used). When an eviction occurs, the page at the tail
+    (least recently used) is selected. LRU is a Stack Algorithm: the contents of an
+    n-frame memory are always a subset of an (n+1)-frame memory, mathematically guaranteeing
+    immunity to Belady''s Anomaly.'
+  prediction:
+    prompt: Why is LRU mathematically guaranteed to NEVER experience Belady's Anomaly?
+    choices:
+    - id: opt_a
+      label: 'LRU is a stack algorithm satisfying the inclusion property: pages resident
+        in k frames are always a subset of pages in k+1 frames.'
+      explanation: Correct! Because the top k elements in the recency stack are always
+        preserved when adding an extra slot, page hits can never decrease.
+      is_correct: true
+    - id: opt_b
+      label: LRU peeks into the future using hardware branch predictors to see next
+        instructions.
+      explanation: "Misconception! Looking into the future is the theoretical Optimal\
+        \ algorithm (B\xE9l\xE1dy's MIN/OPT), not LRU."
+      is_correct: false
+    - id: opt_c
+      label: Because LRU never evicts any pages from physical RAM.
+      explanation: Incorrect! LRU evicts pages on every fault when capacity is reached,
+        but chooses the least recently accessed page.
+      is_correct: false
+    revealed_explanation: LRU aligns with temporal locality and stack inclusion, making
+      it the bedrock principle behind OS page replacement and database buffer pool
+      managers.
+  controls:
+  - id: access_pattern
+    label: Access Locality Pattern
+    type: select
+    default: Temporal Loop
+    options:
+    - Temporal Loop
+    - Sequential Scan
+    - Belady Sequence
+    description: Simulated page reference pattern
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: LRU Doubly-Linked Recency Queue
+- id: w42_s5_thrashing_working_set
+  title: The Working Set Model & The Thrashing Death Spiral
+  subtitle: What happens when total active memory exceeds physical RAM
+  scenario: What happens to a production server when active applications collectively
+    demand more page frames than physical RAM provides?
+  mechanism: "When the sum of all processes' Working Sets (the set of pages referenced\
+    \ in a time window \u0394) exceeds physical RAM, every page fault evicts a page\
+    \ that is immediately needed by another thread. The system spends 99% of CPU time\
+    \ waiting for disk swap I/O transfers, causing CPU utilization to plummet. This\
+    \ death spiral is known as Thrashing."
+  prediction:
+    prompt: If an operating system enters thrashing, what symptom appears in CPU and
+      system monitoring metrics?
+    choices:
+    - id: opt_a
+      label: User CPU utilization drops near 0% while iowait spikes to 95-99%, because
+        threads spend all time blocked on swap disk I/O.
+      explanation: Correct! Thrashing starves the CPU of runnable instructions; the
+        disk controller is overwhelmed by continuous page swapping.
+      is_correct: true
+    - id: opt_b
+      label: CPU utilization locks at 100% user space because the CPU executes user
+        code faster.
+      explanation: Incorrect! The CPU cannot execute user instructions because the
+        necessary memory pages are not in RAM.
+      is_correct: false
+    - id: opt_c
+      label: Network bandwidth increases by 10x automatically.
+      explanation: Irrelevant! Thrashing is an internal memory/disk bottleneck.
+      is_correct: false
+    revealed_explanation: To recover from thrashing, modern kernels invoke kswapd
+      to proactively reclaim page cache, and if necessary, trigger the OOM killer
+      to terminate memory-heavy processes.
+  controls:
+  - id: working_set_size_pages
+    label: Active Working Set (Pages)
+    type: slider
+    default: 20
+    min: 4
+    max: 30
+    step: 2
+    description: Number of unique pages referenced in active loop
+  - id: ram_frames
+    label: Available RAM Frames
+    type: slider
+    default: 8
+    min: 4
+    max: 16
+    step: 2
+    description: Physical page frames in memory
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 'Thrashing Curve: Page Fault Rate vs Working Set'
+- id: w42_s6_transfer_challenge
+  title: 'Transfer Challenge: OS Virtual Memory Page Replacement Engine'
+  subtitle: Build the complete kernel page replacement simulator for FIFO and LRU
+  scenario: 'Implement the operating system page replacement simulator `simulate_page_replacement(capacity:
+    int, pages: list[int], algorithm: str) -> dict`.'
+  mechanism: Track page hits, faults, frame snapshots, and evicted pages under both
+    FIFO and LRU policies. Maintain the recency ordering on hits for LRU, and snapshot
+    frame states after every memory access.
+  prediction:
+    prompt: In your simulation, when page 3 is accessed with capacity 3, frames [1,
+      2, 3], and algorithm "LRU", what changes in the frames list?
+    choices:
+    - id: opt_a
+      label: 'It is a page hit: page 3 moves to the end of the list [1, 2, 3] as most
+        recently used, and page_hits increments by 1 with 0 evictions.'
+      explanation: Correct! A page hit updates recency order in LRU without evicting
+        any pages.
+      is_correct: true
+    - id: opt_b
+      label: Page 1 is evicted to disk immediately because the page table is full.
+      explanation: Incorrect! Since page 3 is already resident, no eviction is necessary.
+      is_correct: false
+    - id: opt_c
+      label: The simulator crashes with a MemoryError.
+      explanation: Nonsense! A hit is the optimal fast path in virtual memory.
+      is_correct: false
+    revealed_explanation: Implement the simulator using the pre-loaded starter below
+      and run your test suite.
+  controls:
+  - id: run_verification
+    label: Execute Full OS Kernel Simulation Tests
+    type: button
+    default: true
+    description: Run comprehensive test suite against LRU and FIFO implementations
+  lab_starter_code: "class Solution:\n    def simulate_page_replacement(self, capacity:\
+    \ int, pages: list[int], algorithm: str) -> dict:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Kernel Memory Simulator Sandbox

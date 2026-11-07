@@ -4,70 +4,79 @@ citadel_id: os_concurrency
 brick_layer: 2
 runner_type: python_practical
 concept:
-  problem_it_solves: How do operating systems and database engines detect when a set of concurrent processes are frozen in
-    an unrecoverable deadlock? According to Coffman's conditions, deadlock occurs when there is Circular Wait. In a Wait-For
-    Graph (WFG), a directed edge T_A -> T_B exists if T_A is waiting for a lock held by T_B. A directed cycle in this graph
-    is both necessary and sufficient for deadlock.
-  brute_force: Letting hung threads block indefinitely until customer requests time out.
+  problem_it_solves: How do operating systems and database engines detect when a set
+    of concurrent processes are frozen in an unrecoverable deadlock? According to
+    Coffman's conditions, deadlock occurs when there is Circular Wait. In a Wait-For
+    Graph (WFG), a directed edge T_A -> T_B exists if T_A is waiting for a lock held
+    by T_B. A directed cycle in this graph is both necessary and sufficient for deadlock.
+  brute_force: Letting hung threads block indefinitely until customer requests time
+    out.
   brute_force_complexity: System starvation and thread pool exhaustion.
-  key_insight: Construct a Wait-For Graph from lock allocations and pending requests, then run 3-color DFS to detect directed
-    cycles.
-  real_world: PostgreSQL `deadlock_timeout` background detection worker, MySQL InnoDB lock table cycle detection, and OS kernel
-    thread monitors.
+  key_insight: Construct a Wait-For Graph from lock allocations and pending requests,
+    then run 3-color DFS to detect directed cycles.
+  real_world: PostgreSQL `deadlock_timeout` background detection worker, MySQL InnoDB
+    lock table cycle detection, and OS kernel thread monitors.
 statement:
-  clean: "Implement an OS wait-for graph cycle detector to identify deadlock situations:\n`detect_deadlock(allocations: dict[str,\
-    \ str], requests: list[list[str]]) -> dict`.\n\nInputs:\n- `allocations`: `{lock_id: thread_id}` specifying which thread\
-    \ currently holds each lock.\n- `requests`: `[[thread_id, lock_id], ...]` listing threads waiting to acquire specific\
-    \ locks.\n\nWait-For Graph Construction:\n- If `thread_A` requests `lock_id`, and `allocations[lock_id] == thread_B` (where\
-    \ `thread_A != thread_B`):\n  there is a directed edge: `thread_A -> thread_B` (Thread A is waiting for Thread B).\n\n\
-    Deadlock Detection:\n- Run 3-color DFS cycle detection (0: unvisited, 1: currently visiting in recursion stack, 2: fully\
-    \ visited).\n- Search starting from lexicographically sorted thread IDs.\n- If a cycle is detected, record the cycle path\
-    \ (e.g. `[\"T1\", \"T2\", \"T1\"]`) and the sorted unique list of `deadlocked_threads`.\n\nReturn a dictionary containing:\n\
-    - `\"has_deadlock\"`: `bool`\n- `\"cycle\"`: `list[str]` (empty if no cycle)\n- `\"deadlocked_threads\"`: `list[str]`\
-    \ (empty if no cycle)"
-  oa_story: '**Swiggy Delivery Matcher — Lock Inversion Incident**
-
-
-    During peak lunch hour, Swiggy''s delivery assignment service froze completely. Thread 1 held the Delivery Partner lock
-    and requested the Order lock. Simultaneously, Thread 2 held the Order lock and requested the Delivery Partner lock.
-
-
-    Neither thread could progress, freezing order dispatch across Bengaluru. Implement this Resource Allocation Graph cycle
-    detector to diagnose deadlocks before system hangs occur.'
+  clean: "Implement an OS wait-for graph cycle detector to identify deadlock situations:\n\
+    `detect_deadlock(allocations: dict[str, str], requests: list[list[str]]) -> dict`.\n\
+    \nInputs:\n- `allocations`: `{lock_id: thread_id}` specifying which thread currently\
+    \ holds each lock.\n- `requests`: `[[thread_id, lock_id], ...]` listing threads\
+    \ waiting to acquire specific locks.\n\nWait-For Graph Construction:\n- If `thread_A`\
+    \ requests `lock_id`, and `allocations[lock_id] == thread_B` (where `thread_A\
+    \ != thread_B`):\n  there is a directed edge: `thread_A -> thread_B` (Thread A\
+    \ is waiting for Thread B).\n\nDeadlock Detection:\n- Run 3-color DFS cycle detection\
+    \ (0: unvisited, 1: currently visiting in recursion stack, 2: fully visited).\n\
+    - Search starting from lexicographically sorted thread IDs.\n- If a cycle is detected,\
+    \ record the cycle path (e.g. `[\"T1\", \"T2\", \"T1\"]`) and the sorted unique\
+    \ list of `deadlocked_threads`.\n\nReturn a dictionary containing:\n- `\"has_deadlock\"\
+    `: `bool`\n- `\"cycle\"`: `list[str]` (empty if no cycle)\n- `\"deadlocked_threads\"\
+    `: `list[str]` (empty if no cycle)"
+  oa_story: "**Swiggy Delivery Matcher \u2014 Lock Inversion Incident**\n\nDuring\
+    \ peak lunch hour, Swiggy's delivery assignment service froze completely. Thread\
+    \ 1 held the Delivery Partner lock and requested the Order lock. Simultaneously,\
+    \ Thread 2 held the Order lock and requested the Delivery Partner lock.\n\nNeither\
+    \ thread could progress, freezing order dispatch across Bengaluru. Implement this\
+    \ Resource Allocation Graph cycle detector to diagnose deadlocks before system\
+    \ hangs occur."
   trigger_keywords:
   - wait-for graph
   - detect_deadlock
   - deadlocked_threads
   examples:
-  - input: 'allocations = {"L1": "T1", "L2": "T2"}, requests = [["T1", "L2"], ["T2", "L1"]]'
-    output: '{"has_deadlock": True, "cycle": ["T1", "T2", "T1"], "deadlocked_threads": ["T1", "T2"]}'
+  - input: 'allocations = {"L1": "T1", "L2": "T2"}, requests = [["T1", "L2"], ["T2",
+      "L1"]]'
+    output: '{"has_deadlock": True, "cycle": ["T1", "T2", "T1"], "deadlocked_threads":
+      ["T1", "T2"]}'
     explanation: T1 waits for T2, and T2 waits for T1, creating a circular wait cycle.
-  - input: 'allocations = {"L1": "T1", "L2": "T2"}, requests = [["T1", "L3"], ["T2", "L1"]]'
+  - input: 'allocations = {"L1": "T1", "L2": "T2"}, requests = [["T1", "L3"], ["T2",
+      "L1"]]'
     output: '{"has_deadlock": False, "cycle": [], "deadlocked_threads": []}'
     explanation: No cycle exists since L3 is unallocated.
   constraints:
   - 0 <= len(allocations) <= 500
   - 0 <= len(requests) <= 500
 constraint_quiz:
-  prompt: What graph condition indicates a deadlock in a single-unit resource allocation graph?
+  prompt: What graph condition indicates a deadlock in a single-unit resource allocation
+    graph?
   options:
   - A directed cycle in the Wait-For Graph
   - An undirected path connecting any two nodes
   - A node with degree greater than 2
   - A bipartite coloring mismatch
   answer: 0
-  explanation: In single-unit resource systems, a directed cycle in the Wait-For Graph is both necessary and sufficient for
-    deadlock.
+  explanation: In single-unit resource systems, a directed cycle in the Wait-For Graph
+    is both necessary and sufficient for deadlock.
 pattern_quiz:
   prompt: How does 3-color DFS identify directed graph cycles without false positives?
   options:
-  - A back-edge to a node currently marked with Color 1 (in current recursion stack) proves a directed cycle
+  - A back-edge to a node currently marked with Color 1 (in current recursion stack)
+    proves a directed cycle
   - Any edge to a Color 2 node proves a cycle
   - Counting total visited nodes exceeding edge count
   - Sorting node IDs alphabetically
   answer: 0
-  explanation: Gray (color 1) nodes represent ancestors on the current recursion call stack. Re-encountering a gray node confirms
-    a directed cycle.
+  explanation: Gray (color 1) nodes represent ancestors on the current recursion call
+    stack. Re-encountering a gray node confirms a directed cycle.
 function:
   name: detect_deadlock
   params:
@@ -75,8 +84,8 @@ function:
   - name: requests
   returns: any
   compare: exact
-starter_code: "class Solution:\n    def detect_deadlock(self, allocations: dict[str, str], requests: list[list[str]]) -> dict:\n\
-  \        pass\n"
+starter_code: "class Solution:\n    def detect_deadlock(self, allocations: dict[str,\
+  \ str], requests: list[list[str]]) -> dict:\n        pass\n"
 tests:
 - args:
   - L1: T1
@@ -142,16 +151,16 @@ drills:
 - skill: setup
   title: Build wait-for edge
   goal: Map requester to lock holder.
-  instructions: If `lock in allocations` and `allocations[lock] != requester`, return `(requester, allocations[lock])`, else
-    None.
+  instructions: If `lock in allocations` and `allocations[lock] != requester`, return
+    `(requester, allocations[lock])`, else None.
   function:
     name: drill_make_edge
     params:
     - name: requester
     - name: lock
     - name: allocations
-  starter_code: "class Solution:\n    def drill_make_edge(self, requester: str, lock: str, allocations: dict) -> list:\n \
-    \       pass\n"
+  starter_code: "class Solution:\n    def drill_make_edge(self, requester: str, lock:\
+    \ str, allocations: dict) -> list:\n        pass\n"
   tests:
   - args:
     - T1
@@ -165,9 +174,10 @@ drills:
     - L1
     - L1: T1
     expected: null
-  solution: "class Solution:\n    def drill_make_edge(self, requester: str, lock: str, allocations: dict) -> list:\n     \
-    \   if lock in allocations and allocations[lock] != requester:\n            return [requester, allocations[lock]]\n  \
-    \      return None\n"
+  solution: "class Solution:\n    def drill_make_edge(self, requester: str, lock:\
+    \ str, allocations: dict) -> list:\n        if lock in allocations and allocations[lock]\
+    \ != requester:\n            return [requester, allocations[lock]]\n        return\
+    \ None\n"
   hint: Check if lock in allocations and not owned by requester.
 - skill: core
   title: Detect back-edge in DFS
@@ -178,7 +188,8 @@ drills:
     params:
     - name: color
     - name: neighbor
-  starter_code: "class Solution:\n    def drill_is_back_edge(self, color: dict, neighbor: str) -> bool:\n        pass\n"
+  starter_code: "class Solution:\n    def drill_is_back_edge(self, color: dict, neighbor:\
+    \ str) -> bool:\n        pass\n"
   tests:
   - args:
     - T1: 1
@@ -188,8 +199,8 @@ drills:
     - T1: 2
     - T1
     expected: false
-  solution: "class Solution:\n    def drill_is_back_edge(self, color: dict, neighbor: str) -> bool:\n        return color.get(neighbor)\
-    \ == 1\n"
+  solution: "class Solution:\n    def drill_is_back_edge(self, color: dict, neighbor:\
+    \ str) -> bool:\n        return color.get(neighbor) == 1\n"
   hint: Check if color is 1.
 - skill: edge
   title: Extract cycle members
@@ -199,7 +210,8 @@ drills:
     name: drill_cycle_members
     params:
     - name: cycle
-  starter_code: "class Solution:\n    def drill_cycle_members(self, cycle: list) -> list:\n        pass\n"
+  starter_code: "class Solution:\n    def drill_cycle_members(self, cycle: list) ->\
+    \ list:\n        pass\n"
   tests:
   - args:
     - - T1
@@ -211,12 +223,13 @@ drills:
   - args:
     - []
     expected: []
-  solution: "class Solution:\n    def drill_cycle_members(self, cycle: list) -> list:\n        return sorted(set(cycle[:-1]))\
-    \ if cycle else []\n"
+  solution: "class Solution:\n    def drill_cycle_members(self, cycle: list) -> list:\n\
+    \        return sorted(set(cycle[:-1])) if cycle else []\n"
   hint: Slice `cycle[:-1]`, take set, sort.
 hints:
 - Construct directed adjacency list `adj` mapping waiting threads to holding threads.
-- 'Use 3-color DFS: 0=unvisited, 1=in stack, 2=visited. Reaching color 1 reveals the cycle.'
+- 'Use 3-color DFS: 0=unvisited, 1=in stack, 2=visited. Reaching color 1 reveals the
+  cycle.'
 - '| # Pseudocode Blueprint
 
   | build adj: for t, lock in requests: if lock in alloc: adj[t].append(alloc[lock])
@@ -227,45 +240,320 @@ hints:
 
   | return has_deadlock, cycle, sorted(deadlocked_threads)'
 solution:
-  code: "class Solution:\n    def detect_deadlock(self, allocations: dict[str, str], requests: list[list[str]]) -> dict:\n\
-    \        adj: dict[str, list[str]] = {}\n        all_threads = set(allocations.values())\n        for t, lock in requests:\n\
-    \            all_threads.add(t)\n            if lock in allocations:\n                holder = allocations[lock]\n   \
-    \             if holder != t:\n                    adj.setdefault(t, []).append(holder)\n\n        color: dict[str, int]\
-    \ = {}\n        cycle_found: list[str] = []\n\n        def dfs(u: str, path: list[str]):\n            nonlocal cycle_found\n\
-    \            color[u] = 1\n            path.append(u)\n            for v in adj.get(u, []):\n                if cycle_found:\n\
-    \                    return\n                if color.get(v, 0) == 1:\n                    idx = path.index(v)\n     \
-    \               cycle_found = path[idx:] + [v]\n                    return\n                elif color.get(v, 0) == 0:\n\
-    \                    dfs(v, path)\n            path.pop()\n            color[u] = 2\n\n        for t in sorted(all_threads):\n\
-    \            if color.get(t, 0) == 0 and not cycle_found:\n                dfs(t, [])\n\n        deadlocked = sorted(set(cycle_found[:-1]))\
-    \ if cycle_found else []\n        return {\n            \"has_deadlock\": len(cycle_found) > 0,\n            \"cycle\"\
-    : cycle_found,\n            \"deadlocked_threads\": deadlocked,\n        }\n"
-  explanation: Constructing the Wait-For Graph by linking requesters to lock holders models resource dependencies. Running
-    a 3-color Depth-First Search reliably isolates directed circular dependencies without false positives from non-cyclical
-    shared nodes.
+  code: "class Solution:\n    def detect_deadlock(self, allocations: dict[str, str],\
+    \ requests: list[list[str]]) -> dict:\n        adj: dict[str, list[str]] = {}\n\
+    \        all_threads = set(allocations.values())\n        for t, lock in requests:\n\
+    \            all_threads.add(t)\n            if lock in allocations:\n       \
+    \         holder = allocations[lock]\n                if holder != t:\n      \
+    \              adj.setdefault(t, []).append(holder)\n\n        color: dict[str,\
+    \ int] = {}\n        cycle_found: list[str] = []\n\n        def dfs(u: str, path:\
+    \ list[str]):\n            nonlocal cycle_found\n            color[u] = 1\n  \
+    \          path.append(u)\n            for v in adj.get(u, []):\n            \
+    \    if cycle_found:\n                    return\n                if color.get(v,\
+    \ 0) == 1:\n                    idx = path.index(v)\n                    cycle_found\
+    \ = path[idx:] + [v]\n                    return\n                elif color.get(v,\
+    \ 0) == 0:\n                    dfs(v, path)\n            path.pop()\n       \
+    \     color[u] = 2\n\n        for t in sorted(all_threads):\n            if color.get(t,\
+    \ 0) == 0 and not cycle_found:\n                dfs(t, [])\n\n        deadlocked\
+    \ = sorted(set(cycle_found[:-1])) if cycle_found else []\n        return {\n \
+    \           \"has_deadlock\": len(cycle_found) > 0,\n            \"cycle\": cycle_found,\n\
+    \            \"deadlocked_threads\": deadlocked,\n        }\n"
+  explanation: Constructing the Wait-For Graph by linking requesters to lock holders
+    models resource dependencies. Running a 3-color Depth-First Search reliably isolates
+    directed circular dependencies without false positives from non-cyclical shared
+    nodes.
   time: O(V + E) where V is threads and E is resource dependencies
   space: O(V + E) for the adjacency list and recursion stack
-pitch_script: '**(Clarify)** "We need to construct a Wait-For Graph from lock allocations and pending requests and detect
-  any circular wait deadlock cycles."
+pitch_script: '**(Clarify)** "We need to construct a Wait-For Graph from lock allocations
+  and pending requests and detect any circular wait deadlock cycles."
 
 
-  **(Brute force)** "Scanning random pairs of threads misses multi-party cycles (e.g. T1 -> T2 -> T3 -> T1)."
+  **(Brute force)** "Scanning random pairs of threads misses multi-party cycles (e.g.
+  T1 -> T2 -> T3 -> T1)."
 
 
-  **(Trigger)** "Resource allocation dependencies mapped to directed graph cycles signals a Wait-For Graph with 3-color cycle
-  detection."
+  **(Trigger)** "Resource allocation dependencies mapped to directed graph cycles
+  signals a Wait-For Graph with 3-color cycle detection."
 
 
-  **(Optimal)** "We build a directed graph where each edge points from a waiting thread to the thread holding the requested
-  lock. We perform 3-color DFS (white/gray/black). When an edge points to an active gray ancestor on the call stack, we slice
-  the cycle path and identify the deadlocked threads."
+  **(Optimal)** "We build a directed graph where each edge points from a waiting thread
+  to the thread holding the requested lock. We perform 3-color DFS (white/gray/black).
+  When an edge points to an active gray ancestor on the call stack, we slice the cycle
+  path and identify the deadlocked threads."
 
 
   **(Complexity)** "Executes in O(V + E) time and O(V + E) space." '
 twist:
   lc: 9423
   title: Hierarchical Lock Acquisition Ordering
-  why: Rather than detecting deadlocks after they occur, enforcing a strict global total ordering on lock acquisition mathematically
-    prevents circular wait.
+  why: Rather than detecting deadlocks after they occur, enforcing a strict global
+    total ordering on lock acquisition mathematically prevents circular wait.
 viz:
   title: Wait-For Graph Deadlock Detection
   type: concurrency_timeline
+journey:
+- id: w27_s1_mutual_exclusion
+  title: Mutual Exclusion & Race Conditions (Why We Lock)
+  subtitle: The non-atomic nature of CPU memory increments and lost updates
+  scenario: Two threads increment a shared counter variable count = count + 1 1,000
+    times concurrently without a mutex. What happens to the final value?
+  mechanism: 'Incrementing is not an atomic CPU instruction: it involves 1. Read memory
+    to register, 2. Add 1, 3. Write register to memory. An interleaved thread context
+    switch overwrites updates, causing lost increments. Mutexes enforce mutual exclusion
+    so only one thread enters the critical section.'
+  prediction:
+    prompt: If Thread A and Thread B each increment a shared counter 1,000 times without
+      locks on a multi-core machine, what is the final counter value?
+    choices:
+    - id: opt_a
+      label: Less than 2,000 (often 1,200 to 1,600) due to race condition overwrites.
+      explanation: Correct! Without mutual exclusion, interleaved reads and writes
+        overwrite each other, causing lost updates.
+      is_correct: true
+    - id: opt_b
+      label: Exactly 2,000 every single time.
+      explanation: Misconception! Without synchronization, race conditions make deterministic
+        results impossible.
+      is_correct: false
+    - id: opt_c
+      label: Always 0 because concurrent writes cancel each other out.
+      explanation: Incorrect! The value increments, but loses dozens or hundreds of
+        operations due to clobbered registers.
+      is_correct: false
+    revealed_explanation: Locks are essential to enforce mutual exclusion on shared
+      mutable state. However, introducing multiple locks creates the risk of Deadlocks.
+  controls:
+  - id: thread_count
+    label: Concurrent Threads
+    type: slider
+    default: 2
+    min: 2
+    max: 8
+    step: 1
+    description: Number of threads competing for critical section
+  - id: mutex_enabled
+    label: Mutex Lock Enabled
+    type: toggle
+    default: false
+    description: Acquire exclusive lock before modifying shared state
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Thread Race Condition & Interleaved CPU Assembly
+- id: w27_s2_coffman_conditions
+  title: The 4 Coffman Conditions for System Deadlock
+  subtitle: The mathematical requirements that produce permanent thread freezes
+  scenario: When does a multi-threaded system freeze in an unrecoverable deadlock?
+  mechanism: 'Deadlock can occur if and only if all four Coffman conditions hold simultaneously:
+    1. Mutual Exclusion (resources held exclusively), 2. Hold and Wait (processes
+    holding resources request new ones), 3. No Preemption (resources cannot be forcibly
+    taken), 4. Circular Wait (a closed cycle of processes waiting for each other).'
+  prediction:
+    prompt: If you break ANY ONE of the four Coffman conditions in an operating system,
+      can a deadlock still occur?
+    choices:
+    - id: opt_a
+      label: No! All 4 conditions are strictly required simultaneously; breaking any
+        single condition makes deadlock mathematically impossible.
+      explanation: Correct! Deadlock prevention algorithms focus on eliminating at
+        least one Coffman condition (most commonly Circular Wait).
+      is_correct: true
+    - id: opt_b
+      label: Yes, deadlocks can occur spontaneously due to CPU overheating.
+      explanation: Incorrect! Deadlock is a logical scheduling and synchronization
+        state, not a thermal fault.
+      is_correct: false
+    - id: opt_c
+      label: Yes, breaking Circular Wait only delays the deadlock rather than preventing
+        it.
+      explanation: Misconception! Without circular wait, the resource allocation graph
+        is a directed acyclic graph (DAG), which can never deadlock.
+      is_correct: false
+    revealed_explanation: Operating system and database architects prevent deadlocks
+      by designing protocols that eliminate at least one Coffman condition.
+  controls:
+  - id: circular_wait_permitted
+    label: Circular Wait Allowed
+    type: toggle
+    default: true
+    description: Permit arbitrary circular locking patterns
+  - id: preemption_permitted
+    label: Resource Preemption Allowed
+    type: toggle
+    default: false
+    description: Kernel can forcibly seize lock from waiting thread
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Coffman Conditions Matrix
+- id: w27_s3_wait_for_graphs
+  title: "Resource Allocation Graphs \u2794 Wait-For Graphs (WFG)"
+  subtitle: Modeling threads and locks as a directed dependency graph
+  scenario: How do database engines (PostgreSQL, MySQL InnoDB) and OS kernels monitor
+    locks to detect deadlocks programmatically?
+  mechanism: The kernel collapses the bipartite Resource Allocation Graph (threads
+    and locks) into a directed Wait-For Graph (WFG) where nodes are threads. If Thread
+    A requests a lock currently allocated to Thread B, a directed edge T_A -> T_B
+    is added. For single-unit resources, a directed cycle in the WFG is necessary
+    and sufficient for deadlock.
+  prediction:
+    prompt: If Thread 1 holds Lock A and requests Lock B, while Thread 2 holds Lock
+      B and requests Lock A, what does the Wait-For Graph look like?
+    choices:
+    - id: opt_a
+      label: 'A 2-node cycle: T1 -> T2 and T2 -> T1, proving an unresolvable circular
+        deadlock.'
+      explanation: Correct! T1 is waiting for T2 (owner of Lock B), and T2 is waiting
+        for T1 (owner of Lock A). Neither can proceed.
+      is_correct: true
+    - id: opt_b
+      label: A disconnected graph with no edges.
+      explanation: Incorrect! Lock requests create directed dependencies between the
+        requesting thread and the holding thread.
+      is_correct: false
+    - id: opt_c
+      label: A self-loop on Lock A.
+      explanation: Misconception! In a Wait-For Graph, nodes represent threads, not
+        locks.
+      is_correct: false
+    revealed_explanation: 'Wait-For Graphs transform the deadlock problem into a classic
+      graph problem: detecting directed cycles.'
+  controls:
+  - id: scenario_preset
+    label: Lock Scenario
+    type: select
+    default: Classic Deadlock
+    options:
+    - Classic Deadlock
+    - Chain No Cycle
+    - 3-Thread Cycle
+    description: Simulated thread lock allocations and requests
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Wait-For Graph (WFG) Directed Graph Canvas
+- id: w27_s4_three_color_dfs
+  title: "3-Color DFS Cycle Detection (White \u2794 Gray \u2794 Black)"
+  subtitle: Detecting circular wait in O(V + E) time without infinite recursion
+  scenario: How does the operating system detect cycles in a Wait-For Graph without
+    falling into an infinite loop during graph traversal?
+  mechanism: "The kernel uses 3-color Depth-First Search: 0 (White: unvisited), 1\
+    \ (Gray: currently in the active recursion call stack), 2 (Black: fully explored\
+    \ with all descendants verified acyclic). If DFS visits a node that is currently\
+    \ Gray, it has found a back-edge pointing to an active ancestor \u2014 confirming\
+    \ a directed cycle in O(V + E) time."
+  prediction:
+    prompt: During DFS traversal of a Wait-For Graph, which node color encounter indicates
+      that a directed cycle exists?
+    choices:
+    - id: opt_a
+      label: Encountering a Gray (visiting) node, indicating a back-edge to an active
+        ancestor in the recursion call stack.
+      explanation: Correct! A Gray node is currently in the active traversal stack;
+        encountering it means a closed loop has been formed.
+      is_correct: true
+    - id: opt_b
+      label: Encountering a Black (visited) node, meaning the search reached a finished
+        branch.
+      explanation: Incorrect! A Black node has already been completely explored and
+        certified free of cycles.
+      is_correct: false
+    - id: opt_c
+      label: Encountering a White (unvisited) node.
+      explanation: Incorrect! White nodes are simply unvisited vertices waiting to
+        be explored.
+      is_correct: false
+    revealed_explanation: 3-color DFS allows database engines like PostgreSQL to run
+      deadlock detection asynchronously every deadlock_timeout (default 1000ms) with
+      minimal CPU overhead.
+  controls:
+  - id: step_traversal
+    label: Step DFS Traversal
+    type: button
+    default: true
+    description: Advance DFS step-by-step watching White -> Gray -> Black transitions
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: 3-Color DFS Recursion Stack Trace
+- id: w27_s5_hierarchical_lock_ordering
+  title: 'Deadlock Prevention: Hierarchical Global Lock Ordering'
+  subtitle: Eliminating circular wait by design in production architectures
+  scenario: Instead of letting threads deadlock and killing one after a timeout, how
+    can high-performance distributed systems prevent deadlocks entirely?
+  mechanism: 'Establish a global total ordering on all locks (e.g. by sorting lock
+    IDs lexicographically: Lock_1 < Lock_2 < Lock_3). Every thread in the system must
+    acquire locks in strictly increasing order. If Thread A holds Lock 1 and needs
+    Lock 2, it acquires Lock 2. If Thread B needs both, it CANNOT acquire Lock 2 first.
+    Circular wait becomes mathematically impossible.'
+  prediction:
+    prompt: If all threads in an application are strictly required to acquire locks
+      in sorted order (Lock A before Lock B, Lock B before Lock C), what happens to
+      deadlocks?
+    choices:
+    - id: opt_a
+      label: Deadlocks are mathematically impossible because circular wait cannot
+        form in an acyclic directed resource hierarchy.
+      explanation: Correct! Hierarchical lock acquisition transforms the resource
+        dependency graph into a DAG, completely eliminating circular wait.
+      is_correct: true
+    - id: opt_b
+      label: Deadlocks happen twice as often because all threads queue for Lock A
+        first.
+      explanation: Misconception! Threads may queue (contention), but they will never
+        deadlock (permanent circular freeze).
+      is_correct: false
+    - id: opt_c
+      label: Locks become volatile and lose mutual exclusion guarantees.
+      explanation: Incorrect! Mutual exclusion is preserved; only the acquisition
+        sequence is disciplined.
+      is_correct: false
+    revealed_explanation: Hierarchical lock ordering is the gold-standard design pattern
+      used in Linux kernel spinlocks, database transaction managers, and concurrent
+      systems to prevent deadlocks proactively.
+  controls:
+  - id: enforce_lock_ordering
+    label: Enforce Global Lock Ordering
+    type: toggle
+    default: true
+    description: Sort lock acquisitions by global resource ID
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Lock Hierarchy DAG vs Unordered Circular Wait
+- id: w27_s6_transfer_challenge
+  title: 'Transfer Challenge: OS Wait-For Graph Cycle Detector'
+  subtitle: Build the kernel deadlock detector using 3-color DFS
+  scenario: 'Implement `detect_deadlock(allocations: dict[str, str], requests: list[list[str]])
+    -> dict` to construct the Wait-For Graph and detect deadlocked threads.'
+  mechanism: Parse lock allocations and pending requests. Build the directed graph
+    of thread dependencies. Run 3-color DFS in lexicographical thread order to detect
+    cycles, extracting the cycle path and unique deadlocked threads.
+  prediction:
+    prompt: 'Given allocations {"L1": "T1", "L2": "T2"} and requests [["T1", "L2"],
+      ["T2", "L1"]], what does detect_deadlock return?'
+    choices:
+    - id: opt_a
+      label: '{"has_deadlock": True, "cycle": ["T1", "T2", "T1"], "deadlocked_threads":
+        ["T1", "T2"]}'
+      explanation: Correct! T1 waits for T2 (holder of L2), and T2 waits for T1 (holder
+        of L1), forming a direct cycle.
+      is_correct: true
+    - id: opt_b
+      label: '{"has_deadlock": False, "cycle": [], "deadlocked_threads": []}'
+      explanation: Incorrect! Both threads are mutually blocked waiting for each other's
+        locks.
+      is_correct: false
+    - id: opt_c
+      label: '{"has_deadlock": True, "cycle": ["L1", "L2"], "deadlocked_threads":
+        ["L1", "L2"]}'
+      explanation: Incorrect! The Wait-For Graph connects threads, not locks.
+      is_correct: false
+    revealed_explanation: Implement the cycle detector in the code editor below and
+      verify with all test cases.
+  controls:
+  - id: run_verification
+    label: Run Full Deadlock Detection Test Suite
+    type: button
+    default: true
+    description: Execute test suite validating cycle detection and acyclic chains
+  lab_starter_code: "class Solution:\n    def detect_deadlock(self, allocations: dict[str,\
+    \ str], requests: list[list[str]]) -> dict:\n        pass\n"
+  visualizer_type: system_blueprint
+  visualizer_config:
+    title: Wait-For Graph Cycle Detector Sandbox
