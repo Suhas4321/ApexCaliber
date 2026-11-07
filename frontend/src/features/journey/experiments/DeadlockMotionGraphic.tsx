@@ -170,21 +170,21 @@ export default function DeadlockMotionGraphic() {
                 setCurrentTime(0)
                 setIsPlaying(true)
               }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all border ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border shadow-xs ${
                 lockOrderingEnabled
-                  ? 'bg-emerald-950/40 text-emerald-300 border-emerald-600/60 shadow-xs'
-                  : 'bg-panel text-muted border-line hover:text-chalk'
+                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-600/70 shadow-emerald-950/40'
+                  : 'bg-panel-3 text-muted border-line hover:text-chalk'
               }`}
               title="Toggle Strict Lock Hierarchy (Resource Ordering)"
             >
               {lockOrderingEnabled ? (
                 <>
-                  <ShieldCheck size={13} className="text-emerald-400" />
+                  <ShieldCheck size={14} className="text-emerald-400" />
                   <span>Lock Ordering: ON (Safe)</span>
                 </>
               ) : (
                 <>
-                  <AlertOctagon size={13} className="text-amber-400" />
+                  <AlertOctagon size={14} className="text-amber-400" />
                   <span>Lock Ordering: OFF (Deadlock)</span>
                 </>
               )}
@@ -192,259 +192,319 @@ export default function DeadlockMotionGraphic() {
           </div>
         }
       >
-        {/* SVG Graphic Scene (600 x 340 viewBox) */}
-        <div className="relative w-full aspect-[16/9] max-w-[620px] mx-auto">
-          <svg
-            viewBox="0 0 600 340"
-            className={`w-full h-full transition-all duration-300 rounded-lg ${
-              isDeadlocked ? 'drop-shadow-[0_0_25px_rgba(239,68,68,0.25)]' : ''
-            }`}
-          >
-            <defs>
-              {/* Arrow Markers */}
-              <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
-              </marker>
-              <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
-              </marker>
-              <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
-              </marker>
-            </defs>
+        {(canvasTheme) => {
+          const isLight = canvasTheme === 'light'
+          
+          // Theme-dependent color tokens
+          const bgNode = isLight ? '#ffffff' : '#111726'
+          const borderThread1 = isLight ? '#4f46e5' : '#818cf8'
+          const borderThread2 = isLight ? '#0891b2' : '#22d3ee'
+          const textPrimary = isLight ? '#0f172a' : '#f8fafc'
+          const textSecondary = isLight ? '#475569' : '#94a3b8'
+          const resourceBg = isLight ? '#f1f5f9' : '#1e293b'
+          const resourceBorder = isLight ? '#cbd5e1' : '#334155'
+          const arrowGreen = isLight ? '#059669' : '#10b981'
+          const arrowAmber = isLight ? '#d97706' : '#f59e0b'
+          const arrowRed = isLight ? '#dc2626' : '#ef4444'
 
-            {/* Background subtle connection circle showing the cyclic dependency */}
-            <circle
-              cx="300"
-              cy="170"
-              r="140"
-              fill="none"
-              stroke={isDeadlocked ? '#ef4444' : isSafeResolved ? '#10b981' : '#334155'}
-              strokeWidth={isDeadlocked ? 2.5 : 1}
-              strokeDasharray={isDeadlocked ? '6 6' : '3 6'}
-              className={isDeadlocked ? 'animate-pulse' : 'opacity-40'}
-            />
-
-            {/* EDGES (Assignment: Lock -> Thread; Request: Thread -> Lock) */}
-            
-            {/* 1. Assignment Edge: Lock 1 (Rider) -> Thread 1 */}
-            {p1HoldProgress > 0 && (
-              <g>
-                <line
-                  x1="180"
-                  y1="230"
-                  x2="180"
-                  y2={230 - 110 * p1HoldProgress}
-                  stroke={isDeadlocked ? '#ef4444' : '#10b981'}
-                  strokeWidth="2.5"
-                  markerEnd={p1HoldProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-green)') : ''}
-                />
-                <text x="135" y="175" fill="#10b981" fontSize="10" fontFamily="monospace" fontWeight="bold">
-                  holds L1
-                </text>
-              </g>
-            )}
-
-            {/* 2. Assignment Edge: Lock 2 (Order) -> Thread 2 */}
-            {p2HoldProgress > 0 && (
-              <g>
-                <line
-                  x1="420"
-                  y1="110"
-                  x2="420"
-                  y2={110 + 110 * p2HoldProgress}
-                  stroke={isDeadlocked ? '#ef4444' : '#10b981'}
-                  strokeWidth="2.5"
-                  markerEnd={p2HoldProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-green)') : ''}
-                />
-                <text x="430" y="175" fill="#10b981" fontSize="10" fontFamily="monospace" fontWeight="bold">
-                  holds L2
-                </text>
-              </g>
-            )}
-
-            {/* 3. Request Edge: Thread 1 -> Lock 2 (Order) */}
-            {p1ReqProgress > 0 && (
-              <g>
-                <line
-                  x1="220"
-                  y1="85"
-                  x2={220 + 140 * p1ReqProgress}
-                  y2="85"
-                  stroke={isDeadlocked ? '#ef4444' : '#f59e0b'}
-                  strokeWidth="2.5"
-                  strokeDasharray="5 4"
-                  markerEnd={p1ReqProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-amber)') : ''}
-                />
-                <text x="270" y="75" fill={isDeadlocked ? '#ef4444' : '#f59e0b'} fontSize="10" fontFamily="monospace" fontWeight="bold">
-                  requests L2
-                </text>
-              </g>
-            )}
-
-            {/* 4. Request Edge: Thread 2 -> Lock 1 (Rider) */}
-            {p2ReqProgress > 0 && (
-              <g>
-                <line
-                  x1="380"
-                  y1="255"
-                  x2={380 - 140 * p2ReqProgress}
-                  y2="255"
-                  stroke={isDeadlocked ? '#ef4444' : '#f59e0b'}
-                  strokeWidth="2.5"
-                  strokeDasharray="5 4"
-                  markerEnd={p2ReqProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-amber)') : ''}
-                />
-                <text x="270" y="275" fill={isDeadlocked ? '#ef4444' : '#f59e0b'} fontSize="10" fontFamily="monospace" fontWeight="bold">
-                  requests L1
-                </text>
-              </g>
-            )}
-
-            {/* THREAD 1 NODE (Process circle, Top-Left) */}
-            <g transform="translate(180, 85)">
-              <circle
-                r="36"
-                fill="#12161f"
-                stroke={isDeadlocked ? '#ef4444' : '#8b5cf6'}
-                strokeWidth={isDeadlocked ? '3' : '2'}
-                className="transition-all duration-300"
-              />
-              <text textAnchor="middle" y="-6" fill="#f8fafc" fontSize="12" fontWeight="bold" fontFamily="sans-serif">
-                Thread 1
-              </text>
-              <text textAnchor="middle" y="10" fill="#94a3b8" fontSize="9" fontFamily="monospace">
-                (Rider Matcher)
-              </text>
-              <text
-                textAnchor="middle"
-                y="22"
-                fill={isDeadlocked ? '#ef4444' : '#10b981'}
-                fontSize="8"
-                fontWeight="bold"
-                fontFamily="monospace"
+          return (
+            <div className="relative w-full aspect-[16/10] max-w-[840px] mx-auto py-2">
+              <svg
+                viewBox="0 0 880 500"
+                className={`w-full h-full transition-all duration-300 ${
+                  isDeadlocked ? 'drop-shadow-[0_0_35px_rgba(239,68,68,0.35)]' : ''
+                }`}
               >
-                {isDeadlocked ? 'BLOCKED' : p1HoldProgress > 0 ? 'ACTIVE' : 'IDLE'}
-              </text>
-            </g>
+                <defs>
+                  {/* Arrow Markers */}
+                  <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill={arrowGreen} />
+                  </marker>
+                  <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill={arrowAmber} />
+                  </marker>
+                  <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill={arrowRed} />
+                  </marker>
 
-            {/* THREAD 2 NODE (Process circle, Bottom-Right) */}
-            <g transform="translate(420, 255)">
-              <circle
-                r="36"
-                fill="#12161f"
-                stroke={isDeadlocked ? '#ef4444' : '#8b5cf6'}
-                strokeWidth={isDeadlocked ? '3' : '2'}
-                className="transition-all duration-300"
-              />
-              <text textAnchor="middle" y="-6" fill="#f8fafc" fontSize="12" fontWeight="bold" fontFamily="sans-serif">
-                Thread 2
-              </text>
-              <text textAnchor="middle" y="10" fill="#94a3b8" fontSize="9" fontFamily="monospace">
-                (Order Dispatch)
-              </text>
-              <text
-                textAnchor="middle"
-                y="22"
-                fill={isDeadlocked ? '#ef4444' : isSafeResolved ? '#10b981' : '#10b981'}
-                fontSize="8"
-                fontWeight="bold"
-                fontFamily="monospace"
-              >
-                {isDeadlocked ? 'BLOCKED' : p2HoldProgress > 0 ? 'ACTIVE' : lockOrderingEnabled ? 'WAITING' : 'IDLE'}
-              </text>
-            </g>
+                  {/* Drop Shadow Filter for Nodes */}
+                  <filter id="node-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodOpacity={isLight ? '0.12' : '0.4'} floodColor="#000" />
+                  </filter>
+                </defs>
 
-            {/* RESOURCE 1 NODE (Lock 1 - Rider Mutex, Bottom-Left rectangle) */}
-            <g transform="translate(140, 230)">
-              <rect
-                x="0"
-                y="0"
-                width="80"
-                height="50"
-                rx="6"
-                fill="#1a202c"
-                stroke={p1HoldProgress > 0 ? '#10b981' : '#475569'}
-                strokeWidth="2"
-              />
-              <circle cx="20" cy="18" r="3" fill="#10b981" />
-              <text x="32" y="22" fill="#f8fafc" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                L1
-              </text>
-              <text x="12" y="40" fill="#94a3b8" fontSize="9" fontFamily="sans-serif">
-                Rider Lock
-              </text>
-            </g>
+                {/* Circular Cycle Halo Ring (Background aura) */}
+                <ellipse
+                  cx="440"
+                  cy="250"
+                  rx="260"
+                  ry="180"
+                  fill="none"
+                  stroke={isDeadlocked ? arrowRed : isSafeResolved ? arrowGreen : isLight ? '#cbd5e1' : '#1e293b'}
+                  strokeWidth={isDeadlocked ? 3 : 1.5}
+                  strokeDasharray={isDeadlocked ? '8 6' : '4 6'}
+                  className={isDeadlocked ? 'animate-pulse' : 'opacity-50'}
+                />
 
-            {/* RESOURCE 2 NODE (Lock 2 - Order Mutex, Top-Right rectangle) */}
-            <g transform="translate(380, 60)">
-              <rect
-                x="0"
-                y="0"
-                width="80"
-                height="50"
-                rx="6"
-                fill="#1a202c"
-                stroke={p2HoldProgress > 0 ? '#10b981' : '#475569'}
-                strokeWidth="2"
-              />
-              <circle cx="20" cy="18" r="3" fill="#10b981" />
-              <text x="32" y="22" fill="#f8fafc" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                L2
-              </text>
-              <text x="12" y="40" fill="#94a3b8" fontSize="9" fontFamily="sans-serif">
-                Order Lock
-              </text>
-            </g>
+                {/* ==================== EDGES ==================== */}
 
-            {/* DEADLOCK BANNER OVERLAY */}
-            {isDeadlocked && (
-              <g transform="translate(190, 145)">
-                <rect x="0" y="0" width="220" height="48" rx="8" fill="#450a0a" stroke="#ef4444" strokeWidth="2" />
-                <text x="110" y="20" textAnchor="middle" fill="#fca5a5" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
-                  ⚡ CIRCULAR WAIT DEADLOCK
-                </text>
-                <text x="110" y="36" textAnchor="middle" fill="#fecaca" fontSize="9" fontFamily="monospace">
-                  T1 → L2 → T2 → L1 → T1
-                </text>
-              </g>
-            )}
+                {/* 1. Assignment Edge: Lock 1 (Rider) -> Thread 1 (Solid Green Arrow) */}
+                {p1HoldProgress > 0 && (
+                  <g>
+                    <line
+                      x1="220"
+                      y1="340"
+                      x2="220"
+                      y2={340 - 150 * p1HoldProgress}
+                      stroke={isDeadlocked ? arrowRed : arrowGreen}
+                      strokeWidth="4"
+                      markerEnd={p1HoldProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-green)') : ''}
+                    />
+                    <rect x="155" y="245" width="130" height="28" rx="14" fill={isLight ? '#ecfdf5' : '#064e3b'} stroke={arrowGreen} strokeWidth="1.5" />
+                    <text x="220" y="263" textAnchor="middle" fill={arrowGreen} fontSize="11" fontFamily="sans-serif" fontWeight="bold">
+                      ✓ HOLDS LOCK 1
+                    </text>
+                  </g>
+                )}
 
-            {/* SAFE RESOLVED BANNER OVERLAY */}
-            {isSafeResolved && (
-              <g transform="translate(170, 145)">
-                <rect x="0" y="0" width="260" height="48" rx="8" fill="#064e3b" stroke="#10b981" strokeWidth="2" />
-                <text x="130" y="20" textAnchor="middle" fill="#6ee7b7" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
-                  ✓ DEADLOCK AVOIDED
-                </text>
-                <text x="130" y="36" textAnchor="middle" fill="#a7f3d0" fontSize="9" fontFamily="monospace">
-                  Strict Hierarchy (L1 &lt; L2) broke cycle!
-                </text>
-              </g>
-            )}
-          </svg>
-        </div>
+                {/* 2. Assignment Edge: Lock 2 (Order) -> Thread 2 (Solid Green Arrow) */}
+                {p2HoldProgress > 0 && (
+                  <g>
+                    <line
+                      x1="660"
+                      y1="160"
+                      x2="660"
+                      y2={160 + 150 * p2HoldProgress}
+                      stroke={isDeadlocked ? arrowRed : arrowGreen}
+                      strokeWidth="4"
+                      markerEnd={p2HoldProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-green)') : ''}
+                    />
+                    <rect x="595" y="245" width="130" height="28" rx="14" fill={isLight ? '#ecfdf5' : '#064e3b'} stroke={arrowGreen} strokeWidth="1.5" />
+                    <text x="660" y="263" textAnchor="middle" fill={arrowGreen} fontSize="11" fontFamily="sans-serif" fontWeight="bold">
+                      ✓ HOLDS LOCK 2
+                    </text>
+                  </g>
+                )}
 
-        {/* Legend bar underneath the animation stage */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-3 text-[11px] font-mono border-t border-line/60">
-          <div className="flex items-center gap-1.5 text-muted">
-            <span className="w-2.5 h-2.5 rounded-full bg-violet-400" />
-            <span>Process Node (Circle)</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted">
-            <span className="w-2.5 h-2.5 rounded-xs bg-slate-500 border border-slate-400" />
-            <span>Resource Node (Rectangle)</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-emerald-400">
-            <span className="w-4 h-0.5 bg-emerald-500" />
-            <span>Assignment Edge (R → T)</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-amber-400">
-            <span className="w-4 h-0.5 border-t border-dashed border-amber-500" />
-            <span>Request Edge (T → R)</span>
-          </div>
-        </div>
+                {/* 3. Request Edge: Thread 1 -> Lock 2 (Order) (Dashed Amber Arrow) */}
+                {p1ReqProgress > 0 && (
+                  <g>
+                    <line
+                      x1="280"
+                      y1="125"
+                      x2={280 + 300 * p1ReqProgress}
+                      y2="125"
+                      stroke={isDeadlocked ? arrowRed : arrowAmber}
+                      strokeWidth="4"
+                      strokeDasharray="6 5"
+                      markerEnd={p1ReqProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-amber)') : ''}
+                    />
+                    <rect x="375" y="105" width="130" height="28" rx="14" fill={isLight ? '#fffbeb' : '#451a03'} stroke={isDeadlocked ? arrowRed : arrowAmber} strokeWidth="1.5" />
+                    <text x="440" y="123" textAnchor="middle" fill={isDeadlocked ? arrowRed : arrowAmber} fontSize="11" fontFamily="sans-serif" fontWeight="bold">
+                      ⚡ REQUESTS LOCK 2
+                    </text>
+                  </g>
+                )}
+
+                {/* 4. Request Edge: Thread 2 -> Lock 1 (Rider) (Dashed Amber Arrow) */}
+                {p2ReqProgress > 0 && (
+                  <g>
+                    <line
+                      x1="600"
+                      y1="375"
+                      x2={600 - 300 * p2ReqProgress}
+                      y2="375"
+                      stroke={isDeadlocked ? arrowRed : arrowAmber}
+                      strokeWidth="4"
+                      strokeDasharray="6 5"
+                      markerEnd={p2ReqProgress >= 0.95 ? (isDeadlocked ? 'url(#arrow-red)' : 'url(#arrow-amber)') : ''}
+                    />
+                    <rect x="375" y="360" width="130" height="28" rx="14" fill={isLight ? '#fffbeb' : '#451a03'} stroke={isDeadlocked ? arrowRed : arrowAmber} strokeWidth="1.5" />
+                    <text x="440" y="378" textAnchor="middle" fill={isDeadlocked ? arrowRed : arrowAmber} fontSize="11" fontFamily="sans-serif" fontWeight="bold">
+                      ⚡ REQUESTS LOCK 1
+                    </text>
+                  </g>
+                )}
+
+                {/* ==================== NODES ==================== */}
+
+                {/* THREAD 1 (Process Node - Circle, Top-Left) */}
+                <g transform="translate(220, 125)" filter="url(#node-shadow)">
+                  <circle
+                    r="52"
+                    fill={bgNode}
+                    stroke={isDeadlocked ? arrowRed : borderThread1}
+                    strokeWidth={isDeadlocked ? '4' : '3.5'}
+                    className="transition-all duration-300"
+                  />
+                  <text textAnchor="middle" y="-12" fill={textPrimary} fontSize="15" fontWeight="bold" fontFamily="sans-serif">
+                    Thread 1
+                  </text>
+                  <text textAnchor="middle" y="8" fill={textSecondary} fontSize="11" fontFamily="monospace">
+                    Rider Matcher
+                  </text>
+                  <rect
+                    x="-38"
+                    y="18"
+                    width="76"
+                    height="18"
+                    rx="9"
+                    fill={isDeadlocked ? (isLight ? '#fee2e2' : '#7f1d1d') : (isLight ? '#e0e7ff' : '#312e81')}
+                  />
+                  <text
+                    textAnchor="middle"
+                    y="31"
+                    fill={isDeadlocked ? arrowRed : borderThread1}
+                    fontSize="9"
+                    fontWeight="bold"
+                    fontFamily="monospace"
+                  >
+                    {isDeadlocked ? 'BLOCKED' : p1HoldProgress > 0 ? 'ACTIVE' : 'IDLE'}
+                  </text>
+                </g>
+
+                {/* THREAD 2 (Process Node - Circle, Bottom-Right) */}
+                <g transform="translate(660, 375)" filter="url(#node-shadow)">
+                  <circle
+                    r="52"
+                    fill={bgNode}
+                    stroke={isDeadlocked ? arrowRed : borderThread2}
+                    strokeWidth={isDeadlocked ? '4' : '3.5'}
+                    className="transition-all duration-300"
+                  />
+                  <text textAnchor="middle" y="-12" fill={textPrimary} fontSize="15" fontWeight="bold" fontFamily="sans-serif">
+                    Thread 2
+                  </text>
+                  <text textAnchor="middle" y="8" fill={textSecondary} fontSize="11" fontFamily="monospace">
+                    Order Dispatch
+                  </text>
+                  <rect
+                    x="-42"
+                    y="18"
+                    width="84"
+                    height="18"
+                    rx="9"
+                    fill={isDeadlocked ? (isLight ? '#fee2e2' : '#7f1d1d') : isSafeResolved ? (isLight ? '#dcfce7' : '#064e3b') : (isLight ? '#cffafe' : '#164e63')}
+                  />
+                  <text
+                    textAnchor="middle"
+                    y="31"
+                    fill={isDeadlocked ? arrowRed : isSafeResolved ? arrowGreen : borderThread2}
+                    fontSize="9"
+                    fontWeight="bold"
+                    fontFamily="monospace"
+                  >
+                    {isDeadlocked ? 'BLOCKED' : p2HoldProgress > 0 ? 'ACTIVE' : lockOrderingEnabled ? 'QUEUED (SAFE)' : 'IDLE'}
+                  </text>
+                </g>
+
+                {/* RESOURCE 1: LOCK(RIDER) (Resource Node - Rectangle, Bottom-Left) */}
+                <g transform="translate(150, 345)" filter="url(#node-shadow)">
+                  <rect
+                    x="0"
+                    y="0"
+                    width="140"
+                    height="70"
+                    rx="10"
+                    fill={resourceBg}
+                    stroke={p1HoldProgress > 0 ? arrowGreen : resourceBorder}
+                    strokeWidth="3"
+                  />
+                  <circle cx="26" cy="24" r="6" fill={p1HoldProgress > 0 ? arrowGreen : textSecondary} />
+                  <text x="42" y="28" fill={textPrimary} fontSize="14" fontWeight="bold" fontFamily="monospace">
+                    Lock 1 (L1)
+                  </text>
+                  <text x="20" y="52" fill={textSecondary} fontSize="11" fontFamily="sans-serif">
+                    Rider Profile Mutex
+                  </text>
+                </g>
+
+                {/* RESOURCE 2: LOCK(ORDER) (Resource Node - Rectangle, Top-Right) */}
+                <g transform="translate(590, 85)" filter="url(#node-shadow)">
+                  <rect
+                    x="0"
+                    y="0"
+                    width="140"
+                    height="70"
+                    rx="10"
+                    fill={resourceBg}
+                    stroke={p2HoldProgress > 0 ? arrowGreen : resourceBorder}
+                    strokeWidth="3"
+                  />
+                  <circle cx="26" cy="24" r="6" fill={p2HoldProgress > 0 ? arrowGreen : textSecondary} />
+                  <text x="42" y="28" fill={textPrimary} fontSize="14" fontWeight="bold" fontFamily="monospace">
+                    Lock 2 (L2)
+                  </text>
+                  <text x="20" y="52" fill={textSecondary} fontSize="11" fontFamily="sans-serif">
+                    Order Batch Mutex
+                  </text>
+                </g>
+
+                {/* ==================== CENTER OVERLAY BANNERS ==================== */}
+
+                {/* DEADLOCK BANNER OVERLAY */}
+                {isDeadlocked && (
+                  <g transform="translate(290, 215)">
+                    <rect x="0" y="0" width="300" height="70" rx="12" fill={isLight ? '#fef2f2' : '#450a0a'} stroke={arrowRed} strokeWidth="2.5" />
+                    <text x="150" y="28" textAnchor="middle" fill={arrowRed} fontSize="14" fontWeight="bold" fontFamily="sans-serif">
+                      ⚡ CIRCULAR WAIT DEADLOCK
+                    </text>
+                    <text x="150" y="48" textAnchor="middle" fill={isLight ? '#991b1b' : '#fca5a5'} fontSize="11" fontFamily="monospace">
+                      Cycle: T1 → L2 → T2 → L1 → T1
+                    </text>
+                    <text x="150" y="62" textAnchor="middle" fill={isLight ? '#7f1d1d' : '#fecaca'} fontSize="9" fontFamily="sans-serif">
+                      All 4 Coffman conditions satisfied. System frozen!
+                    </text>
+                  </g>
+                )}
+
+                {/* SAFE RESOLVED BANNER OVERLAY */}
+                {isSafeResolved && (
+                  <g transform="translate(270, 215)">
+                    <rect x="0" y="0" width="340" height="70" rx="12" fill={isLight ? '#f0fdf4' : '#064e3b'} stroke={arrowGreen} strokeWidth="2.5" />
+                    <text x="170" y="28" textAnchor="middle" fill={arrowGreen} fontSize="14" fontWeight="bold" fontFamily="sans-serif">
+                      ✓ DEADLOCK PREVENTED SAFELY
+                    </text>
+                    <text x="170" y="48" textAnchor="middle" fill={isLight ? '#166534' : '#a7f3d0'} fontSize="11" fontFamily="monospace">
+                      Strict Global Lock Order (L1 &lt; L2) Enforced
+                    </text>
+                    <text x="170" y="62" textAnchor="middle" fill={isLight ? '#14532d' : '#d1fae5'} fontSize="9" fontFamily="sans-serif">
+                      Circular wait broken. Transactions completed in sequence!
+                    </text>
+                  </g>
+                )}
+              </svg>
+            </div>
+          )
+        }}
       </MotionGraphicPlayer>
+
+      {/* Legend & Formal Definition Card (Bottom of Player) */}
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 rounded-xl border border-line bg-panel-2 text-xs font-mono">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-chalk">RAG Formalism:</span>
+          <span className="text-muted">Single-instance Resource Allocation Graph</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-5">
+          <div className="flex items-center gap-2">
+            <span className="w-3.5 h-3.5 rounded-full border-2 border-indigo-500 bg-panel" />
+            <span className="text-chalk">Process (Circle)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-3 rounded-xs border-2 border-slate-400 bg-panel" />
+            <span className="text-chalk">Resource Lock (Box)</span>
+          </div>
+          <div className="flex items-center gap-2 text-emerald-400">
+            <span className="w-5 h-0.5 bg-emerald-500" />
+            <span>Assignment (R → T)</span>
+          </div>
+          <div className="flex items-center gap-2 text-amber-400">
+            <span className="w-5 h-0.5 border-t-2 border-dashed border-amber-500" />
+            <span>Request (T → R)</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
