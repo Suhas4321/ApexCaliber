@@ -5,6 +5,9 @@ import CodeExecutionMotionGraphic from '../../features/system-design/motion/Code
 import RateLimiterMotionGraphic from '../../features/system-design/motion/RateLimiterMotionGraphic'
 import TinyUrlMotionGraphic from '../../features/system-design/motion/TinyUrlMotionGraphic'
 import ConsistentHashingMotionGraphic from '../../features/system-design/motion/ConsistentHashingMotionGraphic'
+import VideoStreamingMotionGraphic from '../../features/system-design/motion/VideoStreamingMotionGraphic'
+import GeospatialMatchingMotionGraphic from '../../features/system-design/motion/GeospatialMatchingMotionGraphic'
+import PaymentLedgerMotionGraphic from '../../features/system-design/motion/PaymentLedgerMotionGraphic'
 import SystemDesignAssignment from '../workspace/SystemDesignAssignment'
 import { SYSTEM_DESIGN_ASSIGNMENTS } from '../../lib/systemDesignAssignments'
 import { HLD_PROBLEMS } from '../../lib/systemDesignData'
@@ -117,7 +120,7 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
             <span>Architecture Simulation & Motion Graphic</span>
           </h2>
 
-          {(index === 0 || index === 1 || index === 2 || index === 5) && (
+          {[0, 1, 2, 5, 7, 8, 9].includes(index) && (
             <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
               <button
                 type="button"
@@ -155,6 +158,12 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
           <TinyUrlMotionGraphic />
         ) : simViewMode === 'motion' && index === 5 ? (
           <ConsistentHashingMotionGraphic />
+        ) : simViewMode === 'motion' && index === 7 ? (
+          <VideoStreamingMotionGraphic />
+        ) : simViewMode === 'motion' && index === 8 ? (
+          <GeospatialMatchingMotionGraphic />
+        ) : simViewMode === 'motion' && index === 9 ? (
+          <PaymentLedgerMotionGraphic />
         ) : (
           <ArchitectureFlowSimulator
             systemTitle={hld.title}
