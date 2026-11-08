@@ -13,6 +13,7 @@ export type LessonStep = {
   mastered: boolean
   ready: boolean
   prerequisites: string[]
+  prerequisite_details: Array<{ id: string; title: string }>
 }
 
 export type CueCard = {

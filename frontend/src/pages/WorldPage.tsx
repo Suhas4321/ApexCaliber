@@ -16,6 +16,7 @@ export default function WorldPage() {
   const passed = (useLocation().state as { world?: World } | null)?.world
   const [world, setWorld] = useState<World | null>(passed && String(passed.id) === id ? passed : null)
   const [error, setError] = useState<string | null>(null)
+  const [hasConceptRoute, setHasConceptRoute] = useState(false)
 
   useEffect(() => {
     setWorld((w) => (w && String(w.id) === id ? w : null))
@@ -29,6 +30,16 @@ export default function WorldPage() {
       .catch((e) => setError(e.message))
   }, [id])
 
+  useEffect(() => {
+    if (!world) return
+    const citadelId = citadelForWorld(world.id).id
+    let active = true
+    api.learningPath(citadelId).then((path) => {
+      if (active) setHasConceptRoute(path.modules.length > 0)
+    }).catch(() => { if (active) setHasConceptRoute(false) })
+    return () => { active = false }
+  }, [world?.id])
+
   if (error) return <div className="shell p-8"><ErrorNote message={error} /></div>
   if (!world)
     return (
@@ -37,7 +48,7 @@ export default function WorldPage() {
         <div className="stage h-[600px] rounded-3xl" />
       </div>
     )
-  return <WorldTrail world={world} />
+  return <WorldTrail world={world} hasConceptRoute={hasConceptRoute} />
 }
 
 /** The question you should work on in this world: due review → in progress → first unsolved. */
@@ -49,7 +60,7 @@ function activeIndex(qs: QuestionSummary[]) {
   return qs.findIndex((q) => !q.progress.solved)
 }
 
-function WorldTrail({ world }: { world: World }) {
+function WorldTrail({ world, hasConceptRoute }: { world: World; hasConceptRoute: boolean }) {
   const navigate = useNavigate()
   const openGrimoire = useGrimoire()
   const qs = world.questions || []
@@ -59,7 +70,7 @@ function WorldTrail({ world }: { world: World }) {
 
   return (
     <div className="shell flex flex-col gap-5 py-5">
-      {(citadel.id === 'os_concurrency' || citadel.id === 'sql_dbms') && <Link to={`/learn/${citadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/30 bg-cyan/10 px-5 py-4 text-sm hover:bg-cyan/15"><span><strong className="block text-chalk">Learn the foundations first</strong><span className="text-muted">Build the idea step by step before you solve the challenge.</span></span><span className="shrink-0 font-semibold text-cyan">Open lessons →</span></Link>}
+      {hasConceptRoute && <Link to={`/learn/${citadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/30 bg-cyan/10 px-5 py-4 text-sm hover:bg-cyan/15"><span><strong className="block text-chalk">Learn the foundations first</strong><span className="text-muted">Build the idea step by step before you solve the challenge.</span></span><span className="shrink-0 font-semibold text-cyan">Open lessons →</span></Link>}
       {/* Compact World header (Zone 2, ~160px desktop height) */}
       <header className="card flex flex-col justify-between gap-4 rounded-2xl p-4 sm:p-5 md:flex-row md:items-center">
         <div className="min-w-0 flex-1">

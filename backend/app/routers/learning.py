@@ -51,6 +51,8 @@ def learning_path(citadel_id: str, session: Session = Depends(get_session)):
     parents: dict[str, list[str]] = {}
     for lesson_id, parent in edges:
         parents.setdefault(lesson_id, []).append(parent)
+    prerequisite_ids = {parent for _, parent in edges}
+    prerequisite_titles = dict(session.execute(select(Lesson.id, Lesson.title).where(Lesson.id.in_(prerequisite_ids))).all()) if prerequisite_ids else {}
     output = []
     for module in modules:
         lessons = session.scalars(select(Lesson).where(Lesson.module_id == module.id).order_by(Lesson.position)).all()
@@ -62,6 +64,7 @@ def learning_path(citadel_id: str, session: Session = Depends(get_session)):
             "lessons": [{"id": lesson.id, "title": lesson.title, "summary": lesson.summary,
                          "position": lesson.position, "mastered": lesson.id in mastered,
                          "prerequisites": parents.get(lesson.id, []),
+                         "prerequisite_details": [{"id": parent, "title": prerequisite_titles[parent]} for parent in parents.get(lesson.id, [])],
                          "ready": all(parent in mastered for parent in parents.get(lesson.id, []))}
                         for lesson in lessons],
         })
@@ -74,6 +77,7 @@ def lesson_detail(lesson_id: str, session: Session = Depends(get_session)):
     if not lesson:
         raise HTTPException(404, "Unknown lesson")
     parents = session.scalars(select(LessonPrerequisite.prerequisite_id).where(LessonPrerequisite.lesson_id == lesson_id)).all()
+    prerequisite_titles = dict(session.execute(select(Lesson.id, Lesson.title).where(Lesson.id.in_(parents))).all()) if parents else {}
     mastered = _mastered(session)
     progress = session.get(LessonProgress, lesson_id)
     content = dict(lesson.content)
@@ -81,7 +85,9 @@ def lesson_detail(lesson_id: str, session: Session = Depends(get_session)):
     module = session.get(LearningModule, lesson.module_id)
     return {"id": lesson.id, "module_id": lesson.module_id, "citadel_id": module.citadel_id, "title": lesson.title,
             "summary": lesson.summary, "position": lesson.position, "content": content,
-            "prerequisites": list(parents), "ready": all(parent in mastered for parent in parents),
+            "prerequisites": list(parents),
+            "prerequisite_details": [{"id": parent, "title": prerequisite_titles[parent]} for parent in parents],
+            "ready": all(parent in mastered for parent in parents),
             "passed_checks": progress.passed_checks if progress else [], "mastered": bool(progress and progress.mastered)}
 
 

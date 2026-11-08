@@ -300,10 +300,456 @@ modules:
               answer: 0
               explanation: Commit only when the unit of work is complete and valid.
           sources: [https://www.postgresql.org/docs/current/tutorial-transactions.html]
+  - id: os-systems
+    citadel_id: os_concurrency
+    title: How the OS shares time, memory and resources
+    summary: Move from a single running process to scheduling, virtual memory and safe waiting.
+    position: 2
+    cue_card:
+      elevator_pitch: The OS schedules runnable work, gives processes virtual address spaces, and coordinates access to resources; concurrency bugs arise when shared state or waiting rules are wrong.
+      pillars:
+        - A scheduler chooses runnable work; a blocked task is waiting rather than using a CPU.
+        - Virtual addresses are translated to physical memory and pages can be absent.
+        - A deadlock is a cycle of workers waiting for resources held by one another.
+      tradeoffs:
+        - Frequent switching improves responsiveness but consumes time saving and restoring state.
+        - More isolation and coordination improve safety but cost memory or waiting time.
+      candidate_trap: Concurrency means work overlaps in time; parallelism means work executes simultaneously. Neither requires the other in every situation.
+    lessons:
+      - id: os-scheduling
+        title: How can one CPU run many apps?
+        summary: Separate runnable work from waiting work and see why the OS switches tasks.
+        position: 1
+        prerequisites: [os-process]
+        content:
+          situation: Music keeps playing while a browser loads a page on a laptop with one busy CPU core.
+          explanation: A CPU core executes one instruction stream at a time. The OS scheduler chooses which runnable thread gets a turn. When its turn ends, the OS can save its execution state and resume another thread; this is a context switch. A thread waiting for disk or network I/O is blocked and need not occupy the CPU while waiting. On several cores, some threads can run simultaneously.
+          terms:
+            - {name: Runnable, meaning: Ready to use a CPU when scheduled.}
+            - {name: Blocked, meaning: Waiting for an event such as completed I/O.}
+            - {name: Context switch, meaning: Saving one execution context and resuming another.}
+          worked_example: A browser requests a file and waits for the network. While it waits, the scheduler runs the music app so playback continues. When data arrives, the browser becomes runnable again.
+          second_example: A calculator doing a long computation stays CPU-bound. Sharing the core with a text editor gives the editor a turn, though frequent switching itself has a cost.
+          misconception: A waiting task is not necessarily using CPU time. Concurrency on one core does not mean simultaneous execution.
+          checks:
+            - prompt: A browser is waiting for a network reply. What can the CPU do meanwhile?
+              choices: [Run another runnable task., Only wait for the browser., Turn the browser into a second CPU core.]
+              answer: 0
+              explanation: I/O waiting frees the core to run other ready work.
+            - prompt: Two threads take turns on one core. Are they running in parallel?
+              choices: ['No, their work is concurrent but not simultaneous.', 'Yes, every context switch creates a second core.', 'No, they must be separate processes.']
+              answer: 0
+              explanation: Parallel work executes at the same time; interleaving on one core is concurrency.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
+      - id: os-virtual-memory
+        title: Why does each process see its own memory?
+        summary: Learn virtual addresses and pages before page replacement algorithms.
+        position: 2
+        prerequisites: [os-scheduling]
+        content:
+          situation: Two copies of a game both use an address called 0x1000, yet changing one game's score does not change the other.
+          explanation: A process uses virtual addresses. The OS and hardware translate those addresses through mappings to physical memory. Each process can have different mappings, so the same virtual address need not refer to the same physical bytes. Memory is managed in pages. If a needed page is absent, a page fault lets the OS resolve it or reject an invalid access. A valid page fault can still be slow when data must be fetched from storage.
+          terms:
+            - {name: Virtual address, meaning: An address used by a process before translation.}
+            - {name: Page, meaning: A fixed-size unit used in virtual-memory mappings.}
+            - {name: Page fault, meaning: A trap when a referenced virtual page is not currently mapped for the attempted access.}
+          worked_example: Game A and game B both use virtual address 0x1000, but their mappings point to different physical pages. Their scores stay separate unless they intentionally share memory.
+          second_example: A photo editor touches a large image page that is not resident. The OS may load the needed data before the editor can continue, making that access slower than a normal memory read.
+          misconception: A page fault does not always mean a program bug. Some faults are resolved as part of normal memory management.
+          checks:
+            - prompt: Why can two processes use the same virtual address safely?
+              choices: [Their mappings can point to different physical memory., The address is always a disk location., The CPU ignores both addresses.]
+              answer: 0
+              explanation: Address translation and separate mappings give processes isolated views.
+            - prompt: An app accesses a valid page that is not resident. What may happen?
+              choices: [The OS resolves a page fault and the app continues., The app must always be deleted., A mutex automatically loads the page.]
+              answer: 0
+              explanation: A valid missing page can be brought into memory or mapped by the OS.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
+      - id: os-deadlock
+        title: How can two workers wait forever?
+        summary: Build from lock ownership to a circular wait and ways to break it.
+        position: 3
+        prerequisites: [os-mutex, os-scheduling]
+        content:
+          situation: One worker holds the printer lock and waits for the scanner; another holds the scanner lock and waits for the printer.
+          explanation: A lock has an owner. A worker that requests an unavailable lock waits until its owner releases it. Here each worker holds one resource while waiting for the other, forming a cycle. Neither can make progress, so they are deadlocked. Acquiring locks in the same global order can prevent this particular cycle. Timeouts or detection and recovery are other strategies, with different costs.
+          terms:
+            - {name: Lock ownership, meaning: The worker currently permitted to use a protected resource.}
+            - {name: Wait-for cycle, meaning: A chain of workers waiting that returns to its starting worker.}
+            - {name: Deadlock, meaning: Workers cannot progress because each waits for resources held in the cycle.}
+          worked_example: A holds printer then requests scanner. B holds scanner then requests printer. Draw A → B → A. If both acquire printer before scanner, this two-lock cycle cannot form.
+          second_example: Two bank transfers lock account rows in opposite order. Sorting account IDs and always locking the smaller ID first prevents this specific ordering cycle.
+          misconception: A slow task or a single worker waiting for a lock is not necessarily deadlocked. Look for a cycle that cannot resolve without intervention.
+          checks:
+            - prompt: A holds lock X and waits for Y; B holds Y and waits for X. What is the key problem?
+              choices: [A circular wait with neither worker able to release its held lock., A page fault., Two CPUs executing simultaneously.]
+              answer: 0
+              explanation: The ownership and waiting edges form a cycle.
+            - prompt: What simple rule can prevent this two-lock ordering deadlock?
+              choices: [Both workers acquire X before Y., Let each worker choose a random order., Make both locks permanent.]
+              answer: 0
+              explanation: A consistent global order removes the opposing acquisition order.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
+  - id: db-queries-and-storage
+    citadel_id: sql_dbms
+    title: Ask useful questions, then make them efficient
+    summary: Learn filtering and indexes before studying physical pages or query plans.
+    position: 2
+    cue_card:
+      elevator_pitch: SQL describes the rows you want; the database chooses a plan to find them. An index can speed a selective lookup but costs storage and writes.
+      pillars:
+        - SELECT chooses columns; WHERE filters rows using a condition.
+        - A relational result can contain several rows; ordering is not guaranteed without ORDER BY.
+        - An index is an auxiliary search structure, not the table itself.
+      tradeoffs:
+        - Indexes speed some reads but use space and must be updated on writes.
+      candidate_trap: Do not claim an index always wins. Inspect the actual query plan and data distribution.
+    lessons:
+      - id: db-query
+        title: How do we ask a table a question?
+        summary: Use SELECT, WHERE and ORDER BY to reason about a result.
+        position: 1
+        prerequisites: [db-table]
+        content:
+          situation: A school wants the names of students in year 1, sorted alphabetically.
+          explanation: A SQL SELECT specifies columns to return from a table. WHERE keeps rows satisfying a condition. ORDER BY requests a result order; without it, the database does not promise row order. Think about the expected result on a tiny table before optimizing it.
+          terms:
+            - {name: SELECT, meaning: The columns or expressions to return.}
+            - {name: WHERE, meaning: A condition used to filter rows.}
+            - {name: ORDER BY, meaning: A requested order for result rows.}
+          worked_example: For students (7, Asha, 1) and (8, Bilal, 2), SELECT name FROM students WHERE year = 1 returns Asha. Add ORDER BY name to specify alphabetical order when several rows match.
+          second_example: A shop can ask for product names WHERE price < 500, then ORDER BY price to show the cheapest first. Selecting only name does not make the rows sorted by name.
+          misconception: The order in which rows happen to be stored or returned today is not a guaranteed SQL result order.
+          checks:
+            - prompt: Which clause keeps only year-1 students?
+              choices: [WHERE year = 1, ORDER BY year, SELECT year]
+              answer: 0
+              explanation: WHERE filters the rows before they appear in the result.
+            - prompt: How do you guarantee an alphabetical result?
+              choices: [Add ORDER BY name., Rely on insertion order., Add a primary key only.]
+              answer: 0
+              explanation: An explicit ORDER BY defines the output order.
+          sources: [https://www.postgresql.org/docs/current/tutorial-sql.html]
+      - id: db-index
+        title: Why use an index?
+        summary: Compare a table scan with a selective lookup before choosing an index.
+        position: 2
+        prerequisites: [db-query, db-key]
+        content:
+          situation: A library has a million books. A visitor searches for one ISBN instead of reading every shelf label.
+          explanation: An index stores searchable keys with a way to find the matching table rows. A B-tree index can support equality and ordered range searches on its leading key columns. A table scan may still be better when a query needs most rows or the table is small. Every extra index uses space and must be maintained as rows change. Check the plan and measured workload rather than assuming every query needs an index.
+          terms:
+            - {name: Table scan, meaning: Reading table rows to test a query condition.}
+            - {name: Index, meaning: An auxiliary structure that helps find rows by key.}
+            - {name: Selectivity, meaning: How narrowly a condition limits matching rows.}
+          worked_example: An ISBN equality lookup returns one book among a million. An index on ISBN may avoid checking every book row. If a query returns almost every row, a scan can be cheaper.
+          second_example: A food app finds recent orders for one customer. An index beginning with customer_id may help, but adding indexes to every column makes each order insert more expensive.
+          misconception: A primary key is a logical uniqueness rule; an index is a physical access structure. Many databases implement a primary key with an index, but the concepts differ.
+          checks:
+            - prompt: Which query is a strong index candidate on a large books table?
+              choices: [Find one known ISBN., Read every book row., Count all rows after every write.]
+              answer: 0
+              explanation: A selective lookup can benefit from a suitable index.
+            - prompt: Why not add an index to every column?
+              choices: [Indexes consume space and add work to writes., Indexes remove all table rows., Indexes disable SELECT.]
+              answer: 0
+              explanation: Index maintenance is part of the write path.
+          sources: [https://www.postgresql.org/docs/current/indexes-intro.html]
+  - id: network-foundations
+    citadel_id: computer_networking
+    title: From a web address to a response
+    summary: Follow a request from client to server before diagnosing DNS or TCP failures.
+    position: 1
+    cue_card:
+      elevator_pitch: A browser resolves a name, connects to a server using a transport, sends an application request and interprets the response.
+      pillars:
+        - DNS maps a name to address records; it does not fetch the page.
+        - TCP provides an ordered byte stream; applications define message boundaries.
+        - HTTP defines request and response meaning above the transport.
+      tradeoffs:
+        - Caches reduce lookup latency but changes may take time to propagate.
+        - Reliable delivery and security need protocols and state beyond a raw packet.
+      candidate_trap: HTTP/3 uses QUIC over UDP; HTTP is not universally tied to TCP.
+    lessons:
+      - id: net-client-server
+        title: What happens when you open a website?
+        summary: Meet the client, server, address and request before protocol details.
+        position: 1
+        content:
+          situation: You type a school's website address into a browser and a timetable appears.
+          explanation: The browser is a client asking a server for a resource. A URL identifies where and what to request. The browser needs a reachable server address, then sends a request and receives a response. DNS, transport and HTTP solve different parts of this journey. A response may contain HTML, data or an error rather than the page you expected.
+          terms:
+            - {name: Client, meaning: Software that initiates a request.}
+            - {name: Server, meaning: Software that listens and responds to requests.}
+            - {name: URL, meaning: An address identifying a resource and how to access it.}
+          worked_example: The browser requests /timetable from the school's server. The server replies with page data that the browser renders.
+          second_example: A weather app sends a request to an API server and renders the returned forecast. It is still a client-server exchange although no traditional web page appears.
+          misconception: A server is a role played by software, not necessarily a special kind of physical machine. One machine can run several servers.
+          checks:
+            - prompt: Who initiates a timetable request when you open a page?
+              choices: [The browser client., The monitor., The database table.]
+              answer: 0
+              explanation: The client starts the exchange by requesting a resource.
+            - prompt: Can a server return something other than an HTML page?
+              choices: ['Yes, it may return data or an error.', 'No, all responses are HTML.', Only if DNS is disabled.]
+              answer: 0
+              explanation: A server response depends on the request and application.
+          sources: [https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works]
+      - id: net-dns
+        title: How does a name lead to a server address?
+        summary: Learn DNS resolution and caching before tracing a recursive lookup.
+        position: 2
+        prerequisites: [net-client-server]
+        content:
+          situation: You know the name school.example, but your browser needs a network address to reach it.
+          explanation: DNS resolves a domain name to records such as an IP address. A resolver may answer from a cache or ask other DNS servers. A cached record can remain until its time-to-live expires. DNS supplies addressing information; it does not itself open the web page or guarantee that the application server is healthy.
+          terms:
+            - {name: Domain name, meaning: A human-readable name used to identify a network service.}
+            - {name: DNS resolver, meaning: A service that looks up DNS records for a client.}
+            - {name: TTL, meaning: The lifetime a DNS answer may be cached.}
+          worked_example: The resolver returns an address for school.example. The browser uses that address to reach the server, then requests /timetable separately.
+          second_example: A shop moves its service to a new address. Some clients may briefly use a cached old answer until the TTL allows a fresh lookup.
+          misconception: DNS is an address lookup, not the request for the web page. A successful lookup does not prove the server will answer.
+          checks:
+            - prompt: What does DNS usually give the browser?
+              choices: [Address records for a name., The complete rendered page., A database transaction.]
+              answer: 0
+              explanation: DNS resolves names; other protocols handle the application exchange.
+            - prompt: Why might a client still use an old address after a DNS change?
+              choices: [A prior answer is cached within its TTL., HTTP forbids address changes., TCP changes the domain name.]
+              answer: 0
+              explanation: DNS caches can retain an answer for its allowed lifetime.
+          sources: [https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works]
+      - id: net-transport
+        title: How does information cross the network?
+        summary: Compare packets and TCP's ordered byte stream before the handshake exercise.
+        position: 3
+        prerequisites: [net-dns]
+        content:
+          situation: A large photo cannot fit in one network packet, but it arrives intact in your browser.
+          explanation: Networks carry data in packets. TCP establishes a connection and presents an ordered, reliable byte stream to the application, retransmitting lost data when possible. It does not know where one JSON message ends and another begins; the application protocol needs framing. UDP offers datagrams with different guarantees. Modern HTTP/3 runs over QUIC, which uses UDP and provides its own reliable streams.
+          terms:
+            - {name: Packet, meaning: A bounded unit of data sent through a network.}
+            - {name: TCP, meaning: A transport protocol that provides an ordered byte stream.}
+            - {name: Framing, meaning: A rule for finding application message boundaries in a stream.}
+          worked_example: A photo is transmitted in pieces. TCP reassembles an ordered byte stream for the receiving application, which then interprets the bytes as the photo response.
+          second_example: Two JSON documents sent on one TCP connection do not automatically arrive as two read calls. A length prefix or delimiter can tell the receiver where each document ends.
+          misconception: TCP preserves byte order but does not preserve application write boundaries. One send is not guaranteed to equal one receive.
+          checks:
+            - prompt: Two JSON messages are sent on one TCP connection. How does the receiver know their boundaries?
+              choices: [Use an application framing rule., Assume each read returns one message., Ask DNS to split them.]
+              answer: 0
+              explanation: TCP is a byte stream; applications define message boundaries.
+            - prompt: Does HTTP/3 always use a TCP connection?
+              choices: ['No, HTTP/3 uses QUIC over UDP.', 'Yes, all HTTP versions require TCP.', 'No, it uses DNS as transport.']
+              answer: 0
+              explanation: HTTP/3 uses QUIC, which runs over UDP.
+          sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview, https://www.rfc-editor.org/rfc/rfc9114]
+  - id: backend-web-basics
+    citadel_id: backend_apis
+    title: From a web request to a reliable API
+    summary: Understand HTTP messages and errors before framework or security exercises.
+    position: 1
+    cue_card:
+      elevator_pitch: An API receives a request, validates it, performs work and sends a response with an appropriate status and body.
+      pillars:
+        - An HTTP request has a method, target, headers and sometimes a body.
+        - A response has a status, headers and possibly a body.
+        - The server validates input and reports failures at the right boundary.
+      tradeoffs:
+        - Rich error responses help clients but must avoid exposing secrets.
+      candidate_trap: A 4xx means the request cannot be fulfilled as sent; a 5xx indicates a server-side failure. Do not use 500 for every error.
+    lessons:
+      - id: backend-http
+        title: What is an HTTP request?
+        summary: Learn method, path, headers, body and response before status-code diagnosis.
+        position: 1
+        prerequisites: [net-client-server]
+        content:
+          situation: A food app asks its backend for the menu, then sends a new order.
+          explanation: HTTP is an application protocol for requests and responses. A request has a method such as GET or POST, a target path, headers that carry metadata and sometimes a body. A response includes a status, headers and optionally a body. GET is used to retrieve a resource; POST often asks the server to process submitted data. The network transport carries the bytes but HTTP gives the message its meaning.
+          terms:
+            - {name: Method, meaning: 'The requested action, such as GET or POST.'}
+            - {name: Header, meaning: Metadata about the request or response.}
+            - {name: Body, meaning: Optional message content such as an order payload.}
+          worked_example: GET /menu asks for a menu. The server returns status 200 and JSON describing dishes. A later POST /orders can include JSON describing a chosen dish.
+          second_example: A calendar app GETs /events to list meetings and POSTs /events with a new meeting. The same protocol works even though the data is not a web page.
+          misconception: HTTP does not mean HTML only. APIs commonly exchange JSON over HTTP.
+          checks:
+            - prompt: Where should an order's submitted JSON normally go?
+              choices: [In the request body., In the status code., In a DNS record.]
+              answer: 0
+              explanation: The body carries submitted application data.
+            - prompt: What does GET /menu usually express?
+              choices: [A request to retrieve the menu resource., A promise to create a new order., A command to resolve DNS.]
+              answer: 0
+              explanation: GET requests a representation of the targeted resource.
+          sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview]
+      - id: backend-status
+        title: What does a response status tell the client?
+        summary: Distinguish success, invalid requests and server failures.
+        position: 2
+        prerequisites: [backend-http]
+        content:
+          situation: A customer submits an order with a missing item ID. The app needs to say what went wrong.
+          explanation: HTTP status codes summarize the outcome. A 2xx status indicates success; 4xx indicates a problem with the request as sent; 5xx indicates the server could not fulfill an otherwise valid request. The response body can explain the specific issue. Use a status that reflects the actual boundary failure, then provide a safe and actionable explanation.
+          terms:
+            - {name: 2xx, meaning: A successful outcome.}
+            - {name: 4xx, meaning: A client request that cannot be fulfilled as sent.}
+            - {name: 5xx, meaning: A server-side failure to fulfill the request.}
+          worked_example: POST /orders with an unknown item ID can receive 400 or 422 depending on the API contract, with a body naming the invalid field. A database outage during a valid order can produce 503.
+          second_example: GET /products/999 can return 404 if that product does not exist. A server bug that crashes while processing a valid request is a 500-class failure.
+          misconception: 500 is not a generic 'anything went wrong' response. A malformed or unauthorized request should not be presented as a server crash.
+          checks:
+            - prompt: A valid request fails because the database is unavailable. Which class fits?
+              choices: [5xx server failure., 2xx success., 4xx invalid client request.]
+              answer: 0
+              explanation: The server failed to fulfill a valid request.
+            - prompt: A client asks for a resource that does not exist. Which status is commonly appropriate?
+              choices: [404 Not Found., 200 OK with invented data., 500 Internal Server Error.]
+              answer: 0
+              explanation: A missing targeted resource is commonly represented by 404.
+          sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status]
+  - id: python-foundations
+    citadel_id: python_data
+    title: Python values and functions before internals
+    summary: Build a reliable mental model of names and values before memory puzzles.
+    position: 1
+    cue_card:
+      elevator_pitch: Python names refer to objects; functions bind parameters to passed objects and can return new objects or mutate shared ones.
+      pillars:
+        - Assignment binds a name to an object.
+        - Mutable objects can change in place; immutable objects cannot.
+        - A function call creates local parameter bindings.
+      tradeoffs:
+        - Mutation can avoid copies but makes shared state harder to reason about.
+      candidate_trap: Python does not pass a variable box by reference. It passes object references by assignment to local names.
+    lessons:
+      - id: py-names
+        title: What does a Python variable hold?
+        summary: Names refer to objects; assignment can make two names refer to the same object.
+        position: 1
+        content:
+          situation: You set a = [1, 2], then b = a. Changing b seems to change a as well.
+          explanation: In Python, assignment binds a name to an object. After b = a, both names refer to the same list object. A list is mutable, so b.append(3) changes the shared object that a also sees. Rebinding b to a different object does not change what a refers to. This model helps explain later function calls, closures and thread sharing.
+          terms:
+            - {name: Name, meaning: An identifier bound to an object.}
+            - {name: Object, meaning: A value with a type and identity.}
+            - {name: Mutable, meaning: Able to change its contents after creation.}
+          worked_example: a = [1, 2]; b = a; b.append(3). Both names now show [1, 2, 3] because the one list changed.
+          second_example: A shopping cart object is shared between a page component and a checkout helper. If the helper mutates that cart, the page can observe the updated items.
+          misconception: Assignment does not always copy an object. Whether a later change is visible depends on rebinding versus mutation.
+          checks:
+            - prompt: After b = a for a list, what does b.append(3) do?
+              choices: [Mutates the list both names refer to., Copies a before changing b., Rebinds a to a new integer.]
+              answer: 0
+              explanation: Both names refer to one mutable list.
+            - prompt: If b is rebound to a new list, what happens to a?
+              choices: [It keeps referring to the original list., It automatically follows b., It becomes a function.]
+              answer: 0
+              explanation: Rebinding b changes that name's binding, not a's.
+          sources: [https://docs.python.org/3/tutorial/classes.html]
+      - id: py-functions
+        title: What happens when a function receives a value?
+        summary: Follow local parameter names and distinguish mutation from rebinding.
+        position: 2
+        prerequisites: [py-names]
+        content:
+          situation: A helper receives your list and appends an item. Why did your original list change?
+          explanation: A function call binds each parameter name to an argument object. If the function mutates a shared mutable object, the caller can observe the change. If the function only rebinds the local parameter to a new object, the caller's name still refers to its original object. Returning a result makes data flow explicit.
+          terms:
+            - {name: Parameter, meaning: A local name bound when the function is called.}
+            - {name: Argument, meaning: The object supplied for a parameter at a call.}
+            - {name: Rebinding, meaning: Making a name refer to a different object.}
+          worked_example: def add(xs) calls xs.append(3). Calling add(a) mutates a's list. In contrast, def replace(xs) with xs = [3] only rebinds its local xs.
+          second_example: A photo filter can return a new image instead of changing the original. This is useful when the caller should keep the unedited image.
+          misconception: Calling a function does not automatically copy every object, and rebinding a parameter does not rebind the caller's name.
+          checks:
+            - prompt: A function appends to a list supplied by the caller. What may the caller observe?
+              choices: [The same list has a new element., Its local variable name is deleted., The function has created a new process.]
+              answer: 0
+              explanation: Mutation changes the shared object.
+            - prompt: A function assigns its parameter to a brand-new list. What happens to the caller's name?
+              choices: [It still refers to the original list., It always points to the new list., It becomes an HTTP header.]
+              answer: 0
+              explanation: A local parameter rebinding does not change the caller's binding.
+          sources: [https://docs.python.org/3/tutorial/controlflow.html#defining-functions]
+  - id: ai-foundations
+    citadel_id: ai_resume
+    title: From examples to useful AI outputs
+    summary: Learn what a model learns and what an embedding represents before RAG workflows.
+    position: 1
+    cue_card:
+      elevator_pitch: Machine learning fits patterns from examples; an embedding maps an item to numbers for comparison, and a language model predicts text using learned statistical structure.
+      pillars:
+        - Training data and evaluation data serve different purposes.
+        - An embedding is a representation, not a factual answer.
+        - Model output needs validation against the task and source evidence.
+      tradeoffs:
+        - More context can help, but irrelevant context increases cost and can confuse the answer.
+      candidate_trap: A high similarity score does not prove that retrieved text is true or that it answers the question.
+    lessons:
+      - id: ai-model
+        title: What does a model learn from examples?
+        summary: Separate training, prediction and evaluation before using AI tools.
+        position: 1
+        content:
+          situation: A mail app learns to flag spam from many examples of spam and ordinary mail.
+          explanation: A machine-learning model is a program whose behavior is shaped by training data. During training, its parameters are adjusted to reduce an error measure on examples. After training, it makes predictions on new inputs. Evaluation on held-out examples checks whether patterns generalize instead of merely matching the training set. A model can still be wrong, biased or outdated.
+          terms:
+            - {name: Training, meaning: Adjusting model parameters using examples.}
+            - {name: Prediction, meaning: An output produced for a new input.}
+            - {name: Evaluation, meaning: Measuring how well outputs meet a task goal.}
+          worked_example: A spam model trains on labeled mail and predicts whether a new message is spam. Testing on messages it never trained on gives a more meaningful quality estimate.
+          second_example: A photo app learns examples of cats and dogs, then labels a new photo. Poor lighting or an unfamiliar breed can still cause an error.
+          misconception: Training on examples does not make a model a database of verified facts or guarantee correct predictions.
+          checks:
+            - prompt: Why test on examples the model did not train on?
+              choices: [To measure generalization to new inputs., To force every prediction to be correct., To replace all training data.]
+              answer: 0
+              explanation: Held-out evaluation reveals whether learned patterns transfer beyond training examples.
+            - prompt: Can a well-trained model still make a wrong prediction?
+              choices: ['Yes, because new inputs and data limitations can expose errors.', 'No, training guarantees correctness.', 'Only when DNS fails.']
+              answer: 0
+              explanation: Learned patterns are estimates, not guarantees.
+          sources: [https://developers.google.com/machine-learning/crash-course]
+      - id: ai-embedding
+        title: What is an embedding used for?
+        summary: Represent items as vectors and compare similarity without mistaking it for truth.
+        position: 2
+        prerequisites: [ai-model]
+        content:
+          situation: A student asks for notes about protecting a shared counter, but the notes use the words mutual exclusion.
+          explanation: An embedding model maps text or other inputs to numeric vectors. Similar items can be near one another in that vector space, so a search system can retrieve related notes even when words differ. Similarity is a retrieval signal, not proof that the result is correct or sufficient. Retrieval-augmented generation later combines retrieval with a model that drafts an answer from selected context.
+          terms:
+            - {name: Vector, meaning: An ordered list of numbers.}
+            - {name: Embedding, meaning: A learned numeric representation of an item.}
+            - {name: Similarity, meaning: A measure of closeness between representations.}
+          worked_example: The question shared counter may retrieve a note titled mutex and mutual exclusion because their meanings are related in the model's representation.
+          second_example: A shopping site can retrieve visually similar products from image embeddings. Similar appearance does not mean two products have the same price or quality.
+          misconception: A close vector match is not a citation or a truth check. Inspect the retrieved source before using it to answer.
+          checks:
+            - prompt: What does an embedding give a search system?
+              choices: [A numeric representation for comparing items., A guaranteed factual answer., A database transaction.]
+              answer: 0
+              explanation: Embeddings support similarity comparisons.
+            - prompt: A note has high similarity to a question. Is it automatically correct evidence?
+              choices: ['No, similarity alone does not establish truth or relevance to the exact claim.', 'Yes, every close vector is verified.', 'Yes, if the numbers are large.']
+              answer: 0
+              explanation: Retrieval candidates still need source and claim checks.
+          sources: [https://developers.google.com/machine-learning/crash-course/embeddings]
 challenges:
   - {slug: memory-isolation-threads-vs-processes, requires: [os-thread]}
   - {slug: deterministic-interleaving-counter, requires: [os-race]}
-  - {slug: processes-vs-threads-memory, requires: [os-mutex]}
   - {slug: mutex-protected-counter, requires: [os-mutex]}
   - {slug: sql-customers-never-order, requires: [db-join]}
   - {slug: sql-acid-money-transfer, requires: [db-transaction]}
+  - {slug: context-switch-cost-model, requires: [os-scheduling]}
+  - {slug: virtual-memory-page-replacement, requires: [os-virtual-memory]}
+  - {slug: deadlock-cycle-detector, requires: [os-deadlock]}
+  - {slug: btree-vs-hash-indexes, requires: [db-index]}
+  - {slug: dns-recursive-resolver, requires: [net-dns]}
+  - {slug: tcp-three-way-handshake, requires: [net-transport]}
+  - {slug: http-status-code-diagnostics, requires: [backend-status]}
+  - {slug: processes-vs-threads-memory, requires: [os-mutex]}

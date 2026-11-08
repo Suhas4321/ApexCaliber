@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
-import type { LearningSummary } from '../api/learningTypes'
+import type { LearningPath, LearningSummary } from '../api/learningTypes'
 import type { ReviewQueue, World } from '../api/types'
 import ChapterIntroModal from '../components/ChapterIntroModal'
 import DailyQuestCard from '../components/DailyQuestCard'
@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [worlds, setWorlds] = useState<World[] | null>(null)
   const [review, setReview] = useState<ReviewQueue | null>(null)
   const [learningSummary, setLearningSummary] = useState<LearningSummary | null>(null)
+  const [activeLearningPath, setActiveLearningPath] = useState<LearningPath | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -52,6 +53,15 @@ export default function Dashboard() {
       .catch((e) => setError(e.message))
     api.learningSummary().then(setLearningSummary).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    let active = true
+    setActiveLearningPath(null)
+    api.learningPath(activeCitadel.id).then((path) => {
+      if (active) setActiveLearningPath(path.modules.length ? path : null)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [activeCitadel.id])
 
   if (error) return <div className="shell p-8"><ErrorNote message={error} /></div>
   if (!worlds || !review)
@@ -109,11 +119,11 @@ export default function Dashboard() {
         <CommandHud worlds={displayWorlds} review={review} citadel={activeCitadel} />
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Concepts mastered</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.concepts_mastered} / ${learningSummary.total_concepts}` : '—'}</div><p className="mt-1 text-xs text-slate-400">OS and DB foundations authored so far</p></div>
+          <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Concepts mastered</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.concepts_mastered} / ${learningSummary.total_concepts}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Beginner concept routes authored so far</p></div>
           <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Challenges solved</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.challenges_solved} / ${learningSummary.total_challenges}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Practice after the foundations</p></div>
         </div>
 
-        {(activeCitadel.id === 'os_concurrency' || activeCitadel.id === 'sql_dbms') && <Link to={`/learn/${activeCitadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/35 bg-cyan/10 px-5 py-4 hover:bg-cyan/15"><span><strong className="block text-white">New here? Start with the basics</strong><span className="text-sm text-slate-300">Small lessons and examples before the interview questions.</span></span><span className="shrink-0 text-sm font-semibold text-cyan">Start learning →</span></Link>}
+        {activeLearningPath && <Link to={`/learn/${activeCitadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/35 bg-cyan/10 px-5 py-4 hover:bg-cyan/15"><span><strong className="block text-white">New here? Start with the basics</strong><span className="text-sm text-slate-300">Small lessons and examples before the interview questions.</span></span><span className="shrink-0 text-sm font-semibold text-cyan">Start learning →</span></Link>}
 
         {/* 2. Collapsible Activity & Practice Heatmap */}
         <details className="group rounded-2xl border border-white/12 bg-[#0D1220]/70 backdrop-blur-md transition-colors overflow-hidden shadow-xl">

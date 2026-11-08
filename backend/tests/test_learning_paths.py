@@ -35,7 +35,7 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
 
     summary = client.get("/api/learning-paths/summary").json()
     assert summary["concepts_mastered"] >= 1
-    assert summary["total_concepts"] == 8
+    assert summary["total_concepts"] == 22
     assert "challenges_solved" in summary
     saved = json.loads((backup_dir / "user_data.json").read_text())
     assert any(row["lesson_id"] == "os-process" and row["mastered"] for row in saved["tables"]["lesson_progress"])
@@ -58,6 +58,27 @@ def test_db_path_starts_with_tables_not_joins(client):
     assert lessons[0]["ready"] and not lessons[2]["ready"]
     assert client.get("/api/lessons/db-table").json()["content"]["worked_example"]
     assert len(client.get("/api/lessons/db-join").json()["content"]["visual"]["tracks"]) == 2
+
+
+def test_extended_paths_begin_with_foundations_and_gate_advanced_challenges(client):
+    os_modules = client.get("/api/learning-paths/os_concurrency").json()["modules"]
+    assert [module["id"] for module in os_modules] == ["os-foundations", "os-systems"]
+    assert [lesson["id"] for lesson in os_modules[1]["lessons"]] == [
+        "os-scheduling", "os-virtual-memory", "os-deadlock"
+    ]
+    assert os_modules[1]["lessons"][0]["prerequisites"] == ["os-process"]
+
+    network = client.get("/api/learning-paths/computer_networking").json()["modules"][0]
+    assert [lesson["id"] for lesson in network["lessons"]] == [
+        "net-client-server", "net-dns", "net-transport"
+    ]
+    assert network["lessons"][0]["ready"]
+    assert not network["lessons"][1]["ready"]
+    assert client.get("/api/questions/dns-recursive-resolver").json()["required_lessons"][0]["id"] == "net-dns"
+    assert client.get("/api/questions/virtual-memory-page-replacement").json()["required_lessons"][0]["id"] == "os-virtual-memory"
+    assert client.get("/api/lessons/net-client-server").json()["content"]["checks"]
+    backend_first = client.get("/api/learning-paths/backend_apis").json()["modules"][0]["lessons"][0]
+    assert backend_first["prerequisite_details"] == [{"id": "net-client-server", "title": "What happens when you open a website?"}]
 
 
 def test_authoring_graph_rejects_cycles_and_duplicate_challenge_mappings(tmp_path):
