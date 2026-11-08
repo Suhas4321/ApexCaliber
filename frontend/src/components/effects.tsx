@@ -13,19 +13,33 @@ import { flushSync } from 'react-dom'
 
 export type BackgroundEffectLevel = 'off' | 'subtle' | 'full'
 const BG_KEY = 'pf-bg-effects'
+const BG_EVENT = 'pf-bg-effects-change'
+
+function storedBackgroundLevel(): BackgroundEffectLevel {
+  try {
+    const stored = localStorage.getItem(BG_KEY)
+    if (stored === 'off' || stored === 'subtle' || stored === 'full') return stored
+  } catch { /* noop */ }
+  return 'subtle'
+}
 
 export function useBackgroundEffects(): { level: BackgroundEffectLevel; setLevel: (l: BackgroundEffectLevel) => void } {
-  const [level, setLevelState] = useState<BackgroundEffectLevel>(() => {
-    try {
-      const stored = localStorage.getItem(BG_KEY)
-      if (stored === 'off' || stored === 'subtle' || stored === 'full') return stored
-    } catch { /* noop */ }
-    return 'full'
-  })
+  const [level, setLevelState] = useState<BackgroundEffectLevel>(storedBackgroundLevel)
+
+  useEffect(() => {
+    const sync = () => setLevelState(storedBackgroundLevel())
+    window.addEventListener(BG_EVENT, sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener(BG_EVENT, sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
 
   const setLevel = (l: BackgroundEffectLevel) => {
     try { localStorage.setItem(BG_KEY, l) } catch { /* noop */ }
     setLevelState(l)
+    window.dispatchEvent(new Event(BG_EVENT))
   }
 
   return { level, setLevel }

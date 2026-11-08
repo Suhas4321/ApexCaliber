@@ -13,7 +13,7 @@ import { citadelForWorld, getCitadel } from './lib/citadels'
 import { GrimoireProvider, useGrimoire } from './lib/grimoire'
 
 const itemClass = (active: boolean) =>
-  `relative z-10 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+  `relative z-10 flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-medium transition-colors ${
     active ? 'text-chalk font-semibold' : 'text-muted hover:text-chalk'
   }`
 
@@ -136,7 +136,7 @@ function TopBar() {
         {/* Row 1: Primary bar */}
         <div className="shell flex h-14 items-center justify-between gap-3">
           {/* Left: Brand */}
-          <Link to="/" className="flex items-center shrink-0 transition-opacity hover:opacity-90">
+          <Link to="/" aria-label="ApexCaliber home" className="flex items-center shrink-0 transition-opacity hover:opacity-90">
             <ApexCaliberLogo size="sm" />
           </Link>
 

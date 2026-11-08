@@ -17,6 +17,7 @@ export default function WorldPage() {
   const [world, setWorld] = useState<World | null>(passed && String(passed.id) === id ? passed : null)
   const [error, setError] = useState<string | null>(null)
   const [hasConceptRoute, setHasConceptRoute] = useState(false)
+  const conceptCitadelId = world ? citadelForWorld(world.id).id : null
 
   useEffect(() => {
     setWorld((w) => (w && String(w.id) === id ? w : null))
@@ -31,14 +32,13 @@ export default function WorldPage() {
   }, [id])
 
   useEffect(() => {
-    if (!world) return
-    const citadelId = citadelForWorld(world.id).id
+    if (!conceptCitadelId) return
     let active = true
-    api.learningPath(citadelId).then((path) => {
+    api.learningPath(conceptCitadelId).then((path) => {
       if (active) setHasConceptRoute(path.modules.length > 0)
     }).catch(() => { if (active) setHasConceptRoute(false) })
     return () => { active = false }
-  }, [world?.id])
+  }, [conceptCitadelId])
 
   if (error) return <div className="shell p-8"><ErrorNote message={error} /></div>
   if (!world)
@@ -66,11 +66,12 @@ function WorldTrail({ world, hasConceptRoute }: { world: World; hasConceptRoute:
   const qs = world.questions || []
   const active = activeIndex(qs)
   const citadel = citadelForWorld(world.id)
+  const conceptFirst = hasConceptRoute && citadel.id !== 'dsa'
   const isComingSoon = world.status === 'coming_soon' || qs.length === 0
 
   return (
     <div className="shell flex flex-col gap-5 py-5">
-      {hasConceptRoute && <Link to={`/learn/${citadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/30 bg-cyan/10 px-5 py-4 text-sm hover:bg-cyan/15"><span><strong className="block text-chalk">Learn the foundations first</strong><span className="text-muted">Build the idea step by step before you solve the challenge.</span></span><span className="shrink-0 font-semibold text-cyan">Open lessons →</span></Link>}
+      {conceptFirst && <Link to={`/learn/${citadel.id}`} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#E2C27D]/40 bg-[#E2C27D]/10 px-5 py-5 transition-colors hover:bg-[#E2C27D]/15"><span><strong className="block text-lg text-chalk">First, learn the ideas behind {world.name}</strong><span className="mt-1 block text-sm text-muted">Short explanations and worked examples lead to the practice questions below.</span></span><span className="shrink-0 rounded-xl bg-[#E2C27D] px-4 py-2.5 text-sm font-semibold text-[#111827]">Open concept route →</span></Link>}
       {/* Compact World header (Zone 2, ~160px desktop height) */}
       <header className="card flex flex-col justify-between gap-4 rounded-2xl p-4 sm:p-5 md:flex-row md:items-center">
         <div className="min-w-0 flex-1">
@@ -138,11 +139,12 @@ function WorldTrail({ world, hasConceptRoute }: { world: World; hasConceptRoute:
           <div className="flex flex-col gap-1.5">
             {!isComingSoon && active >= 0 && (
               <Button
+                variant={conceptFirst ? 'outline' : undefined}
                 className="h-8 px-3 text-xs"
                 onClick={() => navigate(questUrl(qs[active]))}
               >
                 <Sparkles size={13} />
-                <span>{qs[active].progress.status === 'new' ? 'Start trial →' : 'Continue →'}</span>
+                <span>{conceptFirst ? 'Practice a question' : qs[active].progress.status === 'new' ? 'Start trial →' : 'Continue →'}</span>
               </Button>
             )}
             <Button

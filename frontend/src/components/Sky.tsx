@@ -143,16 +143,16 @@ export default function Sky({
       <ProceduralSky
         peak={cleanPeak}
         accent={resolvedAccent}
-        level="full"
+        level={level}
         className="absolute inset-0"
       />
 
-      {/* 2. Subtle Bottom Vignette (keeps upper aurora bright and vivid!) */}
+      {/* Keep the expedition artwork behind the content instead of competing with it. */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'linear-gradient(to bottom, rgba(5, 7, 14, 0.0) 0%, rgba(5, 7, 14, 0.15) 65%, rgba(5, 7, 14, 0.45) 100%)',
+            'linear-gradient(to bottom, rgba(5, 7, 14, 0.20) 0%, rgba(5, 7, 14, 0.36) 58%, rgba(5, 7, 14, 0.72) 100%)',
         }}
       />
 
@@ -162,7 +162,7 @@ export default function Sky({
           className="pointer-events-none absolute bottom-0 inset-x-0 w-full overflow-hidden"
           style={{ height: '220px' }}
         >
-          {/* Mountain 1: Back Ridge (Furthest, tallest peaks) */}
+          {/* One recognizable summit, with quieter foothills for depth. */}
           <svg
             ref={mountainRef1}
             className="absolute bottom-0 inset-x-0 w-full will-change-transform"
@@ -172,8 +172,8 @@ export default function Sky({
             aria-hidden="true"
           >
             <path
-              d="M0,210 L0,115 L95,78 L185,125 L275,55 L365,105 L485,42 L605,110 L725,32 L845,115 L965,48 L1085,105 L1205,38 L1325,100 L1440,70 L1440,210 Z"
-              fill={`color-mix(in srgb, #090A0F 88%, ${resolvedAccent} 12%)`}
+              d="M0 210V179L164 171 315 151 452 163 620 130 751 142 974 28 1137 134 1272 155 1440 169V210Z"
+              fill={`color-mix(in srgb, #101b2a 93%, ${resolvedAccent} 7%)`}
               stroke="rgba(255, 255, 255, 0.05)"
               strokeWidth="1"
             />
@@ -189,8 +189,8 @@ export default function Sky({
             aria-hidden="true"
           >
             <path
-              d="M0,165 L0,105 L120,65 L240,115 L380,50 L500,110 L640,40 L780,100 L920,45 L1050,105 L1180,55 L1320,110 L1440,70 L1440,165 Z"
-              fill={`color-mix(in srgb, #090A0F 93%, ${resolvedAccent} 7%)`}
+              d="M0 165V121L137 110 286 132 452 106 613 129 774 86 937 130 1081 103 1231 137 1440 108V165Z"
+              fill={`color-mix(in srgb, #0b1421 96%, ${resolvedAccent} 4%)`}
               stroke="rgba(255, 255, 255, 0.04)"
               strokeWidth="1"
             />
@@ -206,8 +206,8 @@ export default function Sky({
             aria-hidden="true"
           >
             <path
-              d="M0,115 L0,78 L140,45 L300,88 L460,35 L620,82 L790,30 L960,78 L1140,40 L1300,82 L1440,55 L1440,115 Z"
-              fill={`color-mix(in srgb, #090A0F 97%, ${resolvedAccent} 3%)`}
+              d="M0 115V73L194 84 392 66 575 89 772 59 979 86 1173 68 1440 83V115Z"
+              fill="#080e18"
               stroke="rgba(255, 255, 255, 0.03)"
               strokeWidth="1"
             />

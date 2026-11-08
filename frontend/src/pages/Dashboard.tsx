@@ -1,4 +1,4 @@
-import { CalendarClock, Check, ChevronDown, Compass, Crown, Lock, Sparkles } from 'lucide-react'
+import { ArrowRight, BookOpen, CalendarClock, Check, ChevronDown, Compass, Crown, Lock, Map as MapIcon, Sparkles } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -17,13 +17,15 @@ import { currentQuest, isRusting, questUrl, rankFor, worldState, type WorldState
 import { useConnectors } from '../lib/useConnectors'
 import { useSystemDesignProgress } from '../lib/systemDesignProgress'
 
-const PEAK_NAMES: Record<string, string> = {
-  dsa: 'DSA',
-  python_data: 'Python & Data',
-  sql_dbms: 'SQL & DBMS',
-  os_concurrency: 'OS & Async',
-  backend_apis: 'FastAPI & Backend',
-  ai_resume: 'GenAI & Resume',
+const CITADEL_INTROS: Record<string, string> = {
+  dsa: 'Build algorithm skills through hands-on practice.',
+  python_data: 'Understand how Python values, objects, and data tools work.',
+  sql_dbms: 'Start with tables and keys, then build toward queries and storage.',
+  os_concurrency: 'Start with processes and threads before coordination problems.',
+  backend_apis: 'Follow a request from the browser to a working API.',
+  ai_resume: 'Understand models and retrieval before building with AI.',
+  computer_networking: 'Follow a message through DNS, TCP, and HTTP.',
+  system_design: 'Build from one working service toward larger systems.',
 }
 
 function getTierAltitude(tierIdx: number, totalTiers: number): string {
@@ -111,19 +113,21 @@ export default function Dashboard() {
       <Sky peak={activeCitadel.id} accent={activeCitadel.themeColor} fixed />
 
       {/* Chapter Intro modal: shown the first time a peak is visited */}
-      <ChapterIntroModal citadel={activeCitadel} />
+      {activeCitadel.id === 'dsa' && <ChapterIntroModal citadel={activeCitadel} />}
 
       {/* Top Cards Section: Floating over the colorful sky */}
       <div className="shell relative z-10 flex flex-col gap-5 pt-5 w-full">
+        {activeCitadel.id === 'dsa' && <PeakSwitcherRibbon activeCitadel={activeCitadel} allWorlds={worlds} />}
         {/* 1. Dashboard Header: Slim ~120px Row */}
-        <CommandHud worlds={displayWorlds} review={review} citadel={activeCitadel} />
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Concepts mastered</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.concepts_mastered} / ${learningSummary.total_concepts}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Beginner concept routes authored so far</p></div>
-          <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Challenges solved</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.challenges_solved} / ${learningSummary.total_challenges}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Practice after the foundations</p></div>
-        </div>
-
-        {activeLearningPath && <Link to={`/learn/${activeCitadel.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-cyan/35 bg-cyan/10 px-5 py-4 hover:bg-cyan/15"><span><strong className="block text-white">New here? Start with the basics</strong><span className="text-sm text-slate-300">Small lessons and examples before the interview questions.</span></span><span className="shrink-0 text-sm font-semibold text-cyan">Start learning →</span></Link>}
+        {activeCitadel.id === 'dsa' ? (
+          <>
+            <CommandHud worlds={displayWorlds} review={review} citadel={activeCitadel} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Concepts mastered</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.concepts_mastered} / ${learningSummary.total_concepts}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Beginner concept routes authored so far</p></div>
+              <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Challenges solved</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.challenges_solved} / ${learningSummary.total_challenges}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Practice after the foundations</p></div>
+            </div>
+          </>
+        ) : <ConceptEntry citadel={activeCitadel} path={activeLearningPath} />}
 
         {/* 2. Collapsible Activity & Practice Heatmap */}
         <details className="group rounded-2xl border border-white/12 bg-[#0D1220]/70 backdrop-blur-md transition-colors overflow-hidden shadow-xl">
@@ -139,12 +143,11 @@ export default function Dashboard() {
           </div>
         </details>
 
-        {/* 3. Peak Switcher Ribbon */}
-        <PeakSwitcherRibbon activeCitadel={activeCitadel} allWorlds={worlds} />
+        {activeCitadel.id !== 'dsa' && <PeakSwitcherRibbon activeCitadel={activeCitadel} allWorlds={worlds} />}
       </div>
 
       {/* 5. Full-bleed Constellation Skill Mountain over the Unified Colorful Sky */}
-      <section className="relative w-full overflow-hidden mt-4">
+      <section id="citadel-map" className="relative w-full overflow-hidden mt-4 scroll-mt-20">
         <div className="relative z-10 w-full">
           <Constellation worlds={displayWorlds} citadel={activeCitadel} />
         </div>
@@ -164,8 +167,30 @@ export default function Dashboard() {
   )
 }
 
+function ConceptEntry({ citadel, path }: { citadel: Citadel; path: LearningPath | null }) {
+  const lessons = path?.modules.flatMap((module) => module.lessons) ?? []
+  const mastered = lessons.filter((lesson) => lesson.mastered).length
+  const next = lessons.find((lesson) => lesson.ready && !lesson.mastered)
+
+  return <section className="rounded-3xl border border-white/15 bg-[#101927]/90 p-6 shadow-xl backdrop-blur-md sm:p-8">
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="max-w-2xl">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#E2C27D]"><BookOpen size={16} /> Citadel {citadel.numeral} · Learn from the ground up</p>
+        <h1 className="mt-3 font-plate text-3xl font-semibold text-white sm:text-4xl">{citadel.name}</h1>
+        <p className="mt-3 max-w-xl text-base leading-relaxed text-slate-300">{CITADEL_INTROS[citadel.id] ?? citadel.description}</p>
+        <p className="mt-4 text-sm text-slate-400">{next ? <>Your next idea: <strong className="font-medium text-slate-100">{next.title}</strong></> : lessons.length ? 'You have completed the concepts in this route.' : 'Begin with a simple explanation and a worked example.'}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link to={`/learn/${citadel.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#E2C27D] px-5 py-2.5 text-sm font-semibold text-[#111827] transition-colors hover:bg-[#F4D99B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{mastered > 0 ? 'Continue learning' : 'Start with the basics'} <ArrowRight size={17} /></Link>
+        <a href="#citadel-map" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5"><MapIcon size={16} /> Explore the map</a>
+      </div>
+    </div>
+    {lessons.length > 0 && <div className="mt-7 flex items-center gap-3 border-t border-white/10 pt-5"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#E2C27D]" style={{ width: `${Math.round(mastered / lessons.length * 100)}%` }} /></div><span className="shrink-0 text-xs text-slate-300">{mastered} of {lessons.length} concepts</span></div>}
+  </section>
+}
+
 // ------------------------------------------------------------------------------------------
-// Peak Switcher Ribbon
+// Engineering citadels: the route comes before practice for non-DSA learners.
 // ------------------------------------------------------------------------------------------
 
 function PeakSwitcherRibbon({
@@ -175,107 +200,35 @@ function PeakSwitcherRibbon({
   activeCitadel: Citadel
   allWorlds: World[]
 }) {
-  const navigate = useNavigate()
-  const { solved: sysSolved, total: sysTotal, pct: sysPct } = useSystemDesignProgress()
+  const { solved: sysSolved, total: sysTotal } = useSystemDesignProgress()
+  const cards = [
+    ...CITADELS.map((cit) => {
+      const questions = allWorlds.filter((world) => cit.worldIds.includes(world.id)).flatMap((world) => world.questions)
+      return { id: cit.id, numeral: cit.numeral, title: cit.shortName, summary: CITADEL_INTROS[cit.id] ?? cit.description, href: cit.id === 'dsa' ? '/' : `/learn/${cit.id}`, mapHref: cit.id === 'dsa' ? '/' : `/citadel/${cit.id}`, progress: `${questions.filter((question) => question.progress.solved).length}/${questions.length} practice`, color: cit.themeColor }
+    }),
+    { id: 'system_design', numeral: 'VIII', title: 'System Design', summary: CITADEL_INTROS.system_design, href: '/system-design', mapHref: '/system-design', progress: `${sysSolved}/${sysTotal} lessons`, color: '#A78BFA' },
+  ]
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between px-1">
-        <span className="text-2xs font-semibold uppercase tracking-wider text-muted">
-          Engineering Citadels
-        </span>
-        <span className="text-2xs text-faint">
-          Select peak to explore skill map
-        </span>
+    <section aria-labelledby="engineering-citadels" className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2 px-1">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E2C27D]">Choose your expedition</p><h2 id="engineering-citadels" className="mt-1 font-plate text-xl font-semibold text-white">Engineering citadels</h2></div>
+        <p className="text-sm text-slate-400">Start with the ideas. Practice when you are ready.</p>
       </div>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
-        {CITADELS.map((cit) => {
-          const isActive = cit.id === activeCitadel.id
-          const citWorlds = allWorlds.filter((w) => cit.worldIds.includes(w.id))
-          const questions = citWorlds.flatMap((w) => w.questions)
-          const solved = questions.filter((q) => q.progress.solved).length
-          const total = questions.length
-          const pct = total > 0 ? Math.round((solved / total) * 100) : 0
-
-          return (
-            <button
-              key={cit.id}
-              onClick={() => navigate(cit.id === 'dsa' ? '/' : `/citadel/${cit.id}`)}
-              className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border p-2.5 text-left transition-all duration-200 backdrop-blur-md ${
-                isActive
-                  ? 'bg-[#131B2E]/90 shadow-lg'
-                  : 'border-white/10 bg-[#0D1220]/70 hover:border-white/30 hover:bg-[#131B2E]/85'
-              }`}
-              style={
-                isActive
-                  ? {
-                      borderColor: cit.themeColor,
-                      boxShadow: `0 0 16px -4px color-mix(in srgb, ${cit.themeColor} 40%, transparent)`,
-                    }
-                  : undefined
-              }
-            >
-              <div className="flex items-start justify-between gap-1">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="font-plate text-xs font-bold"
-                      style={isActive ? { color: cit.themeColor } : undefined}
-                    >
-                      {cit.numeral}
-                    </span>
-                    <span className="font-plate text-xs font-semibold text-chalk truncate">
-                      {PEAK_NAMES[cit.id] ?? cit.shortName}
-                    </span>
-                  </div>
-                </div>
-                <span className="font-mono text-2xs text-muted shrink-0">
-                  {solved}/{total}
-                </span>
-              </div>
-
-              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: isActive ? cit.themeColor : 'var(--color-muted)',
-                  }}
-                />
-              </div>
-            </button>
-          )
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const isActive = card.id === activeCitadel.id
+          return <div key={card.id} className={`flex min-h-44 flex-col rounded-2xl border bg-[#101927]/90 p-4 backdrop-blur-sm transition-colors hover:bg-[#162235] ${isActive ? 'border-[#E2C27D]/55' : 'border-white/12'}`}>
+            <Link to={card.href} className="group flex flex-1 flex-col rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E2C27D]">
+              <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold uppercase tracking-widest" style={{ color: card.color }}>Citadel {card.numeral}</span><ArrowRight size={17} className="text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-[#E2C27D]" /></div>
+              <h3 className="mt-3 font-plate text-lg font-semibold leading-tight text-white">{card.title}</h3>
+              <p className="mt-2 text-sm leading-snug text-slate-400">{card.summary}</p>
+            </Link>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3"><span className="text-xs text-slate-500">{card.progress}</span>{card.mapHref !== card.href && <Link to={card.mapHref} className="text-xs font-medium text-slate-300 underline-offset-4 hover:text-white hover:underline">View map</Link>}</div>
+          </div>
         })}
-
-        {/* Citadel VIII: Interactive System Design (OOP/SOLID -> LLD -> 10 HLD) */}
-        <button
-          type="button"
-          onClick={() => navigate('/system-design')}
-          className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-violet-400/40 bg-[#0D1220]/70 p-2.5 text-left transition-all duration-200 backdrop-blur-md hover:border-violet-400 hover:bg-[#131B2E]/90 hover:shadow-[0_0_16px_-4px_rgba(167,139,250,0.4)]"
-        >
-          <div className="flex items-start justify-between gap-1">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-plate text-xs font-bold text-violet-400">VIII</span>
-                <span className="font-plate text-xs font-semibold text-chalk truncate">
-                  System Design
-                </span>
-              </div>
-            </div>
-            <span className="font-mono text-2xs text-violet-300 shrink-0 font-medium">
-              {sysSolved}/{sysTotal}
-            </span>
-          </div>
-          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
-            <div
-              className="h-full rounded-full bg-violet-400 transition-all duration-300"
-              style={{ width: `${sysPct}%` }}
-            />
-          </div>
-        </button>
       </div>
-    </div>
+    </section>
   )
 }
 
