@@ -15,6 +15,7 @@ backend/.env
 # Local database (your progress is mirrored to backend/backups/user_data.json)
 backend/*.db
 backend/*.db-*
+backend/backups/user_data.json
 
 *.log
 .DS_Store
@@ -24,4 +25,3 @@ screenshots/
 *.jpeg
 frontend/public/test-overlap.png
 .zwork/
-

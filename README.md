@@ -38,6 +38,8 @@ cd frontend && npm run test:journey && npm run lint && npm run build
 
 `./run.sh test` runs the backend test suite and validates the question content. The frontend checks are separate. The project uses FastAPI, React, Vite and SQLite by default; `backend/.env.example` documents the optional PostgreSQL configuration. The AI coach is optional and requires its own configuration.
 
+**Public hosting:** This is currently a single-learner local app, not a production multi-user service. It has no login or per-student data isolation, and the Python runner must not be exposed to untrusted public users. See the [public launch and accounts plan](docs/PUBLIC_LAUNCH_AND_ACCOUNTS.md) before deploying.
+
 ## Content and progress
 
 - `content/questions/` holds the existing world and challenge YAML files. See [the content guide](docs/CONTENT_GUIDE.md) and `backend/app/content_schema.py` before adding a challenge.
