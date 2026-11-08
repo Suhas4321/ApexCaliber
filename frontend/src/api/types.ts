@@ -194,6 +194,12 @@ export interface JourneyStage {
   id: string
   title: string
   subtitle?: string
+  foundation?: {
+    goal: string
+    plain_language: string
+    terms?: { name: string; meaning: string }[]
+    worked_example?: string
+  }
   scenario: string
   mechanism: string
   prediction?: PoePrediction | null
@@ -511,4 +517,3 @@ export interface StatsResponse {
   seals: CitadelSeal[]
   badges: AchievementBadge[]
 }
-

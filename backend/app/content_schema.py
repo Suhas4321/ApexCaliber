@@ -148,10 +148,23 @@ class ControlDefinition(Strict):
     description: str = ""
 
 
+class FoundationTerm(Strict):
+    name: str
+    meaning: str
+
+
+class JourneyFoundation(Strict):
+    goal: str
+    plain_language: str
+    terms: list[FoundationTerm] = Field(default_factory=list)
+    worked_example: str | None = None
+
+
 class JourneyStage(Strict):
     id: str
     title: str
     subtitle: str = ""
+    foundation: JourneyFoundation | None = None
     scenario: str  # Markdown scenario anchor
     mechanism: str  # Markdown causal explanation
     prediction: PoePrediction | None = None
