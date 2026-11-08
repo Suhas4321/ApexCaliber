@@ -118,27 +118,20 @@ export default function Dashboard() {
       {/* Top Cards Section: Floating over the colorful sky */}
       <div className="shell relative z-10 flex flex-col gap-5 pt-5 w-full">
         {activeCitadel.id === 'dsa' && <PeakSwitcherRibbon activeCitadel={activeCitadel} allWorlds={worlds} />}
-        {/* 1. Dashboard Header: Slim ~120px Row */}
-        {activeCitadel.id === 'dsa' ? (
-          <>
-            <CommandHud worlds={displayWorlds} review={review} citadel={activeCitadel} />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Concepts mastered</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.concepts_mastered} / ${learningSummary.total_concepts}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Beginner concept routes authored so far</p></div>
-              <div className="rounded-2xl border border-white/12 bg-[#0D1220]/80 p-4"><div className="text-xs uppercase tracking-widest text-slate-400">Challenges solved</div><div className="mt-1 text-2xl font-semibold text-white">{learningSummary ? `${learningSummary.challenges_solved} / ${learningSummary.total_challenges}` : '—'}</div><p className="mt-1 text-xs text-slate-400">Practice after the foundations</p></div>
-            </div>
-          </>
-        ) : <ConceptEntry citadel={activeCitadel} path={activeLearningPath} />}
+        {activeCitadel.id === 'dsa' ? <CompactQuestStrip worlds={displayWorlds} /> : <ConceptEntry citadel={activeCitadel} path={activeLearningPath} />}
 
-        {/* 2. Collapsible Activity & Practice Heatmap */}
+        {/* Detailed progress stays available without pushing the first camp below the fold. */}
         <details className="group rounded-2xl border border-white/12 bg-[#0D1220]/70 backdrop-blur-md transition-colors overflow-hidden shadow-xl">
           <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-xs font-semibold text-slate-300 hover:text-white transition-colors select-none">
             <div className="flex items-center gap-2">
               <CalendarClock size={15} className="text-cyan" />
-              <span>Activity & Practice Heatmap</span>
+              <span>Progress & activity</span>
             </div>
+            {activeCitadel.id === 'dsa' && <span className="ml-auto mr-3 hidden font-normal text-slate-400 sm:inline">{learningSummary?.concepts_mastered ?? '—'}/{learningSummary?.total_concepts ?? '—'} concepts · {learningSummary?.challenges_solved ?? '—'}/{learningSummary?.total_challenges ?? '—'} challenges</span>}
             <ChevronDown size={14} className="transition-transform duration-200 group-open:rotate-180" />
           </summary>
-          <div className="border-t border-white/10 p-4">
+          <div className="space-y-4 border-t border-white/10 p-4">
+            {activeCitadel.id === 'dsa' && <CommandHud worlds={displayWorlds} review={review} citadel={activeCitadel} />}
             <PracticeCard />
           </div>
         </details>
@@ -165,6 +158,14 @@ export default function Dashboard() {
       </button>
     </div>
   )
+}
+
+function CompactQuestStrip({ worlds }: { worlds: World[] }) {
+  const quest = currentQuest(worlds)
+  return <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 rounded-xl border border-white/12 bg-[#101927]/85 px-4 py-2.5 backdrop-blur-sm">
+    <div className="flex min-w-0 items-center gap-3"><span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-[#E2C27D]">Next step</span><span className="truncate text-sm font-medium text-white">{quest?.question.title ?? 'Choose a world on the map'}</span></div>
+    {quest && <Link to={questUrl(quest.question)} className="inline-flex items-center gap-1 text-sm font-semibold text-[#E2C27D] hover:text-[#F4D99B]">Resume practice <ArrowRight size={15} /></Link>}
+  </div>
 }
 
 function ConceptEntry({ citadel, path }: { citadel: Citadel; path: LearningPath | null }) {
@@ -210,21 +211,20 @@ function PeakSwitcherRibbon({
   ]
 
   return (
-    <section aria-labelledby="engineering-citadels" className="space-y-3">
+    <section aria-labelledby="engineering-citadels" className="space-y-2">
       <div className="flex flex-wrap items-end justify-between gap-2 px-1">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E2C27D]">Choose your expedition</p><h2 id="engineering-citadels" className="mt-1 font-plate text-xl font-semibold text-white">Engineering citadels</h2></div>
-        <p className="text-sm text-slate-400">Start with the ideas. Practice when you are ready.</p>
+        <h2 id="engineering-citadels" className="font-plate text-lg font-semibold text-white">Engineering citadels</h2>
+        <p className="text-xs text-slate-400">Choose a path to start learning</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => {
           const isActive = card.id === activeCitadel.id
-          return <div key={card.id} className={`flex min-h-44 flex-col rounded-2xl border bg-[#101927]/90 p-4 backdrop-blur-sm transition-colors hover:bg-[#162235] ${isActive ? 'border-[#E2C27D]/55' : 'border-white/12'}`}>
-            <Link to={card.href} className="group flex flex-1 flex-col rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E2C27D]">
-              <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold uppercase tracking-widest" style={{ color: card.color }}>Citadel {card.numeral}</span><ArrowRight size={17} className="text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-[#E2C27D]" /></div>
-              <h3 className="mt-3 font-plate text-lg font-semibold leading-tight text-white">{card.title}</h3>
-              <p className="mt-2 text-sm leading-snug text-slate-400">{card.summary}</p>
+          return <div key={card.id} className={`flex min-h-20 flex-col justify-between rounded-xl border bg-[#101927]/90 px-3 py-2.5 backdrop-blur-sm transition-colors hover:bg-[#162235] ${isActive ? 'border-[#E2C27D]/55' : 'border-white/12'}`}>
+            <Link to={card.href} title={card.summary} aria-label={`${card.title}. ${card.summary} ${card.id === 'dsa' ? 'Open practice map.' : 'Open learning path.'}`} className="group flex items-center justify-between gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E2C27D]">
+              <span className="min-w-0"><span className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: card.color }}>Citadel {card.numeral}</span><span className="mt-0.5 block truncate font-plate text-sm font-semibold text-white">{card.title}</span></span>
+              <ArrowRight size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-[#E2C27D]" />
             </Link>
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3"><span className="text-xs text-slate-500">{card.progress}</span>{card.mapHref !== card.href && <Link to={card.mapHref} className="text-xs font-medium text-slate-300 underline-offset-4 hover:text-white hover:underline">View map</Link>}</div>
+            <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/10 pt-1.5"><span className="text-xs text-slate-500">{card.progress}</span>{card.mapHref !== card.href && <Link to={card.mapHref} aria-label={`View ${card.title} map`} className="text-xs font-medium text-slate-300 underline-offset-4 hover:text-white hover:underline">Map</Link>}</div>
           </div>
         })}
       </div>
@@ -477,9 +477,9 @@ function Constellation({ worlds, citadel }: { worlds: World[]; citadel: Citadel 
   }
 
   return (
-    <section className="relative w-full flex flex-col justify-between pt-16 pb-12">
+    <section className="relative w-full flex flex-col justify-between pt-8 pb-12">
       {/* Mountain Header: Aligned to .shell */}
-      <div className="shell mx-auto w-full mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="shell mx-auto w-full mb-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">{citadel.icon}</span>
