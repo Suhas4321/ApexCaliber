@@ -64,7 +64,7 @@ def learning_path(citadel_id: str, session: Session = Depends(get_session)):
             "lessons": [{"id": lesson.id, "title": lesson.title, "summary": lesson.summary,
                          "position": lesson.position, "mastered": lesson.id in mastered,
                          "prerequisites": parents.get(lesson.id, []),
-                         "prerequisite_details": [{"id": parent, "title": prerequisite_titles[parent]} for parent in parents.get(lesson.id, [])],
+                         "prerequisite_details": [{"id": parent, "title": prerequisite_titles[parent], "mastered": parent in mastered} for parent in parents.get(lesson.id, [])],
                          "ready": all(parent in mastered for parent in parents.get(lesson.id, []))}
                         for lesson in lessons],
         })
@@ -86,7 +86,7 @@ def lesson_detail(lesson_id: str, session: Session = Depends(get_session)):
     return {"id": lesson.id, "module_id": lesson.module_id, "citadel_id": module.citadel_id, "title": lesson.title,
             "summary": lesson.summary, "position": lesson.position, "content": content,
             "prerequisites": list(parents),
-            "prerequisite_details": [{"id": parent, "title": prerequisite_titles[parent]} for parent in parents],
+            "prerequisite_details": [{"id": parent, "title": prerequisite_titles[parent], "mastered": parent in mastered} for parent in parents],
             "ready": all(parent in mastered for parent in parents),
             "passed_checks": progress.passed_checks if progress else [], "mastered": bool(progress and progress.mastered)}
 

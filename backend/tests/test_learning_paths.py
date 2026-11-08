@@ -35,7 +35,7 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
 
     summary = client.get("/api/learning-paths/summary").json()
     assert summary["concepts_mastered"] >= 1
-    assert summary["total_concepts"] == 22
+    assert summary["total_concepts"] == 28
     assert "challenges_solved" in summary
     saved = json.loads((backup_dir / "user_data.json").read_text())
     assert any(row["lesson_id"] == "os-process" and row["mastered"] for row in saved["tables"]["lesson_progress"])
@@ -62,7 +62,7 @@ def test_db_path_starts_with_tables_not_joins(client):
 
 def test_extended_paths_begin_with_foundations_and_gate_advanced_challenges(client):
     os_modules = client.get("/api/learning-paths/os_concurrency").json()["modules"]
-    assert [module["id"] for module in os_modules] == ["os-foundations", "os-systems"]
+    assert [module["id"] for module in os_modules] == ["os-foundations", "os-systems", "os-coordination-and-io"]
     assert [lesson["id"] for lesson in os_modules[1]["lessons"]] == [
         "os-scheduling", "os-virtual-memory", "os-deadlock"
     ]
@@ -78,7 +78,23 @@ def test_extended_paths_begin_with_foundations_and_gate_advanced_challenges(clie
     assert client.get("/api/questions/virtual-memory-page-replacement").json()["required_lessons"][0]["id"] == "os-virtual-memory"
     assert client.get("/api/lessons/net-client-server").json()["content"]["checks"]
     backend_first = client.get("/api/learning-paths/backend_apis").json()["modules"][0]["lessons"][0]
-    assert backend_first["prerequisite_details"] == [{"id": "net-client-server", "title": "What happens when you open a website?"}]
+    assert backend_first["prerequisite_details"] == [{"id": "net-client-server", "title": "What happens when you open a website?", "mastered": False}]
+
+
+def test_coordination_and_storage_lessons_gate_matching_practice(client):
+    os_modules = client.get("/api/learning-paths/os_concurrency").json()["modules"]
+    assert os_modules[-1]["id"] == "os-coordination-and-io"
+    assert [lesson["id"] for lesson in os_modules[-1]["lessons"]] == ["os-semaphore", "os-files", "os-async"]
+    async_prereqs = set(os_modules[-1]["lessons"][-1]["prerequisites"])
+    assert async_prereqs == {"os-scheduling", "os-thread", "os-files"}
+    assert {lesson["id"] for lesson in client.get("/api/questions/asyncio-event-loop-semaphore").json()["required_lessons"]} == {"os-async", "os-semaphore"}
+
+    db_modules = client.get("/api/learning-paths/sql_dbms").json()["modules"]
+    assert [lesson["id"] for lesson in db_modules[-1]["lessons"]] == ["db-normalization", "db-isolation", "db-pages"]
+    assert client.get("/api/questions/heap-pages-and-scans").json()["required_lessons"][0]["id"] == "db-pages"
+    assert client.get("/api/lessons/db-pages").json()["content"]["checks"][0]["choices"][1].startswith("No, PostgreSQL")
+    assert len(client.get("/api/lessons/os-semaphore").json()["content"]["visual"]["tracks"]) == 2
+    assert len(client.get("/api/lessons/db-pages").json()["content"]["visual"]["tracks"]) == 2
 
 
 def test_authoring_graph_rejects_cycles_and_duplicate_challenge_mappings(tmp_path):

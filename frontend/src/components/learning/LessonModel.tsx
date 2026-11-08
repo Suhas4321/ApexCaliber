@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, GitMerge, Split } from 'lucide-react'
+import { ArrowLeft, ArrowRight, GitMerge, Split, Waypoints } from 'lucide-react'
 import { useState } from 'react'
 import type { LessonVisual } from '../../api/learningTypes'
 
@@ -17,7 +17,7 @@ export default function LessonModel({ visual }: { visual: LessonVisual }) {
   return <section className="overflow-hidden rounded-2xl border border-cyan/25 bg-panel" aria-label={visual.title}>
     <div className="border-b border-line px-5 py-5 sm:px-6">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan">
-        {visual.kind === 'race' ? <Split size={16} /> : <GitMerge size={16} />} Step-through model
+        {visual.kind === 'race' ? <Split size={16} /> : visual.kind === 'join' ? <GitMerge size={16} /> : <Waypoints size={16} />} Step-through model
       </div>
       <h2 className="mt-2 font-plate text-2xl font-semibold text-chalk">{visual.title}</h2>
       <p className="mt-1 text-sm text-muted">Choose a path, then move one action at a time. Compare what changes.</p>

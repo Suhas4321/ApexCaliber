@@ -13,7 +13,7 @@ export type LessonStep = {
   mastered: boolean
   ready: boolean
   prerequisites: string[]
-  prerequisite_details: Array<{ id: string; title: string }>
+  prerequisite_details: Array<{ id: string; title: string; mastered: boolean }>
 }
 
 export type CueCard = {
@@ -61,7 +61,7 @@ export type CheckResult = {
 }
 
 export type LessonVisual = {
-  kind: 'race' | 'join'
+  kind: 'race' | 'join' | 'model'
   title: string
   tracks: Array<{
     id: string

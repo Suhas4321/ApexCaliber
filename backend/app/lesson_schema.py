@@ -41,7 +41,7 @@ class VisualTrack(Strict):
 
 
 class LessonVisual(Strict):
-    kind: Literal["race", "join"]
+    kind: Literal["race", "join", "model"]
     title: str
     tracks: list[VisualTrack] = Field(min_length=2)
 

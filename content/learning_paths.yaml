@@ -739,6 +739,222 @@ modules:
               answer: 0
               explanation: Retrieval candidates still need source and claim checks.
           sources: [https://developers.google.com/machine-learning/crash-course/embeddings]
+  - id: os-coordination-and-io
+    citadel_id: os_concurrency
+    title: Coordinate work and understand waiting
+    summary: Learn counting permits, persistent files and async waiting after the process and thread basics.
+    position: 3
+    cue_card:
+      elevator_pitch: A mutex protects one critical section, a semaphore limits simultaneous entrants, a file persists data, and an async task yields during supported waits.
+      pillars:
+        - Synchronization primitives solve different ownership and capacity problems.
+        - Files give processes a named interface to persistent bytes.
+        - An event loop can make progress on other tasks when one task awaits non-blocking I/O.
+      tradeoffs:
+        - More concurrency can improve throughput for waiting work but may add coordination and failure complexity.
+      candidate_trap: Async does not make CPU-heavy Python code fast on one event-loop thread; blocking the loop delays other tasks.
+    lessons:
+      - id: os-semaphore
+        title: What if several workers may enter, but not everyone?
+        summary: A semaphore counts available permits; compare it with a one-owner mutex.
+        position: 1
+        prerequisites: [os-mutex]
+        content:
+          situation: A small study room has three seats and ten students arrive. How can the room avoid admitting a fourth student?
+          explanation: A counting semaphore begins with a number of permits. A worker acquires a permit before entering and releases it when leaving. If no permit is available, a worker waits. This limits how many workers are inside at once. A mutex instead expresses exclusive ownership of one critical section. A semaphore does not automatically protect every shared value used by its workers; the rule must match the resource being guarded.
+          terms:
+            - {name: Permit, meaning: One unit of capacity that a worker may acquire.}
+            - {name: Semaphore, meaning: A synchronization primitive that tracks available permits.}
+            - {name: Mutex, meaning: A lock for exclusive ownership of a critical section.}
+          worked_example: A pool has three database connections. The first three requests acquire one permit each. The fourth waits until a request releases its connection and permit.
+          second_example: A media converter limits active large jobs to two to avoid exhausting memory. This is a capacity limit; a separate mutex may still be needed for a shared job counter.
+          misconception: A semaphore with three permits does not make updates to one shared counter atomic. Capacity control and exclusive state protection are different jobs.
+          visual:
+            kind: model
+            title: Follow two permits through three arrivals
+            tracks:
+              - id: acquire-release
+                title: Workers acquire and release
+                steps:
+                  - {label: Start with two free permits, explanation: A and B may each acquire one permit., state: {Free permits: '2', Inside: 'Nobody', Waiting: 'Nobody'}}
+                  - {label: A enters, explanation: A acquires one permit and starts work., state: {Free permits: '1', Inside: 'A', Waiting: 'Nobody'}}
+                  - {label: B enters, explanation: B acquires the final permit., state: {Free permits: '0', Inside: 'A, B', Waiting: 'Nobody'}}
+                  - {label: C arrives, explanation: 'No permit is free, so C waits rather than entering.', state: {Free permits: '0', Inside: 'A, B', Waiting: 'C'}}
+                  - {label: A leaves, explanation: A releases a permit; C may acquire it and begin., state: {Free permits: '0', Inside: 'B, C', Waiting: 'Nobody'}}
+              - id: unsafe-counter
+                title: Capacity is not counter safety
+                steps:
+                  - {label: Two workers hold permits, explanation: Both may be inside at once because capacity is two., state: {Free permits: '0', Inside: 'A, B', Shared count: '0'}}
+                  - {label: Both read the old count, explanation: A and B each read zero before either writes., state: {Free permits: '0', Inside: 'A, B', Shared count: '0'}}
+                  - {label: Both write one, explanation: Capacity control did not make their counter update atomic., state: {Free permits: '0', Inside: 'A, B', Shared count: '1, not 2'}}
+          checks:
+            - prompt: A pool allows three active workers. What should the fourth worker do when all permits are held?
+              choices: [Enter anyway because semaphores are only labels., Wait until a permit is released., Delete another worker's data.]
+              answer: 1
+              explanation: With no permit available, the fourth worker waits for one to be released.
+            - prompt: Does a three-permit semaphore by itself make a shared counter update atomic?
+              choices: [Only if the counter is on disk., 'Yes, any semaphore protects every variable.', 'No, several permit holders can still modify the counter together.']
+              answer: 2
+              explanation: Protect the counter's read-change-write sequence with an appropriate exclusive rule.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/threads-sema.pdf]
+      - id: os-files
+        title: What does saving a file actually involve?
+        summary: Connect path, file handle, buffering and durable storage.
+        position: 2
+        prerequisites: [os-process]
+        content:
+          situation: You save a document, close the app, then open it tomorrow. Where did the words go?
+          explanation: A file is a named interface to persistent data; a directory helps organize names and paths. An app asks the OS to open a path and receives a handle or file descriptor for later reads and writes. Writes may first sit in memory buffers, so a successful write call does not always mean bytes are already durable after power loss. Closing, flushing and synchronization have different guarantees that depend on the OS and storage system.
+          terms:
+            - {name: Path, meaning: A name that locates a file through directories.}
+            - {name: File descriptor, meaning: A process-local handle for an opened file or I/O resource.}
+            - {name: Buffer, meaning: Temporary memory holding data before later processing or storage.}
+          worked_example: A notes app opens notes.txt, writes new text through a file descriptor, and closes it. The file remains after the process exits, unlike an unsaved string in the app's memory.
+          second_example: A payment log may require an explicit durability step before telling the user it is safely recorded. Merely changing an in-memory list would disappear on restart.
+          misconception: A successful write is not a universal guarantee that a sudden power loss cannot lose the data. Durability depends on the full storage path.
+          checks:
+            - prompt: Why can a document remain after its app process exits?
+              choices: [The CPU core remembers it forever., The data was stored through the file system., A thread keeps running invisibly.]
+              answer: 1
+              explanation: File-system storage outlives the process's ordinary in-memory state.
+            - prompt: What does a file descriptor represent?
+              choices: [A permanent public URL., A process-local handle to an opened I/O resource., The file's visual icon.]
+              answer: 1
+              explanation: The process uses the descriptor to refer to its opened resource.
+          sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
+      - id: os-async
+        title: When should one task let another run?
+        summary: Compare async waiting with threads and CPU-heavy work.
+        position: 3
+        prerequisites: [os-scheduling, os-thread, os-files]
+        content:
+          situation: A web service waits for many slow network replies. Should one worker stare at each connection until it answers?
+          explanation: An async task can pause at an await point while a supported non-blocking I/O operation is unfinished. An event loop runs another ready task and later resumes the waiting one. This is concurrency, not automatic parallel execution on multiple CPU cores. Threads can also overlap waits but use OS-scheduled execution paths. Processes offer separate address spaces and can run CPU work on different cores. Choose by workload, libraries and isolation needs.
+          terms:
+            - {name: Async task, meaning: A unit of work that can cooperate with an event loop at await points.}
+            - {name: Event loop, meaning: A scheduler that resumes ready async tasks and handles supported events.}
+            - {name: Blocking call, meaning: An operation that holds the current execution path until it completes.}
+          worked_example: A server starts request A and awaits a database response. The loop serves request B while A waits. When A's result is ready, the loop resumes A.
+          second_example: Resizing hundreds of large images is CPU-heavy. Running that computation directly on one event-loop thread can delay every request; a worker process or another suitable execution strategy may be better.
+          misconception: Writing async def does not make synchronous disk or CPU work non-blocking. The operation and its library must cooperate with the loop or be offloaded.
+          checks:
+            - prompt: Request A awaits a supported network operation. What can an event loop do?
+              choices: [Run another ready async task., Force the network reply to finish instantly., Turn one CPU core into two.]
+              answer: 0
+              explanation: The loop can use the wait time to advance other ready work.
+            - prompt: A CPU-heavy loop runs without yielding on the event-loop thread. What happens?
+              choices: [All other tasks automatically run on new CPU cores., The loop may delay other tasks until the work yields or finishes., DNS turns the work into I/O.]
+              answer: 1
+              explanation: CPU work that does not yield blocks progress on that event-loop thread.
+          sources: [https://docs.python.org/3/library/asyncio.html, https://docs.python.org/3/library/asyncio-task.html]
+  - id: db-data-correctness-and-storage
+    citadel_id: sql_dbms
+    title: Model facts, coordinate transactions and inspect pages
+    summary: Move from logical tables to update anomalies, concurrent transactions and physical storage.
+    position: 3
+    cue_card:
+      elevator_pitch: Good schema design stores each fact in a deliberate place, isolation controls what concurrent transactions observe, and the DBMS stores rows in pages rather than isolated bytes.
+      pillars:
+        - Separate entities and relationships to avoid repeated facts that can disagree.
+        - Atomicity and isolation solve different problems in concurrent transactions.
+        - A query plan and storage layout are implementation details below logical SQL.
+      tradeoffs:
+        - More tables can reduce update anomalies but require joins for some reads.
+        - Stronger isolation may need retries or more coordination.
+      candidate_trap: PostgreSQL's common 8 KB page and SQLite's default 4 KB page are different; a physical tuple location is not a stable business key.
+    lessons:
+      - id: db-normalization
+        title: Why split repeated facts into related tables?
+        summary: Understand update anomalies before formal normal forms.
+        position: 1
+        prerequisites: [db-key, db-join]
+        content:
+          situation: Every course enrollment row repeats the student's phone number. One phone change requires updating five rows.
+          explanation: If the phone number is a fact about the student, storing it in every enrollment duplicates that fact. A missed update can leave conflicting phone numbers. Put student facts in students and enrollment facts in enrollments, connected by student_id. This is the practical motivation for normalization. Later normal-form rules make such dependencies precise; splitting tables is useful only when the relationships and constraints remain correct.
+          terms:
+            - {name: Redundancy, meaning: The same logical fact is stored repeatedly.}
+            - {name: Update anomaly, meaning: Repeated copies of a fact can disagree after a partial update.}
+            - {name: Normalization, meaning: Organizing relations around dependencies to reduce anomalies.}
+          worked_example: Before splitting, Asha's phone appears in Math and Physics enrollments. After splitting, students stores one phone for Asha; enrollments stores two rows referring to her ID.
+          second_example: A shop stores a supplier address on every product row. Moving the supplier means many edits; a suppliers table can hold the address once and products can refer to it.
+          misconception: Normalization does not mean creating the maximum possible number of tables. The decomposition must preserve meaning and be joined correctly when needed.
+          checks:
+            - prompt: A student's phone appears on each of five enrollment rows. What problem can result?
+              choices: [Nothing can ever go wrong., One missed update leaves contradictory phone numbers., The DBMS must stop supporting joins.]
+              answer: 1
+              explanation: Repeated copies of one fact can become inconsistent.
+            - prompt: Where should a fact about one student usually live?
+              choices: [On every enrollment row., In a table describing that student, referenced by enrollments., In the server's CPU register.]
+              answer: 1
+              explanation: A student fact belongs with the student; enrollment rows record relationships.
+          sources: [https://www.postgresql.org/docs/current/tutorial-fk.html, https://www.postgresql.org/docs/current/ddl-constraints.html]
+      - id: db-isolation
+        title: What if two transactions change the same data?
+        summary: Separate all-or-nothing atomicity from concurrent visibility and lost updates.
+        position: 2
+        prerequisites: [db-transaction, os-race]
+        content:
+          situation: Two people each try to buy the last ticket. Both read that one seat remains.
+          explanation: A transaction can be atomic yet still conflict with another transaction. Isolation controls how concurrent operations observe and affect one another. If both buyers read one available seat and each writes a result based on that old value, a lost update or oversell can occur without an appropriate rule. Database engines offer isolation levels and coordination tools such as row locking, conditional updates or optimistic checks; exact behavior varies by engine and isolation level.
+          terms:
+            - {name: Isolation, meaning: Rules for interactions among concurrent transactions.}
+            - {name: Lost update, meaning: One transaction's write overwrites an effect based on an earlier read.}
+            - {name: Retry, meaning: Repeating a transaction after a detected conflict.}
+          worked_example: A and B both read stock 1. A writes stock 0 and commits. B must not blindly write its own stale result and also claim a sale. A conditional update that succeeds only when stock remains positive can make one buyer fail safely.
+          second_example: Two editors update one profile. A version-number check can reject the second stale save and ask the user to review changes rather than silently overwriting the first.
+          misconception: Atomicity alone does not solve concurrent reads and writes. It protects a transaction's all-or-nothing outcome, while isolation governs overlap with other transactions.
+          checks:
+            - prompt: Both buyers read one ticket left. What must the system prevent?
+              choices: [Either buyer seeing the product page., Both sales succeeding from the same stale stock value., A transaction containing more than one statement.]
+              answer: 1
+              explanation: The available-stock rule must hold despite concurrent attempts.
+            - prompt: Is rollback after a half-completed transfer the same concern as two buyers racing?
+              choices: ['Yes, both are only about table names.', 'No, rollback is atomicity while the overlap needs isolation or coordination.', 'No, concurrency cannot affect databases.']
+              answer: 1
+              explanation: Atomicity and isolation address different failure modes.
+          sources: [https://www.postgresql.org/docs/current/transaction-iso.html]
+      - id: db-pages
+        title: Why does a database read pages instead of one byte?
+        summary: Meet storage pages and row locations before heap scans and index internals.
+        position: 3
+        prerequisites: [db-index, os-files]
+        content:
+          situation: A library clerk fetches a whole tray of index cards to find one record rather than lifting one letter from storage.
+          explanation: A DBMS organizes table and index data into fixed-size pages, which are units of storage and caching. PostgreSQL tables commonly use 8 KB pages; SQLite's documented default is 4 KB, and both can have different configured sizes. A heap scan examines relevant table pages; an index can point toward candidate rows. PostgreSQL ctid describes a physical row-version location, which can change when rows are updated or moved. Use a logical key for durable identity.
+          terms:
+            - {name: Page, meaning: A fixed-size unit of database storage and caching.}
+            - {name: Heap scan, meaning: Reading table pages to inspect rows for a condition.}
+            - {name: ctid, meaning: 'A PostgreSQL physical row-version location, not a stable logical ID.'}
+          worked_example: A PostgreSQL table with many rows spans multiple pages. A query without a useful index may read pages and test rows. Finding one matching row does not imply reading exactly that row's bytes from storage.
+          second_example: A SQLite database normally starts with 4096-byte pages. The same conceptual page/row distinction applies, but its page size and physical row identifiers differ from PostgreSQL's.
+          misconception: An 8 KB page is not universal across databases. A physical location such as PostgreSQL ctid should not be used as a permanent customer ID.
+          visual:
+            kind: model
+            title: Two ways to find one book record
+            tracks:
+              - id: scan
+                title: No useful index
+                steps:
+                  - {label: Start at the table, explanation: The query asks for ISBN 7. The table spans three illustrative pages., state: {Page 1: 'ISBN 1, 2', Page 2: 'ISBN 4, 5', Page 3: 'ISBN 7, 8'}}
+                  - {label: Inspect page 1, explanation: 'The target is not here, so continue.', state: {Pages visited: '1', Match: 'None yet', Next: 'Page 2'}}
+                  - {label: Inspect page 2, explanation: These rows do not match either., state: {Pages visited: '2', Match: 'None yet', Next: 'Page 3'}}
+                  - {label: Inspect page 3, explanation: The matching row is found after checking three pages in this toy example., state: {Pages visited: '3', Match: 'ISBN 7', Next: 'Done'}}
+              - id: indexed
+                title: Suitable index
+                steps:
+                  - {label: Search the index, explanation: An index on ISBN narrows the search to a candidate row location., state: {Search key: 'ISBN 7', Index result: 'Candidate on page 3', Table page: 'Not visited yet'}}
+                  - {label: Fetch and verify, explanation: 'The database may fetch the table page and verify the row, depending on the plan.', state: {Search key: 'ISBN 7', Index result: 'Candidate on page 3', Table page: 'Page 3 visited'}}
+                  - {label: Compare the work, explanation: 'For this selective lookup, the index avoids scanning all table pages; it still consumes storage and write work.', state: {Table pages scanned: 'Fewer in this model', Match: 'ISBN 7', Cost: 'Index maintenance on writes'}}
+          checks:
+            - prompt: Are all databases required to use 8 KB pages?
+              choices: ['Yes, it is a SQL rule.', 'No, PostgreSQL commonly uses 8 KB while SQLite defaults to 4 KB.', 'No, every row is exactly one byte.']
+              answer: 1
+              explanation: Page size depends on the database engine and configuration.
+            - prompt: Which value should identify a customer across updates?
+              choices: [A stable logical customer key., PostgreSQL ctid alone., The last byte offset read from disk.]
+              answer: 0
+              explanation: A logical key identifies the row as a business entity; physical locations can change.
+          sources: [https://www.postgresql.org/docs/current/storage-page-layout.html, https://www.postgresql.org/docs/current/ddl-system-columns.html, https://www.sqlite.org/pragma.html]
 challenges:
   - {slug: memory-isolation-threads-vs-processes, requires: [os-thread]}
   - {slug: deterministic-interleaving-counter, requires: [os-race]}
@@ -753,3 +969,8 @@ challenges:
   - {slug: tcp-three-way-handshake, requires: [net-transport]}
   - {slug: http-status-code-diagnostics, requires: [backend-status]}
   - {slug: processes-vs-threads-memory, requires: [os-mutex]}
+  - {slug: bounded-semaphore-simulator, requires: [os-semaphore]}
+  - {slug: asyncio-event-loop-semaphore, requires: [os-async, os-semaphore]}
+  - {slug: database-normalization, requires: [db-normalization]}
+  - {slug: sql-lost-update-optimistic-lock, requires: [db-isolation]}
+  - {slug: heap-pages-and-scans, requires: [db-pages]}
