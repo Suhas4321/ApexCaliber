@@ -38,13 +38,21 @@ cd frontend && npm run test:journey && npm run lint && npm run build
 
 `./run.sh test` runs the backend test suite and validates the question content. The frontend checks are separate. The project uses FastAPI, React, Vite and SQLite by default; `backend/.env.example` documents the optional PostgreSQL configuration. The AI coach is optional and requires its own configuration.
 
-**Public hosting:** This is currently a single-learner local app, not a production multi-user service. It has no login or per-student data isolation, and the Python runner must not be exposed to untrusted public users. See the [public launch and accounts plan](docs/PUBLIC_LAUNCH_AND_ACCOUNTS.md) before deploying.
+**Public hosting:** The account foundation includes managed email sign-in, owner-keyed backend progress, and a hosted mode that disables the in-process code runner and admin routes. A real Supabase project and deployment are still needed for a live sign-in test. The site is not a full public coding platform until an isolated runner and the remaining [launch gates](docs/PUBLIC_LAUNCH_AND_ACCOUNTS.md) are finished.
+
+## Student accounts and hosted mode
+
+Local development remains account-free. The hosted build uses [Supabase Auth](https://supabase.com/docs/guides/auth/quickstarts/react) with email links and [PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow). Visitors can read lessons; saving a check, draft, pitch, or system-design completion asks them to sign in. The API verifies signed access tokens and scopes progress to the account. Existing single-user SQLite data is copied into a local-only account on first startup; it is never assigned to a hosted student automatically.
+
+To prepare a hosted **concept-learning beta**, create a Supabase project with asymmetric JWT signing, enable email sign-in, and set the Site URL to your HTTPS domain. Add the exact `https://your-domain.example/auth/callback` to [allowed redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls). Build the Docker image with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as build arguments. Provide `DATABASE_URL` (PostgreSQL), `SUPABASE_URL`, `PUBLIC_ORIGIN`, and `AUTO_BACKUP=false` as runtime settings; the Docker image sets `APP_MODE=hosted`. Keep database credentials and any AI keys out of frontend build variables. `backend/.env.example` and `frontend/.env.example` list the settings.
+
+In hosted mode, the backup/content-reload controls and in-process code execution are unavailable. The local `./run.sh` continues to support coding practice. Do not turn the hosted playground on by changing a flag: it needs a separate isolated worker. Test email delivery, two real accounts, deployment rollback, and database recovery in staging before inviting students.
 
 ## Content and progress
 
 - `content/questions/` holds the existing world and challenge YAML files. See [the content guide](docs/CONTENT_GUIDE.md) and `backend/app/content_schema.py` before adding a challenge.
 - `content/learning_paths.yaml` holds the beginner modules, lessons, prerequisite graph and selected challenge mappings. Its content is checked by `backend/app/lesson_schema.py` and `backend/app/services/learning_paths.py`.
-- Backend lesson and question progress is stored in SQLite by default and mirrored to `backend/backups/user_data.json` when automatic backup is enabled. **System-design completion and some UI preferences are currently stored in browser localStorage**, so the backend backup is not a complete export of every user-visible state.
+- Backend lesson and question progress is stored in SQLite by default and mirrored to `backend/backups/user_data.json` in local mode when automatic backup is enabled. Hosted accounts use owner-keyed database rows; system-design completion is synced to the account. Some workspace state and UI preferences remain in browser localStorage, so they are not yet a complete cross-device export.
 
 When authoring a lesson, teach the prerequisite before testing it. Use two meaningfully different examples, state the limits of analogies, link technical sources, and add a check that asks the learner to apply the idea in a new situation. Existing lesson examples are in `content/learning_paths.yaml`.
 

@@ -1,5 +1,6 @@
 import type { ActivityEvent, CheatSheet, CoachReply, CoachStatus, Pitch, Progress, QuestionDetail, ReviewQueue, RunResult, StatsResponse, Trace, World } from './types'
 import type { CheckResult, LearningPath, LearningSummary, LessonDetail } from './learningTypes'
+import { accessToken, hostedAuthEnabled } from '../lib/auth'
 
 export class ApiError extends Error {
   status: number
@@ -12,14 +13,19 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
+    const token = await accessToken()
     res = await fetch(path, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init?.headers },
     })
   } catch {
     throw new ApiError(0, 'Backend is not reachable. Start it with ./run.sh (or uvicorn on port 8010).')
   }
   if (!res.ok) {
+    if (res.status === 401 && hostedAuthEnabled && !window.location.pathname.startsWith('/sign-in')) {
+      const next = window.location.pathname + window.location.search
+      window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`)
+    }
     let message = `${res.status} ${res.statusText}`
     try {
       const body = await res.json()

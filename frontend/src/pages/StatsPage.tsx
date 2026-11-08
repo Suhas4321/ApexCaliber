@@ -22,6 +22,7 @@ import type { PeakStat, StatsResponse } from '../api/types'
 import CountUp from '../components/vendor/react-bits/CountUp'
 import { GlassSurface } from '../components/vendor/vsrc/glass-surface'
 import { Skeleton } from '../components/vendor/vsrc/skeleton'
+import { useAuth } from '../lib/auth'
 
 // ========================================================================================
 // READINESS SCORE FORMULA:
@@ -207,11 +208,13 @@ function Heatmap({ days }: { days: { date: string; count: number; level: number 
 }
 
 export default function StatsPage() {
+  const auth = useAuth()
   const [stats, setStats] = useState<StatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (auth.enabled && !auth.session) return
     let active = true
     api.stats()
       .then((data) => {
@@ -229,7 +232,11 @@ export default function StatsPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [auth.enabled, auth.session])
+
+  if (auth.enabled && !auth.session) {
+    return <div className="shell max-w-xl py-16 text-chalk"><h1 className="text-3xl font-semibold">Your expedition log</h1><p className="mt-3 leading-7 text-muted">Sign in to see your saved lessons, practice, and progress across devices.</p><Link to="/sign-in?next=%2Fstats" className="mt-6 inline-flex rounded-lg bg-violet-500 px-4 py-3 text-sm font-semibold text-white">Sign in to view progress</Link></div>
+  }
 
   if (loading) {
     return (

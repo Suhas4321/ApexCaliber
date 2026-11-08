@@ -9,6 +9,7 @@ import { useGrimoire } from '../lib/grimoire'
 import { currentQuest, questUrl } from '../lib/journey'
 import { DifficultyBadge, Kbd } from './ui'
 import { GlassSurface } from './vendor/vsrc/glass-surface'
+import { hostedAuthEnabled } from '../lib/auth'
 
 interface Item {
   id: string
@@ -104,7 +105,7 @@ export default function CommandPalette() {
       { id: 'journey', group: 'Actions', label: 'Journey map', icon: <Map size={16} />, haystack: 'journey dashboard home constellation map', run: close(() => navigate('/')) },
       { id: 'finder', group: 'Actions', label: 'Pattern Finder', detail: 'Which pattern is this problem?', icon: <Compass size={16} />, haystack: 'pattern finder which pattern flowchart decide', run: close(() => navigate('/finder')) },
       { id: 'grimoire', group: 'Actions', label: 'Open the Grimoire', detail: 'Revision sheets', icon: <BookMarked size={16} />, haystack: 'grimoire cheat sheet revision notes pitch', run: close(() => openGrimoire()) },
-      { id: 'playground', group: 'Actions', label: 'Playground', detail: 'Trace any code', icon: <FlaskConical size={16} />, haystack: 'playground trace visualize code', run: close(() => navigate('/playground')) },
+      ...(!hostedAuthEnabled ? [{ id: 'playground', group: 'Actions' as const, label: 'Playground', detail: 'Trace any code', icon: <FlaskConical size={16} />, haystack: 'playground trace visualize code', run: close(() => navigate('/playground')) }] : []),
       { id: 'theme', group: 'Actions', label: 'Switch theme', detail: 'Cycle theme (Dark / Light / System)', icon: <Moon size={16} />, haystack: 'theme dark light mode system night expedition alpine morning', run: close(() => window.dispatchEvent(new Event('pf-toggle-theme'))) },
     ]
     const worldItems: Item[] = (worlds ?? []).map((w) => ({

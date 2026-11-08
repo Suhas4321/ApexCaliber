@@ -1,6 +1,8 @@
 # Public launch and student accounts
 
-**Status: architecture and release plan, not an implemented login system.** ApexCaliber currently works as a local, single-learner application. Do not put the current FastAPI server on a public address or treat the existing PostgreSQL option as multi-user support.
+**Status:** The account foundation implements managed email sign-in, verified API identity, owner-keyed progress tables, and a hosted mode for a concept-learning beta. It has not been connected to a real Supabase project or deployed. The code runner remains deliberately disabled in hosted mode. Do not put the local FastAPI server on a public address.
+
+The inventory below records the risks identified in the original local application. The implementation resolves the identity and backend ownership foundation, keeps admin routes out of hosted mode, and disables public execution; the remaining launch gates still apply.
 
 ## Product decision
 
@@ -8,7 +10,7 @@ Let visitors browse the homepage, citadels, and concept lessons without an accou
 
 For the first public release, use **Supabase Auth** for email magic-link sign-in, then add Google sign-in if students ask for it. Keep FastAPI as the application API and use Supabase PostgreSQL as the durable database. Do not build password storage, reset flows, or session signing from scratch. The existing `DATABASE_URL` support is only a database connection; it does not provide authentication or data isolation. Supabase's [React quickstart](https://supabase.com/docs/guides/auth/quickstarts/react) covers the Vite client and its publishable key. The key is public by design; a service-role key or JWT signing secret must never be placed in `VITE_` variables or the browser.
 
-## What the repository needs before public traffic
+## Baseline inventory and public requirements
 
 | Area | Current behavior | Required public behavior |
 | --- | --- | --- |

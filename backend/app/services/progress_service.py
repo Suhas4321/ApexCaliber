@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.models import Progress, Question, utcnow
+from app.auth import LOCAL_USER_ID
 from app.schemas import ProgressOut, QuestionSummary
 from app.services.spaced_repetition import rust_level
 
@@ -11,10 +12,10 @@ def leetcode_url(question: Question) -> str:
     return f"https://leetcode.com/problems/{question.slug}/"
 
 
-def get_or_create_progress(session: Session, slug: str) -> Progress:
-    progress = session.get(Progress, slug)
+def get_or_create_progress(session: Session, slug: str, user_id: str = LOCAL_USER_ID) -> Progress:
+    progress = session.get(Progress, (user_id, slug))
     if progress is None:
-        progress = Progress(question_slug=slug, drills_passed=[])
+        progress = Progress(user_id=user_id, question_slug=slug, drills_passed=[])
         session.add(progress)
     return progress
 

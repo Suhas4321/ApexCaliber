@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_session
+from app.auth import optional_student
+from app.config import settings
 from app.models import Draft, PitchNote, Progress, Question, Submission, World, utcnow
 from app.schemas import (
     CheatSheetOut,
@@ -23,13 +25,13 @@ router = APIRouter(prefix="/api", tags=["worlds"])
 
 
 @router.get("/worlds", response_model=list[WorldOut])
-def list_worlds(citadel_id: str | None = None, session: Session = Depends(get_session)):
+def list_worlds(citadel_id: str | None = None, session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     now = utcnow()
     stmt = select(World).options(selectinload(World.questions)).order_by(World.id)
     if citadel_id:
         stmt = stmt.where(World.citadel_id == citadel_id)
     worlds = session.scalars(stmt).all()
-    progress = {p.question_slug: p for p in session.scalars(select(Progress))}
+    progress = {p.question_slug: p for p in session.scalars(select(Progress).where(Progress.user_id == (user_id or "")))}
 
     out = []
     for w in worlds:
@@ -58,13 +60,14 @@ def list_worlds(citadel_id: str | None = None, session: Session = Depends(get_se
 
 
 @router.get("/review", response_model=ReviewOut)
-def review_queue(session: Session = Depends(get_session)):
+def review_queue(session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     now = utcnow()
     rows = session.execute(
         select(Progress, Question, World)
         .join(Question, Question.slug == Progress.question_slug)
         .join(World, World.id == Question.world_id)
         .where(Progress.next_review_at.is_not(None))
+        .where(Progress.user_id == (user_id or ""))
         .order_by(Progress.next_review_at)
     ).all()
 
@@ -79,14 +82,14 @@ def review_queue(session: Session = Depends(get_session)):
 
     rusting = [
         {"world_id": w.id, "world_name": w.name, "rust": w.rust, "last_practiced_at": w.last_practiced_at}
-        for w in list_worlds(citadel_id=None, session=session)
+        for w in list_worlds(citadel_id=None, session=session, user_id=user_id)
         if w.rust in ("dusty", "rusting", "rusted")
     ]
     return ReviewOut(due=due, upcoming=upcoming[:10], rusting_worlds=rusting)
 
 
 @router.get("/worlds/{world_id}/cheatsheet", response_model=CheatSheetOut)
-def world_cheatsheet(world_id: int, session: Session = Depends(get_session)):
+def world_cheatsheet(world_id: int, session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     """10-minute revision sheet: every pattern's triggers and complexity, plus the learner's own
     pitches and working code for each question they've solved or studied."""
     world = session.get(World, world_id)
@@ -102,22 +105,22 @@ def world_cheatsheet(world_id: int, session: Session = Depends(get_session)):
             trigger_keywords=c["statement"]["trigger_keywords"], key_insight=c["concept"]["key_insight"],
             time=c["solution"]["time"], space=c["solution"]["space"],
         ))
-        progress = session.get(Progress, q.slug)
+        progress = session.get(Progress, (user_id, q.slug)) if user_id else None
         if not progress or not (progress.solved or progress.studied_solution):
             continue
         passing = session.scalars(
             select(Submission)
-            .where(Submission.question_slug == q.slug, Submission.target == "main", Submission.passed)
+            .where(Submission.user_id == user_id, Submission.question_slug == q.slug, Submission.target == "main", Submission.passed)
             .order_by(Submission.created_at.desc())
         ).first()
-        draft = session.get(Draft, (q.slug, "main"))
+        draft = session.get(Draft, (user_id, q.slug, "main"))
         if passing:
             code, source = passing.code, "passing_submission"
         elif draft and draft.code.strip():
             code, source = draft.code, "draft"
         else:
             code, source = c["solution"]["code"], "reference"
-        pitch = session.get(PitchNote, q.slug)
+        pitch = session.get(PitchNote, (user_id, q.slug))
         solved.append(CheatSheetSolved(
             slug=q.slug, lc=q.lc, title=q.title, difficulty=q.difficulty, confidence=progress.confidence,
             pitch=PitchOut.model_validate(pitch, from_attributes=True) if pitch else PitchOut(),
@@ -131,17 +134,20 @@ def world_cheatsheet(world_id: int, session: Session = Depends(get_session)):
 
 @router.get("/coach/status")
 def coach_status():
+    if settings.app_mode == "hosted":
+        return {"enabled": False, "provider": None, "model": None}
     return ai_coach.status()
 
 
 @router.get("/activity")
-def activity(days: int = 371, session: Session = Depends(get_session)):
+def activity(days: int = 371, session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     """Every code run in the last `days` days (UTC timestamps), for streaks and the heatmap.
     The client buckets them by its own local date."""
     since = utcnow() - timedelta(days=days)
     rows = session.execute(
         select(Submission.created_at, Submission.target, Submission.passed, Submission.question_slug)
         .where(Submission.created_at >= since)
+        .where(Submission.user_id == (user_id or ""))
         .order_by(Submission.created_at)
     ).all()
     return {

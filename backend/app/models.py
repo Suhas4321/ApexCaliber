@@ -91,8 +91,9 @@ class ChallengePrerequisite(Base):
 
 
 class LessonProgress(Base):
-    __tablename__ = "lesson_progress"
+    __tablename__ = "student_lesson_progress"
 
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), primary_key=True)
     passed_checks: Mapped[list] = mapped_column(JSON, default=list)
     mastered: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -100,8 +101,9 @@ class LessonProgress(Base):
 
 
 class Progress(Base):
-    __tablename__ = "progress"
+    __tablename__ = "student_progress"
 
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     question_slug: Mapped[str] = mapped_column(ForeignKey("questions.slug"), primary_key=True)
     concept_done: Mapped[bool] = mapped_column(Boolean, default=False)
     quiz_passed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -121,8 +123,9 @@ class Progress(Base):
 
 
 class PitchNote(Base):
-    __tablename__ = "pitch_notes"
+    __tablename__ = "student_pitch_notes"
 
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     question_slug: Mapped[str] = mapped_column(ForeignKey("questions.slug"), primary_key=True)
     brute_force: Mapped[str] = mapped_column(Text, default="")
     trigger: Mapped[str] = mapped_column(Text, default="")
@@ -134,8 +137,9 @@ class PitchNote(Base):
 class Draft(Base):
     """Latest code the user typed for a target ('main' or 'drill:<n>')."""
 
-    __tablename__ = "drafts"
+    __tablename__ = "student_drafts"
 
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     question_slug: Mapped[str] = mapped_column(ForeignKey("questions.slug"), primary_key=True)
     target: Mapped[str] = mapped_column(String(32), primary_key=True)
     language: Mapped[str] = mapped_column(String(16), default="python")
@@ -144,9 +148,10 @@ class Draft(Base):
 
 
 class Submission(Base):
-    __tablename__ = "submissions"
+    __tablename__ = "student_submissions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
     question_slug: Mapped[str] = mapped_column(ForeignKey("questions.slug"), index=True)
     target: Mapped[str] = mapped_column(String(32))
     language: Mapped[str] = mapped_column(String(16), default="python")
@@ -155,3 +160,11 @@ class Submission(Base):
     passed_count: Mapped[int] = mapped_column(Integer)
     total_count: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class SystemDesignCompletion(Base):
+    __tablename__ = "student_system_design_completion"
+
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    assignment_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    completed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

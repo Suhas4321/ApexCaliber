@@ -24,6 +24,7 @@ import LeetCodeRightPanel from '../components/workspace/LeetCodeRightPanel'
 import ResizableSplit from '../components/workspace/ResizableSplit'
 import JourneyPlayer from '../features/journey/JourneyPlayer'
 import { useGrimoire } from '../lib/grimoire'
+import { hostedAuthEnabled } from '../lib/auth'
 import { precomputeTraceNarration } from '../lib/narrator/index.ts'
 import { useDraft } from '../lib/useDraft'
 
@@ -101,7 +102,7 @@ function QuestionWorkspace() {
       .catch((e) => { if (active) setError(e.message) })
 
     // Preload demo trace so the Visualizer tab is immediately interactive
-    api
+    if (!hostedAuthEnabled) api
       .demoTrace(slug)
       .then((res) => {
         if (active && res.trace?.steps?.length) {
@@ -149,6 +150,10 @@ function QuestionWorkspace() {
   }
 
   const runCode = async (customArgs?: unknown, switchToViz = false) => {
+    if (hostedAuthEnabled) {
+      setRunError('Code execution is paused on the hosted site until the isolated runner is ready.')
+      return
+    }
     if (!question?.content) return
     setRunning(true)
     setRunError(null)
@@ -270,8 +275,8 @@ function QuestionWorkspace() {
         </nav>
         <div className="question-tools">
           {workspaceStep === 'code' && <div className="question-code-tools flex items-center gap-2">
-            <Button className="h-7 px-3 text-xs" onClick={() => runCode()} disabled={running}><Play size={12} />{running ? 'Running…' : 'Run'}</Button>
-            <button className="question-icon" title="Run and visualize" aria-label="Run and visualize" onClick={() => runCode(undefined, true)} disabled={running}><Eye size={15} /></button>
+            <Button className="h-7 px-3 text-xs" onClick={() => runCode()} disabled={running || hostedAuthEnabled}><Play size={12} />{running ? 'Running…' : 'Run'}</Button>
+            <button className="question-icon" title="Run and visualize" aria-label="Run and visualize" onClick={() => runCode(undefined, true)} disabled={running || hostedAuthEnabled}><Eye size={15} /></button>
             <button className="question-icon" title={leftCollapsed ? 'Show problem' : 'Expand editor'} aria-label={leftCollapsed ? 'Show problem' : 'Expand editor'} onClick={() => setLeftCollapsed(c => !c)}>{leftCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}</button>
           </div>}
           <details className="question-resource-menu">
@@ -285,6 +290,7 @@ function QuestionWorkspace() {
           <ThemeToggle compact />
         </div>
       </header>
+      {hostedAuthEnabled && workspaceStep === 'code' && <p className="border-b border-amber/30 bg-amber/10 px-4 py-2 text-xs text-amber" role="status">You can read and draft here. Running code is paused on the hosted site until a secure practice worker is ready.</p>}
       {!content ? (
         <div className="p-8">
           <ErrorNote message="This question's content is not yet available." />
@@ -328,7 +334,7 @@ function QuestionWorkspace() {
       ) : (
 
         <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
-          <div className="mobile-code-nav"><button aria-pressed={mobilePane === 'problem'} onClick={() => setMobilePane('problem')}>Problem & help</button><button aria-pressed={mobilePane === 'editor'} onClick={() => setMobilePane('editor')}>Code & tests</button><button disabled={running} onClick={() => { setMobilePane('editor'); runCode() }}>{running ? 'Running…' : 'Run code'}</button></div>
+          <div className="mobile-code-nav"><button aria-pressed={mobilePane === 'problem'} onClick={() => setMobilePane('problem')}>Problem & help</button><button aria-pressed={mobilePane === 'editor'} onClick={() => setMobilePane('editor')}>Code & tests</button><button disabled={running || hostedAuthEnabled} onClick={() => { setMobilePane('editor'); runCode() }}>{running ? 'Running…' : 'Run code'}</button></div>
           <ResizableSplit
             className={`question-code-split ${mobilePane}-view`}
             direction="horizontal"

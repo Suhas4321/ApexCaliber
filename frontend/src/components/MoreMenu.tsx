@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useBackgroundEffects, type BackgroundEffectLevel } from './effects'
 import { Button } from './ui'
+import { hostedAuthEnabled } from '../lib/auth'
 
 type Status = Awaited<ReturnType<typeof api.backupStatus>>
 
@@ -30,7 +31,7 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
     if (open) {
       document.addEventListener('mousedown', onDocClick)
       setMessage(null)
-      api.backupStatus().then(setStatus).catch((e) => setMessage(e.message))
+      if (!hostedAuthEnabled) api.backupStatus().then(setStatus).catch((e) => setMessage(e.message))
     }
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [open])
@@ -120,7 +121,7 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
                 <Compass size={14} />
                 <span>Pattern Finder</span>
               </Link>
-              <Link
+              {!hostedAuthEnabled && <Link
                 to="/playground"
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
@@ -131,7 +132,7 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
               >
                 <FlaskConical size={14} />
                 <span>Playground</span>
-              </Link>
+              </Link>}
               <Link
                 to="/stats"
                 onClick={() => setOpen(false)}
@@ -166,7 +167,7 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
             </div>
 
             {/* Backup & System Section */}
-            <div className="flex flex-col gap-2">
+            {!hostedAuthEnabled && <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1.5 px-2 text-2xs font-semibold uppercase tracking-wider text-faint">
                 <HardDriveDownload size={12} />
                 <span>Local Snapshot Backup</span>
@@ -193,7 +194,7 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
                 </Button>
               </div>
               {message && <p className="px-2 text-2xs text-cyan">{message}</p>}
-            </div>
+            </div>}
           </motion.div>
         )}
       </AnimatePresence>

@@ -3,14 +3,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import func, inspect, select, text
+from sqlalchemy import MetaData, Table, func, inspect, select
 
+from app.auth import LOCAL_USER_ID, validate_hosted_settings
 from app.config import PROJECT_DIR, settings
 from app.db import Base, SessionLocal, engine
-from app.models import Progress
-from app.routers import backup, learning, playground, questions, stats, worlds
+from app.models import Draft, LessonProgress, PitchNote, Progress, Submission
+from app.routers import backup, learning, playground, questions, stats, student, worlds
 from app.services import backup_manager
 from app.services.content_loader import sync_content
 from app.services.learning_paths import sync_learning_paths
@@ -22,27 +24,36 @@ FRONTEND_DIST = PROJECT_DIR / "frontend" / "dist"
 
 
 def startup() -> None:
+    validate_hosted_settings()
     Base.metadata.create_all(engine)
-    try:
-        with engine.connect() as conn:
-            cols = {col["name"] for col in inspect(conn).get_columns("progress")}
-            if "first_try_pass" not in cols:
-                conn.execute(text("ALTER TABLE progress ADD COLUMN first_try_pass BOOLEAN"))
-            if "time_spent_seconds" not in cols:
-                conn.execute(text("ALTER TABLE progress ADD COLUMN time_spent_seconds INTEGER"))
-            conn.commit()
-    except Exception as e:
-        log.warning("Column migration check: %s", e)
     with SessionLocal() as session:
         sync_content(session, settings.content_dir)
         sync_learning_paths(session, settings.content_dir)
-        # Fresh database (new machine, deleted SQLite file, switched to Supabase) but a backup
-        # exists: bring user data back automatically. Otherwise refresh the backup.
-        has_progress = session.scalar(select(func.count()).select_from(Progress)) > 0
-        if not has_progress and backup_manager.backup_path().exists():
+        if settings.app_mode == "local":
+            # Old single-user tables remain untouched. Copy once into owner-keyed tables;
+            # never import legacy local data into a hosted account automatically.
+            existing = set(inspect(engine).get_table_names())
+            for old_name, model in (
+                ("progress", Progress), ("lesson_progress", LessonProgress),
+                ("pitch_notes", PitchNote), ("drafts", Draft), ("submissions", Submission),
+            ):
+                if old_name not in existing or session.scalar(select(func.count()).select_from(model)):
+                    continue
+                old = Table(old_name, MetaData(), autoload_with=engine)
+                columns = {column.name for column in model.__table__.columns}
+                for row in session.execute(select(old)).mappings():
+                    payload = {key: value for key, value in row.items() if key in columns}
+                    session.add(model(user_id=LOCAL_USER_ID, **payload))
+                session.commit()
+        # Only restore a legacy local backup when none of the new local-owned tables has data.
+        has_user_data = any(
+            session.scalar(select(func.count()).select_from(model).where(model.user_id == LOCAL_USER_ID))
+            for model in (Progress, LessonProgress, PitchNote, Draft, Submission)
+        )
+        if settings.app_mode == "local" and not has_user_data and backup_manager.backup_path().exists():
             counts = backup_manager.restore_from_file(session)
             log.info("restored user data from backup: %s", counts)
-        elif has_progress:
+        elif settings.app_mode == "local" and has_user_data:
             backup_manager.auto_dump(session)
 
 
@@ -52,10 +63,12 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="PatternForge DSA", lifespan=lifespan)
+app = FastAPI(title="ApexCaliber", lifespan=lifespan)
+if settings.app_mode == "local":
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=[settings.public_origin] if settings.app_mode == "hosted" else settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -63,7 +76,9 @@ app.include_router(worlds.router)
 app.include_router(learning.router)
 app.include_router(questions.router)
 app.include_router(stats.router)
-app.include_router(backup.router)
+app.include_router(student.router)
+if settings.app_mode == "local":
+    app.include_router(backup.router)
 app.include_router(playground.router)
 
 
@@ -75,6 +90,8 @@ def health():
 @app.post("/api/content/reload")
 def reload_content():
     """Re-read content/ without restarting the server (handy while editing question files)."""
+    if settings.app_mode != "local":
+        raise HTTPException(404)
     with SessionLocal() as session:
         report = sync_content(session, settings.content_dir)
         sync_learning_paths(session, settings.content_dir)

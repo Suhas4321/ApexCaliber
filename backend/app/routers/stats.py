@@ -12,6 +12,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.auth import optional_student
 from app.models import Progress, Question, Submission, World, utcnow
 from app.services.spaced_repetition import rust_level
 
@@ -110,7 +111,7 @@ def calculate_streak(active_dates: set[str], today_str: str) -> int:
 
 
 @router.get("")
-def get_stats(session: Session = Depends(get_session)):
+def get_stats(session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     now = utcnow()
     today_date = now.date()
     today_str = today_date.strftime("%Y-%m-%d")
@@ -118,7 +119,7 @@ def get_stats(session: Session = Depends(get_session)):
     # 1. Fetch all questions and worlds
     questions = session.execute(select(Question)).scalars().all()
     worlds = session.execute(select(World).order_by(World.id)).scalars().all()
-    progress_rows = session.execute(select(Progress)).scalars().all()
+    progress_rows = session.execute(select(Progress).where(Progress.user_id == (user_id or ""))).scalars().all()
     progress_by_slug = {p.question_slug: p for p in progress_rows}
 
     world_by_id = {w.id: w for w in worlds}
@@ -314,6 +315,7 @@ def get_stats(session: Session = Depends(get_session)):
     # 6. Activity for past 20 weeks (140 days) & this week (7 days) + Streak
     submissions = session.execute(
         select(Submission.id, Submission.created_at, Submission.passed, Submission.target, Submission.question_slug, Submission.passed_count, Submission.total_count)
+        .where(Submission.user_id == (user_id or ""))
         .order_by(desc(Submission.created_at))
     ).all()
 

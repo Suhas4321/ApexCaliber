@@ -18,6 +18,9 @@ import NotFound from './pages/NotFound'
 import LearningPathPage from './pages/LearningPathPage'
 import LessonPage from './pages/LessonPage'
 import { Spinner } from './components/ui'
+import { AuthProvider, hostedAuthEnabled } from './lib/auth'
+import SignInPage from './pages/SignInPage'
+import AuthCallbackPage from './pages/AuthCallbackPage'
 
 // Lazy-load heavier interactive pages
 const QuestionPage = lazy(() => import('./pages/QuestionPage'))
@@ -41,11 +44,13 @@ const router = createBrowserRouter([
       { path: 'learn/:citadelId', element: <LearningPathPage /> },
       { path: 'lesson/:lessonId', element: <LessonPage /> },
       { path: 'q/:slug', element: withSpinner(<QuestionPage />) },
-      { path: 'playground', element: withSpinner(<Playground />) },
+      { path: 'playground', element: hostedAuthEnabled ? <div className="shell py-16 text-chalk">The coding playground will return when its isolated runner is ready.</div> : withSpinner(<Playground />) },
       { path: 'finder', element: <PatternFinder /> },
       { path: 'resume-grill', element: withSpinner(<ResumeGrill />) },
       { path: 'system-design', element: withSpinner(<SystemDesignPage />) },
       { path: 'stats', element: withSpinner(<StatsPage />) },
+      { path: 'sign-in', element: <SignInPage /> },
+      { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: '*', element: <NotFound /> },
     ],
   },
@@ -53,6 +58,6 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider><RouterProvider router={router} /></AuthProvider>
   </StrictMode>,
 )

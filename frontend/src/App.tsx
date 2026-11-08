@@ -11,6 +11,7 @@ import { ThemeToggle } from './components/effects'
 import { GlassSurface } from './components/vendor/vsrc/glass-surface'
 import { citadelForWorld, getCitadel } from './lib/citadels'
 import { GrimoireProvider, useGrimoire } from './lib/grimoire'
+import { hostedAuthEnabled, useAuth } from './lib/auth'
 
 const itemClass = (active: boolean) =>
   `relative z-10 flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-medium transition-colors ${
@@ -115,6 +116,7 @@ function BreadcrumbBar() {
 
 function TopBar() {
   const openGrimoire = useGrimoire()
+  const auth = useAuth()
   const { pathname } = useLocation()
   const worldMatch = /^\/world\/(\d+)/.exec(pathname)
   const onJourney = pathname === '/' || pathname.startsWith('/citadel') || pathname.startsWith('/world') || pathname.startsWith('/q/') || pathname.startsWith('/learn/') || pathname.startsWith('/lesson/')
@@ -166,16 +168,16 @@ function TopBar() {
                 <Compass size={14} /> <span>Finder</span>
               </NavLink>
             </DockItem>
-            <DockItem active={pathname === '/playground'}>
+            {!hostedAuthEnabled && <DockItem active={pathname === '/playground'}>
               <NavLink to="/playground" aria-label="Playground" className={({ isActive }) => itemClass(isActive)}>
                 <FlaskConical size={14} /> <span>Playground</span>
               </NavLink>
-            </DockItem>
+            </DockItem>}
           </nav>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            <TopBarHUD />
+            {(!auth.enabled || auth.session) && <TopBarHUD />}
             <button
               onClick={openCommandPalette}
               aria-label="Search (Ctrl+K)"
@@ -187,16 +189,19 @@ function TopBar() {
             </button>
             <ThemeToggle compact />
             <MoreMenu onOpenGrimoire={() => openGrimoire(worldMatch ? Number(worldMatch[1]) : undefined)} />
-            <Link
-              to="/stats"
-              aria-label="View profile stats"
-              title="Suhas · Engineer Profile"
-              className="hidden size-8 rounded-full bg-gradient-to-br from-violet-400 to-cyan-400 p-[2px] transition-transform hover:scale-105 active:scale-95 sm:block"
+            {auth.enabled && !auth.session ? <Link
+              to={`/sign-in?next=${encodeURIComponent(pathname)}`}
+              className="inline-flex h-8 items-center rounded-lg border border-violet-400/40 bg-violet-400/10 px-3 text-xs font-semibold text-violet-200 hover:bg-violet-400/20"
+            >Sign in</Link> : <Link
+              to={auth.enabled ? `/sign-in?next=${encodeURIComponent(pathname)}` : '/stats'}
+              aria-label={auth.enabled ? (auth.session ? 'Your account' : 'Sign in to save progress') : 'View profile stats'}
+              title={auth.enabled ? (auth.session?.user.email || 'Sign in to save progress') : 'Expedition Log'}
+              className="flex size-8 rounded-full bg-gradient-to-br from-violet-400 to-cyan-400 p-[2px] transition-transform hover:scale-105 active:scale-95"
             >
               <div className="grid size-full place-items-center rounded-full bg-panel text-[11px] font-bold text-chalk">
-                SD
+                {auth.enabled ? (auth.session?.user.email?.slice(0, 2).toUpperCase() || 'IN') : 'AC'}
               </div>
-            </Link>
+            </Link>}
           </div>
         </div>
 
@@ -209,8 +214,13 @@ function TopBar() {
 
 function AppShell() {
   const { pathname } = useLocation()
+  const auth = useAuth()
   // Hide the website header on full-screen IDE routes (/q/:slug and /playground)
   const isFullscreenIde = pathname.startsWith('/q/') || pathname === '/playground'
+
+  if (auth.enabled && auth.loading) {
+    return <div className="grid min-h-screen place-items-center bg-void text-muted" role="status">Loading your learning path…</div>
+  }
 
   return (
     <div className={isFullscreenIde ? 'h-screen w-screen overflow-hidden bg-void text-chalk' : 'min-h-screen bg-void text-chalk'}>

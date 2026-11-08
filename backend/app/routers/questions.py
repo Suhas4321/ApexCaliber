@@ -3,6 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.auth import optional_student, require_student
+from app.config import settings
 from app.models import Draft, PitchNote, Progress, Question, Submission, World, utcnow
 from app.runner.dispatcher import dispatch_run
 from app.runner.python_runner import run_python
@@ -42,14 +44,14 @@ def _content(question: Question) -> dict:
 
 
 @router.get("/{slug}", response_model=QuestionDetail)
-def get_question(slug: str, session: Session = Depends(get_session)):
+def get_question(slug: str, session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     question = _question(session, slug)
     now = utcnow()
     ordered = session.scalars(select(Question.slug).order_by(Question.world_id, Question.position)).all()
     idx = ordered.index(slug)
-    pitch = session.get(PitchNote, slug)
-    drafts = {d.target: d.code for d in session.scalars(select(Draft).where(Draft.question_slug == slug))}
-    summary = question_summary(question, session.get(Progress, slug), now)
+    pitch = session.get(PitchNote, (user_id, slug)) if user_id else None
+    drafts = {d.target: d.code for d in session.scalars(select(Draft).where(Draft.user_id == (user_id or ""), Draft.question_slug == slug))}
+    summary = question_summary(question, session.get(Progress, (user_id, slug)) if user_id else None, now)
     world = session.get(World, question.world_id)
     return QuestionDetail(
         **summary.model_dump(),
@@ -60,7 +62,7 @@ def get_question(slug: str, session: Session = Depends(get_session)):
         drafts=drafts,
         prev_slug=ordered[idx - 1] if idx > 0 else None,
         next_slug=ordered[idx + 1] if idx + 1 < len(ordered) else None,
-        required_lessons=required_lessons(session, slug),
+        required_lessons=required_lessons(session, slug, user_id),
     )
 
 
@@ -76,17 +78,19 @@ def _target_spec(content: dict, target: str) -> tuple[dict, list[dict], str, int
     return d["function"], d["tests"], d["solution"], 0
 
 
-def _save_draft(session: Session, slug: str, target: str, code: str) -> None:
-    draft = session.get(Draft, (slug, target)) or Draft(question_slug=slug, target=target)
+def _save_draft(session: Session, slug: str, target: str, code: str, user_id: str) -> None:
+    draft = session.get(Draft, (user_id, slug, target)) or Draft(user_id=user_id, question_slug=slug, target=target)
     draft.code = code
     session.add(draft)
 
 
 @router.post("/{slug}/run", response_model=RunOut)
-def run_code(slug: str, body: RunIn, session: Session = Depends(get_session)):
+def run_code(slug: str, body: RunIn, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
+    if settings.app_mode == "hosted":
+        raise HTTPException(503, "Code execution is unavailable until isolated runners are deployed")
     question = _question(session, slug)
-    required = required_lessons(session, slug)
-    old_progress = session.get(Progress, slug)
+    required = required_lessons(session, slug, user_id)
+    old_progress = session.get(Progress, (user_id, slug))
     if required and not all(item["mastered"] for item in required) and not (old_progress and old_progress.solved):
         raise HTTPException(409, "Complete the linked concept lessons before this challenge")
     content = _content(question)
@@ -127,11 +131,11 @@ def run_code(slug: str, body: RunIn, session: Session = Depends(get_session)):
     passed_count = sum(r["passed"] for r in results)
     passed = result["compile_error"] is None and passed_count == len(results) and bool(results)
 
-    _save_draft(session, slug, body.target, body.code)
-    progress = get_or_create_progress(session, slug)
+    _save_draft(session, slug, body.target, body.code, user_id)
+    progress = get_or_create_progress(session, slug, user_id)
     if body.custom_args is None:
         session.add(Submission(
-            question_slug=slug, target=body.target, language=body.language, code=body.code,
+            user_id=user_id, question_slug=slug, target=body.target, language=body.language, code=body.code,
             passed=passed, passed_count=passed_count, total_count=len(results),
         ))
         if body.target == "main":
@@ -159,16 +163,16 @@ def run_code(slug: str, body: RunIn, session: Session = Depends(get_session)):
 
 
 @router.put("/{slug}/draft", status_code=204)
-def save_draft(slug: str, body: DraftIn, session: Session = Depends(get_session)):
+def save_draft(slug: str, body: DraftIn, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
     _question(session, slug)
-    _save_draft(session, slug, body.target, body.code)
+    _save_draft(session, slug, body.target, body.code, user_id)
     session.commit()
 
 
 @router.patch("/{slug}/progress", response_model=ProgressOut)
-def patch_progress(slug: str, body: ProgressPatch, session: Session = Depends(get_session)):
+def patch_progress(slug: str, body: ProgressPatch, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
     _question(session, slug)
-    progress = get_or_create_progress(session, slug)
+    progress = get_or_create_progress(session, slug, user_id)
     for field, value in body.model_dump(exclude_none=True).items():
         if field == "hints_used":
             value = max(progress.hints_used or 0, value)
@@ -179,9 +183,9 @@ def patch_progress(slug: str, body: ProgressPatch, session: Session = Depends(ge
 
 
 @router.post("/{slug}/confidence", response_model=ProgressOut)
-def rate_confidence(slug: str, body: ConfidenceIn, session: Session = Depends(get_session)):
+def rate_confidence(slug: str, body: ConfidenceIn, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
     _question(session, slug)
-    progress = get_or_create_progress(session, slug)
+    progress = get_or_create_progress(session, slug, user_id)
     if not (progress.solved or progress.studied_solution):
         raise HTTPException(409, "solve the question (or study the solution) before rating it")
     is_review = progress.confidence is not None
@@ -197,9 +201,9 @@ def rate_confidence(slug: str, body: ConfidenceIn, session: Session = Depends(ge
 
 
 @router.put("/{slug}/pitch", response_model=PitchOut)
-def save_pitch(slug: str, body: PitchIn, session: Session = Depends(get_session)):
+def save_pitch(slug: str, body: PitchIn, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
     _question(session, slug)
-    pitch = session.get(PitchNote, slug) or PitchNote(question_slug=slug)
+    pitch = session.get(PitchNote, (user_id, slug)) or PitchNote(user_id=user_id, question_slug=slug)
     for field, value in body.model_dump().items():
         setattr(pitch, field, value)
     session.add(pitch)
@@ -208,16 +212,16 @@ def save_pitch(slug: str, body: PitchIn, session: Session = Depends(get_session)
     return PitchOut.model_validate(pitch, from_attributes=True)
 
 
-def _latest_main_code(session: Session, slug: str) -> str:
+def _latest_main_code(session: Session, slug: str, user_id: str) -> str:
     """The learner's most recent passing solution, else their latest draft."""
     passing = session.scalars(
         select(Submission)
-        .where(Submission.question_slug == slug, Submission.target == "main", Submission.passed)
+        .where(Submission.user_id == user_id, Submission.question_slug == slug, Submission.target == "main", Submission.passed)
         .order_by(Submission.created_at.desc())
     ).first()
     if passing:
         return passing.code
-    draft = session.get(Draft, (slug, "main"))
+    draft = session.get(Draft, (user_id, slug, "main"))
     return draft.code if draft else ""
 
 
@@ -256,6 +260,8 @@ _DEMO_TRACE_CACHE: dict[str, dict] = {}
 @router.get("/{slug}/demo-trace")
 def get_demo_trace(slug: str, session: Session = Depends(get_session)):
     """Returns a cached execution trace of the reference solution on the default visualize_test."""
+    if settings.app_mode == "hosted":
+        raise HTTPException(503, "Execution traces are unavailable until isolated runners are deployed")
     if slug in _DEMO_TRACE_CACHE:
         return _DEMO_TRACE_CACHE[slug]
     question = _question(session, slug)
@@ -285,7 +291,9 @@ def get_demo_trace(slug: str, session: Session = Depends(get_session)):
 
 
 @router.post("/{slug}/ask-coach", response_model=CoachOut)
-def ask_coach(slug: str, body: CoachIn, session: Session = Depends(get_session)):
+def ask_coach(slug: str, body: CoachIn, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
+    if settings.app_mode == "hosted":
+        raise HTTPException(503, "AI coach is unavailable until usage limits are deployed")
     question = _question(session, slug)
     content = _content(question)
     out = CoachOut(enabled=ai_coach.provider() is not None,
@@ -298,7 +306,7 @@ def ask_coach(slug: str, body: CoachIn, session: Session = Depends(get_session))
             out.reply = ai_coach.ask(ai_coach.HINT_SYSTEM, prompt)
         else:
             pitch = (body.pitch or PitchIn()).model_dump()
-            code = _latest_main_code(session, slug) or body.code
+            code = _latest_main_code(session, slug, user_id) or body.code
             out.reply = ai_coach.ask(ai_coach.PITCH_SYSTEM, ai_coach.pitch_prompt(content, question.title, code, pitch))
     except ai_coach.CoachError as exc:
         out.error = str(exc)

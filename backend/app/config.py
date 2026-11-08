@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,6 +13,10 @@ class Settings(BaseSettings):
     # SQLite by default. For Supabase set e.g.
     # DATABASE_URL=postgresql+psycopg://postgres:<password>@db.<project>.supabase.co:5432/postgres
     database_url: str = f"sqlite:///{BACKEND_DIR / 'patternforge.db'}"
+    app_mode: Literal["local", "hosted"] = "local"
+    supabase_url: str = ""
+    supabase_jwt_audience: str = "authenticated"
+    public_origin: str = ""
 
     content_dir: Path = PROJECT_DIR / "content"
     backup_dir: Path = BACKEND_DIR / "backups"

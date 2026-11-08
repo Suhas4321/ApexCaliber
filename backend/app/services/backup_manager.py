@@ -1,8 +1,8 @@
 """Dump / restore of user data (progress, pitch notes, drafts, submissions) as JSON.
 
 The curriculum itself lives in content/ (in git), so a backup only needs what *you* created.
-Auto-dump runs after every write so a paused Supabase project or a deleted SQLite file never
-loses data. Restore replaces all user data with the dump's contents.
+Auto-dump is local-only. Restore replaces the local learner's data with the dump's contents;
+hosted accounts use managed PostgreSQL backups and never call these routes.
 """
 
 import json
@@ -16,6 +16,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.auth import LOCAL_USER_ID
 from app.models import Draft, Lesson, LessonProgress, PitchNote, Progress, Question, Submission, utcnow
 
 log = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ def _dict_to_row(model, data: dict):
         if value is not None and col.type.python_type is datetime:
             value = datetime.fromisoformat(value)
         kwargs[col.name] = value
+    kwargs["user_id"] = LOCAL_USER_ID
     return model(**kwargs)
 
 
@@ -59,11 +61,11 @@ def export_user_data(session: Session) -> dict:
     for name, model in USER_TABLES.items():
         if name == "submissions":
             # Keep the most recent submissions plus at least all passing submissions up to MAX_BACKUP_SUBMISSIONS
-            stmt = select(Submission).order_by(Submission.id.desc()).limit(MAX_BACKUP_SUBMISSIONS)
+            stmt = select(Submission).where(Submission.user_id == LOCAL_USER_ID).order_by(Submission.id.desc()).limit(MAX_BACKUP_SUBMISSIONS)
             rows = list(reversed(session.scalars(stmt).all()))
             tables_out[name] = [_row_to_dict(r) for r in rows]
         else:
-            tables_out[name] = [_row_to_dict(r) for r in session.scalars(select(model))]
+            tables_out[name] = [_row_to_dict(r) for r in session.scalars(select(model).where(model.user_id == LOCAL_USER_ID))]
     return {
         "format_version": FORMAT_VERSION,
         "exported_at": utcnow().isoformat(),
@@ -88,7 +90,7 @@ def dump_to_file(session: Session, backup_dir: Path | None = None) -> Path:
 
 
 def auto_dump(session: Session) -> None:
-    if not settings.auto_backup:
+    if settings.app_mode != "local" or not settings.auto_backup:
         return
     try:
         dump_to_file(session)
@@ -106,7 +108,7 @@ def import_user_data(session: Session, data: dict) -> dict[str, int]:
     counts: dict[str, int] = {}
     # Delete children first (all reference questions only, so order among them doesn't matter).
     for model in USER_TABLES.values():
-        session.execute(delete(model))
+        session.execute(delete(model).where(model.user_id == LOCAL_USER_ID))
     for name, model in USER_TABLES.items():
         if name == "lesson_progress":
             rows = [r for r in tables.get(name, []) if r.get("lesson_id") in known_lessons]

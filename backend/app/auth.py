@@ -1,0 +1,75 @@
+"""Verify Supabase identities at the API boundary; local mode keeps one local learner."""
+
+from functools import lru_cache
+from urllib.parse import urlparse
+from uuid import UUID
+
+import jwt
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.config import settings
+
+LOCAL_USER_ID = "local"
+bearer = HTTPBearer(auto_error=False)
+
+
+def validate_hosted_settings() -> None:
+    if settings.app_mode != "hosted":
+        return
+    supabase = urlparse(settings.supabase_url)
+    public = urlparse(settings.public_origin)
+    if supabase.scheme != "https" or not (supabase.hostname or "").endswith(".supabase.co") or supabase.path not in ("", "/"):
+        raise RuntimeError("Hosted mode requires a Supabase HTTPS project URL")
+    if public.scheme != "https" or not public.netloc or public.path or public.query or public.fragment:
+        raise RuntimeError("Hosted mode requires a plain HTTPS PUBLIC_ORIGIN without a path")
+    if not settings.database_url.startswith("postgresql+psycopg://"):
+        raise RuntimeError("Hosted mode requires a psycopg PostgreSQL DATABASE_URL")
+    if settings.auto_backup:
+        raise RuntimeError("Hosted mode requires AUTO_BACKUP=false; use managed database backups")
+
+
+@lru_cache(maxsize=1)
+def _jwks() -> jwt.PyJWKClient:
+    return jwt.PyJWKClient(
+        f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json",
+        cache_jwk_set=True,
+        lifespan=600,
+        timeout=5,
+    )
+
+
+def verify_access_token(token: str) -> str:
+    try:
+        key = _jwks().get_signing_key_from_jwt(token)
+        claims = jwt.decode(
+            token,
+            key.key,
+            algorithms=["ES256", "RS256"],
+            audience=settings.supabase_jwt_audience,
+            issuer=f"{settings.supabase_url.rstrip('/')}/auth/v1",
+            options={"require": ["exp", "iat", "iss", "sub", "aud"]},
+        )
+        # Supabase Auth user subjects are UUIDs; reject API-key JWTs and malformed identities.
+        user_id = str(UUID(claims["sub"]))
+        if claims.get("role") != "authenticated":
+            raise ValueError("not a student access token")
+        return user_id
+    except (jwt.PyJWTError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(401, "Invalid or expired session", headers={"WWW-Authenticate": "Bearer"}) from exc
+
+
+def optional_student(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> str | None:
+    if settings.app_mode == "local":
+        return LOCAL_USER_ID
+    if credentials is None:
+        return None
+    if credentials.scheme.lower() != "bearer":
+        raise HTTPException(401, "Bearer token required")
+    return verify_access_token(credentials.credentials)
+
+
+def require_student(user_id: str | None = Depends(optional_student)) -> str:
+    if user_id is None:
+        raise HTTPException(401, "Sign in to save your progress", headers={"WWW-Authenticate": "Bearer"})
+    return user_id

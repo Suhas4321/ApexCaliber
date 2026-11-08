@@ -2,10 +2,11 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.auth import LOCAL_USER_ID, optional_student, require_student
 from app.models import ChallengePrerequisite, LearningModule, Lesson, LessonPrerequisite, LessonProgress, Progress, Question, utcnow
 from app.services.backup_manager import auto_dump
 
@@ -16,8 +17,11 @@ class CheckAnswer(BaseModel):
     answer: int = Field(ge=0)
 
 
-def _mastered(session: Session) -> set[str]:
-    return set(session.scalars(select(LessonProgress.lesson_id).where(LessonProgress.mastered.is_(True))))
+def _mastered(session: Session, user_id: str | None = LOCAL_USER_ID) -> set[str]:
+    if user_id is None:
+        return set()
+    return set(session.scalars(select(LessonProgress.lesson_id).where(
+        LessonProgress.user_id == user_id, LessonProgress.mastered.is_(True))))
 
 
 def _ordered_prerequisites(session: Session, targets: list[str]) -> list[str]:
@@ -49,7 +53,7 @@ def _ordered_prerequisites(session: Session, targets: list[str]) -> list[str]:
     return order
 
 
-def required_lessons(session: Session, slug: str) -> list[dict]:
+def required_lessons(session: Session, slug: str, user_id: str | None = LOCAL_USER_ID) -> list[dict]:
     targets = session.scalars(
         select(ChallengePrerequisite.lesson_id)
         .where(ChallengePrerequisite.question_slug == slug)
@@ -60,7 +64,8 @@ def required_lessons(session: Session, slug: str) -> list[dict]:
         return []
     details = session.execute(
         select(Lesson.id, Lesson.title, LessonProgress.mastered)
-        .outerjoin(LessonProgress, LessonProgress.lesson_id == Lesson.id)
+        .outerjoin(LessonProgress, and_(LessonProgress.lesson_id == Lesson.id,
+                                        LessonProgress.user_id == (user_id or "")))
         .where(Lesson.id.in_(ordered))
     ).all()
     by_id = {lesson_id: {"id": lesson_id, "title": title, "mastered": bool(mastered)}
@@ -69,21 +74,23 @@ def required_lessons(session: Session, slug: str) -> list[dict]:
 
 
 @router.get("/learning-paths/summary")
-def learning_summary(session: Session = Depends(get_session)):
+def learning_summary(session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     total_concepts = session.scalar(select(func.count()).select_from(Lesson)) or 0
-    concepts_mastered = session.scalar(select(func.count()).select_from(LessonProgress).where(LessonProgress.mastered.is_(True))) or 0
+    concepts_mastered = session.scalar(select(func.count()).select_from(LessonProgress).where(
+        LessonProgress.user_id == (user_id or ""), LessonProgress.mastered.is_(True))) or 0
     total_challenges = session.scalar(select(func.count()).select_from(Question)) or 0
-    challenges_solved = session.scalar(select(func.count()).select_from(Progress).where(Progress.solved.is_(True))) or 0
+    challenges_solved = session.scalar(select(func.count()).select_from(Progress).where(
+        Progress.user_id == (user_id or ""), Progress.solved.is_(True))) or 0
     return {"concepts_mastered": concepts_mastered, "total_concepts": total_concepts,
             "challenges_solved": challenges_solved, "total_challenges": total_challenges}
 
 
 @router.get("/learning-paths/{citadel_id}")
-def learning_path(citadel_id: str, session: Session = Depends(get_session)):
+def learning_path(citadel_id: str, session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     modules = session.scalars(select(LearningModule).where(LearningModule.citadel_id == citadel_id).order_by(LearningModule.position)).all()
     if not modules:
         raise HTTPException(404, "No authored learning path for this citadel yet")
-    mastered = _mastered(session)
+    mastered = _mastered(session, user_id)
     edges = session.execute(select(LessonPrerequisite.lesson_id, LessonPrerequisite.prerequisite_id)).all()
     parents: dict[str, list[str]] = {}
     for lesson_id, parent in edges:
@@ -119,15 +126,15 @@ def learning_path(citadel_id: str, session: Session = Depends(get_session)):
 
 
 @router.get("/lessons/{lesson_id}")
-def lesson_detail(lesson_id: str, session: Session = Depends(get_session)):
+def lesson_detail(lesson_id: str, session: Session = Depends(get_session), user_id: str | None = Depends(optional_student)):
     lesson = session.get(Lesson, lesson_id)
     if not lesson:
         raise HTTPException(404, "Unknown lesson")
     parents = session.scalars(select(LessonPrerequisite.prerequisite_id).where(LessonPrerequisite.lesson_id == lesson_id)).all()
     prerequisite_chain = _ordered_prerequisites(session, list(parents))
     prerequisite_titles = dict(session.execute(select(Lesson.id, Lesson.title).where(Lesson.id.in_(prerequisite_chain))).all()) if prerequisite_chain else {}
-    mastered = _mastered(session)
-    progress = session.get(LessonProgress, lesson_id)
+    mastered = _mastered(session, user_id)
+    progress = session.get(LessonProgress, (user_id, lesson_id)) if user_id else None
     content = dict(lesson.content)
     content["checks"] = [{"prompt": item["prompt"], "choices": item["choices"]} for item in content["checks"]]
     module = session.get(LearningModule, lesson.module_id)
@@ -140,12 +147,12 @@ def lesson_detail(lesson_id: str, session: Session = Depends(get_session)):
 
 
 @router.post("/lessons/{lesson_id}/checks/{check_index}")
-def check_lesson(lesson_id: str, check_index: int, body: CheckAnswer, session: Session = Depends(get_session)):
+def check_lesson(lesson_id: str, check_index: int, body: CheckAnswer, session: Session = Depends(get_session), user_id: str = Depends(require_student)):
     lesson = session.get(Lesson, lesson_id)
     if not lesson:
         raise HTTPException(404, "Unknown lesson")
     parents = session.scalars(select(LessonPrerequisite.prerequisite_id).where(LessonPrerequisite.lesson_id == lesson_id)).all()
-    mastered = _mastered(session)
+    mastered = _mastered(session, user_id)
     if any(parent not in mastered for parent in parents):
         raise HTTPException(409, "Complete the prerequisite lessons first")
     checks = lesson.content["checks"]
@@ -155,7 +162,7 @@ def check_lesson(lesson_id: str, check_index: int, body: CheckAnswer, session: S
     if body.answer >= len(check["choices"]):
         raise HTTPException(422, "Answer is outside the choices")
     correct = body.answer == check["answer"]
-    progress = session.get(LessonProgress, lesson_id) or LessonProgress(lesson_id=lesson_id, passed_checks=[])
+    progress = session.get(LessonProgress, (user_id, lesson_id)) or LessonProgress(user_id=user_id, lesson_id=lesson_id, passed_checks=[])
     passed = set(progress.passed_checks or [])
     if correct:
         passed.add(check_index)

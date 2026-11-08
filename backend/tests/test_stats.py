@@ -51,6 +51,7 @@ def test_stats_with_progress_and_submissions(client: TestClient):
         now = utcnow()
         # Add progress
         p = Progress(
+            user_id="local",
             question_slug=q.slug,
             solved=True,
             solved_at=now,
@@ -66,6 +67,7 @@ def test_stats_with_progress_and_submissions(client: TestClient):
 
         # Add a submission
         sub = Submission(
+            user_id="local",
             question_slug=q.slug,
             target="main",
             code="def solve(): pass",
@@ -104,6 +106,7 @@ def test_stats_rust_camps_detection(client: TestClient):
         # 25 days ago = rusted (> 21 days)
         old_time = now - timedelta(days=25)
         p2 = Progress(
+            user_id="local",
             question_slug=q2.slug,
             solved=True,
             solved_at=old_time,
