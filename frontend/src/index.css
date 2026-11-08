@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Keep lesson prose readable while diagrams and code use the available canvas. */
+.system-design-reading p {
+  max-width: 75ch;
+}
+
 /* Design language: see DESIGN_REFERENCES.md. Dual-theme system:                           */
 /* Dark: "Night Expedition" (Nebula Plum) | Light: "Alpine Morning" (Warm Ivory)            */
 @theme {

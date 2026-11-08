@@ -64,7 +64,7 @@ export default function SystemDesignPage() {
             aria-label="Close curriculum navigator"
             onClick={() => setLeftOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 z-50 max-w-[85vw] md:static md:z-auto md:max-w-none">
+          <div id="system-design-curriculum" className="fixed inset-y-0 left-0 z-50 max-w-[85vw] md:static md:z-auto md:max-w-none">
             <SystemDesignSidebar
               selected={selected}
               onSelect={handleSelect}
@@ -92,22 +92,20 @@ export default function SystemDesignPage() {
 
       {/* 2. Main Fluid Reading & Coding Canvas (Full Center Space Utilization) */}
       <main className="flex-1 min-w-0 h-screen overflow-y-auto px-4 sm:px-8 xl:px-12 py-6">
-        <div className="w-full max-w-6xl mx-auto space-y-4">
-          {/* Top Bar for Reopening Collapsed Sidebars */}
-          {(!leftOpen || (!rightOpen && selected !== null)) && (
+        <div className="system-design-reading w-full max-w-6xl mx-auto space-y-4">
+          {/* A visible control makes the reading mode discoverable. */}
             <div className="flex items-center justify-between pb-2 border-b border-line text-xs">
               <div>
-                {!leftOpen && (
                   <button
                     type="button"
-                    onClick={() => setLeftOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-line bg-panel px-2.5 py-1 font-medium text-muted hover:text-chalk hover:bg-panel-2 transition-colors"
-                    title="Open Curriculum Navigator"
+                    onClick={() => setLeftOpen((open) => !open)}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line bg-panel px-3 font-medium text-muted transition-colors hover:bg-panel-2 hover:text-chalk"
+                    aria-expanded={leftOpen}
+                    aria-controls="system-design-curriculum"
                   >
                     <PanelLeftOpen size={14} className="text-violet-500 dark:text-violet-400" />
-                    <span>Curriculum Navigator</span>
+                    <span>{leftOpen ? 'Focus reading' : 'Show curriculum'}</span>
                   </button>
-                )}
               </div>
 
               <div>
@@ -124,7 +122,6 @@ export default function SystemDesignPage() {
                 )}
               </div>
             </div>
-          )}
           {selected === null && (
             <SystemDesignSyllabusView
               completedIds={completedIds}

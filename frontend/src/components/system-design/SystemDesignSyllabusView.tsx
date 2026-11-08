@@ -46,15 +46,16 @@ export default function SystemDesignSyllabusView({ completedIds, onOpenItem }: P
         </p>
       </div>
 
-      <section aria-label="How this track builds up" className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-5 sm:p-6">
-        <span className="font-mono text-2xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">Start with a familiar app</span>
-        <h2 className="mt-2 text-xl font-semibold text-chalk">Imagine building a food-ordering app.</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">First decide what an order, menu and payment each own. Next, make those parts work together in one app. When many customers order at once, ask how to keep it fast and reliable. That is the path from OOP to low-level design to distributed systems.</p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-line bg-panel p-3"><strong className="block text-sm text-chalk">1. Give each part a job</strong><span className="mt-1 block text-xs leading-5 text-muted">Objects, responsibilities, and SOLID.</span></div>
-          <div className="rounded-lg border border-line bg-panel p-3"><strong className="block text-sm text-chalk">2. Connect the parts</strong><span className="mt-1 block text-xs leading-5 text-muted">Classes, state, and common workflows.</span></div>
-          <div className="rounded-lg border border-line bg-panel p-3"><strong className="block text-sm text-chalk">3. Handle real scale</strong><span className="mt-1 block text-xs leading-5 text-muted">Traffic, failures, and trade-offs.</span></div>
-        </div>
+      <section aria-label="Start with one request" className="rounded-2xl border border-violet-500/25 bg-violet-500/5 p-5 sm:p-6">
+        <span className="font-mono text-2xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">Base camp · Before system design</span>
+        <h2 className="mt-2 text-xl font-semibold text-chalk">What happens when you place one food order?</h2>
+        <p className="mt-2 max-w-[70ch] text-sm leading-6 text-muted">You tap “Place order” in an app. Your phone asks a server to create the order. The server checks it, saves it in a database, and replies with a confirmation. That small journey is the foundation for every larger design in this citadel.</p>
+        <ol className="mt-5 grid gap-3 sm:grid-cols-3">
+          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-violet-600 dark:text-violet-300">01 · Client</span><strong className="mt-1 block text-sm text-chalk">The app asks</strong><span className="mt-1 block text-xs leading-5 text-muted">The client is the phone or browser the person uses. It sends a request.</span></li>
+          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-violet-600 dark:text-violet-300">02 · Server</span><strong className="mt-1 block text-sm text-chalk">The app decides</strong><span className="mt-1 block text-xs leading-5 text-muted">The server runs the rules: Is the restaurant open? Is the order valid?</span></li>
+          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-violet-600 dark:text-violet-300">03 · Database</span><strong className="mt-1 block text-sm text-chalk">The app remembers</strong><span className="mt-1 block text-xs leading-5 text-muted">The database stores the order so it is still there after the request ends.</span></li>
+        </ol>
+        <p className="mt-4 max-w-[70ch] text-sm leading-6 text-muted">First we give each piece of the server a clear job. Then we connect the pieces. Only after one order works do we ask what changes when thousands of people order together.</p>
       </section>
 
       {groups.map((g) => {
