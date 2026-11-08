@@ -234,12 +234,12 @@ function QuestionWorkspace() {
     )
   }
 
-  const prerequisiteLessons = ((question as QuestionDetail & { required_lessons?: Array<{ id: string; title: string; mastered: boolean }> }).required_lessons ?? [])
+  const prerequisiteLessons = question.required_lessons
   const missingLessons = progress.solved ? [] : prerequisiteLessons.filter((lesson) => !lesson.mastered)
   if (missingLessons.length > 0) {
     return <div className="shell max-w-3xl py-10 space-y-6">
       <Link to={`/world/${question.world_id}`} className="inline-flex items-center gap-2 text-sm text-muted hover:text-chalk"><ArrowLeft size={16} /> Back to {question.world_name}</Link>
-      <div className="rounded-3xl border border-line bg-panel p-7 sm:p-9"><div className="text-xs font-semibold uppercase tracking-widest text-cyan">Before this challenge</div><h1 className="mt-2 font-plate text-3xl font-semibold text-chalk">Build the idea first</h1><p className="mt-3 leading-7 text-muted">{question.title} uses ideas that are easier to understand in this order. Each lesson starts with a familiar situation and two examples.</p><ol className="mt-6 space-y-3">{prerequisiteLessons.map((lesson) => <li key={lesson.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel-2 p-4"><span className="text-chalk">{lesson.title}</span><span className="text-sm text-cyan">{lesson.mastered ? 'Understood' : 'Next to learn'}</span></li>)}</ol><Link to={`/lesson/${missingLessons[0].id}`} className="mt-6 inline-flex rounded-xl bg-cyan px-5 py-3 text-sm font-semibold text-[#06121a]">Start with {missingLessons[0].title} →</Link></div>
+      <div className="rounded-3xl border border-line bg-panel p-7 sm:p-9"><div className="text-xs font-semibold uppercase tracking-widest text-cyan">Your route to this question</div><h1 className="mt-2 font-plate text-3xl font-semibold text-chalk">Start with the first idea</h1><p className="mt-3 leading-7 text-muted">Before {question.title}, learn these ideas in order. Each short lesson uses a familiar situation and a worked example. We will bring you back here when you finish.</p><ol className="mt-6 space-y-3">{prerequisiteLessons.map((lesson, index) => <li key={lesson.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel-2 p-4"><span className="flex items-center gap-3 text-chalk"><span className="font-mono text-xs text-muted">{String(index + 1).padStart(2, '0')}</span>{lesson.title}</span><span className="shrink-0 text-sm text-cyan">{lesson.mastered ? 'Done' : lesson.id === missingLessons[0].id ? 'Up next' : 'Later'}</span></li>)}</ol><Link to={`/lesson/${missingLessons[0].id}?practice=${encodeURIComponent(slug)}`} className="mt-6 inline-flex rounded-xl bg-cyan px-5 py-3 text-sm font-semibold text-[#06121a]">{prerequisiteLessons.length === missingLessons.length ? 'Start' : 'Continue'}: {missingLessons[0].title} →</Link></div>
     </div>
   }
 

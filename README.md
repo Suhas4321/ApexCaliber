@@ -1,171 +1,60 @@
-# ApexCaliber (formerly PatternForge)
+# ApexCaliber
 
-<div align="center">
+ApexCaliber is a local learning platform for aspiring software engineers and interview candidates. Its aim is to make unfamiliar engineering topics approachable: start with a small idea, see it in a familiar situation, try it, and only then tackle a harder question. The mountain and citadel theme represents that climb from base camp to advanced work.
 
-**The Full-Stack, Systems & AI Engineering Citadel Platform**
+**The product is in progress.** The existing challenge bank is much larger than the beginner lesson library. A topic appearing on the map does not mean it has a complete beginner-to-interview learning route yet.
 
-[![Tests](https://img.shields.io/badge/tests-32%20passed-brightgreen.svg)]()
-[![Curriculum](https://img.shields.io/badge/curriculum-198%20verified%20problems-blue.svg)]()
-[![Citadels](https://img.shields.io/badge/citadels-7%20specialized%20domains-purple.svg)]()
-[![Worlds](https://img.shields.io/badge/worlds-42%20total%20worlds-orange.svg)]()
-[![Protocol](https://img.shields.io/badge/protocol-apex.trace.v1-cyan.svg)]()
+## What is available today
 
-*Stop memorizing code templates. Master the causal mechanisms, basement-layer trade-offs, and failure modes of production engineering.*
+| Learning area | Current entry point |
+| --- | --- |
+| Data structures & algorithms | The established world map and code practice flow. |
+| Python & data | A short foundation route, then worlds and challenges. |
+| SQL, databases & caching | A foundation route covering tables, keys, joins, transactions and selected storage topics. |
+| Operating systems & concurrency | A foundation route from processes and threads toward races, locks, scheduling, deadlocks and selected I/O topics. |
+| Backend & APIs | Introductory HTTP lessons, then application questions. |
+| AI & retrieval | Introductory models and embeddings lessons, then application questions. |
+| Computer networking | Introductory client/server, DNS and transport lessons, then application questions. |
+| System design | A separate syllabus with a client → server → database primer, SOLID, LLD and HLD assignments. |
 
-</div>
+The seven world-map citadels contain **42 worlds and 198 question files**. The beginner concept graph currently contains **10 modules and 28 authored lessons**, with prerequisite mappings for **18 challenges**. System design is an eighth learning area with **20 assignments**; it is not part of the 42-world or 198-question counts. These are content counts, not a claim that all topics are taught comprehensively.
 
----
+For non-DSA citadels with an authored route, the citadel entry points to concepts before practice. Mapped questions show the full prerequisite chain, start at the first missing lesson, and return to the question after the required ideas are complete. Finished modules list their linked practice questions. Each concept lesson uses a situation, plain-language explanation, terms, worked example, second setting, misconception, and two checks. A correct pair of checks records lesson completion; it is **not** yet evidence of durable understanding. DSA retains its coding-centered flow.
 
-## 🏛️ The Pedagogical Philosophy: Two Distinct Engines
+## Run locally
 
-Traditional platforms force a single paradigm onto every topic—either reducing complex distributed systems to multiple-choice trivia or forcing distributed consensus into an empty coding box.
+You need Python 3.11+ and Node.js 20+. The launcher installs dependencies on first use.
 
-**ApexCaliber** splits engineering mastery into two deliberate learning architectures:
-
-```
-                                 APEXCALIBER CURRICULUM
-                                           │
-         ┌─────────────────────────────────┴─────────────────────────────────┐
-         ▼                                                                   ▼
-  CITADEL I: DSA                                              CITADELS II–VII: SYSTEMS & AI
-  [Code-First Mastery]                                        [Concept Journey & POE First]
-  ────────────────────                                        ─────────────────────────────
-  • 12 Worlds · 107 Problems                                  • 30 Worlds · 91 Problems
-  • Line-by-Line Heap/Pointer Tracing                         • 6–7 Stage POE Simulation Loop
-  • Indian OA Real-World Hooks                                • Predict ➔ Observe ➔ Explain
-  • 3-Tier Socratic Hint System                               • Interactive Parameter Controls
-  • 4-Line Interview Pitch Defense                            • Pre-Wired Code Transfer Labs
-```
-
-### 1. Code-First Engine (Citadel I: Data Structures & Algorithms)
-Every algorithmic problem guides the developer through 4 rigorous phases:
-1. **Concept**: Why the pattern exists, Indian OA scenario vs clean LeetCode statement with trigger keywords.
-2. **Micro-drills**: 3 targeted exercises training isolated sub-mechanics.
-3. **Arena**: Real Monaco editor with line-by-line animated state tracing (pointers, heaps, trees, recursions). Socratic hints guide without giving away answers.
-4. **Pitch Studio**: Practice defending time/space complexity and trade-offs against a model interview script, scheduled via spaced repetition (3, 7, 21 days).
-
-### 2. Teaching-First Engine (Citadels II–VII: Systems, Runtime, Data & GenAI)
-Non-DSA systems problems adhere to the **`apex.trace.v1` Universal Learning Protocol**, powered by the **POE (Predict ➔ Observe ➔ Explain)** model:
-- **Incident Anchor**: Grounded in real-world outages (e.g. Swiggy delivery deadlocks, BharatPay token theft, SwiftCart 2M QPS polling stampedes, FitLabs 10GB OOM crashes).
-- **Predict**: Interactive hypothesis quiz confronting common misconceptions before seeing the simulation.
-- **Observe**: Interactive reactive controls (sliders, selectors, toggles) driving deterministic simulations (packet flows, buffer pools, page replacement, lock wait-for graphs).
-- **Explain**: Deep causal explanation illuminating why the systems invariant functions.
-- **Transfer Challenge**: Pre-wired coding sandbox with instant test execution—no blank-canvas homework fatigue.
-
----
-
-## 🏰 The 7 Citadels (42 Worlds · 198 Problems)
-
-| Citadel | Domain | Worlds Covered | Highlights & Systems Concepts |
-| :--- | :--- | :---: | :--- |
-| **🏰 Citadel I** | **Data Structures & Algorithms** | Worlds 1–12 *(107 problems)* | Two Pointers, Sliding Window, Monotonic Stack, Binary Search, Trees, Graphs, DP, Intervals. |
-| **🐍 Citadel II** | **Python Internals & Data Engineering** | Worlds 13–16 *(16 problems)* | PyObject 28-byte headers, O(1) generator streaming, SOLID OOP patterns, vectorized Pandas merges. |
-| **🗄️ Citadel III** | **Database Systems, SQL & In-Memory Caching** | Worlds 17, 18, 22–25, 39 *(25 problems)* | 8KB Slotted Heap Pages, B-Trees vs Hash indexes, ACID isolation anomalies, Redis cache-aside stampede mutex. |
-| **⚙️ Citadel IV** | **Operating Systems, Concurrency & Memory** | Worlds 19, 26–30, 42 *(18 problems)* | 4KB Virtual Memory paging, Belady's Anomaly, 3-color DFS deadlock cycle detection, CPython GIL contention. |
-| **🚀 Citadel V** | **Backend Engineering & API Design** | Worlds 20, 31–34 *(15 problems)* | HTTP lifecycle diagnostics, OAuth 2.0 Refresh Token Rotation (RTR), Pydantic 422 validation, HTTP 202 async backoff. |
-| **🤖 Citadel VI** | **GenAI Systems, RAG & Agents** | Worlds 21, 35–38 *(13 problems)* | Vector Cosine Similarity, Reciprocal Rank Fusion (RRF), LangGraph cyclic state machines, GEPA prompt optimization, Staff Resume Grill. |
-| **🌐 Citadel VII** | **High-Performance Networking** | Worlds 40–41 *(4 problems)* | Hierarchical recursive DNS resolution, TCP 3-Way Handshake, SYN flood resilience, sliding window rate limiters. |
-
----
-
-## 📚 Architectural Specifications & RFC Library
-
-Every systems world is engineered according to an explicit pedagogical blueprint published in [`docs/rfc/`](docs/rfc/):
-
-- [`W13_PYTHON_MEMORY.md`](docs/rfc/W13_PYTHON_MEMORY.md) — PyObject Memory Layout, Eager List Danger & Lazy Generator Streaming.
-- [`W17_DBMS_STORAGE.md`](docs/rfc/W17_DBMS_STORAGE.md) — 8KB Slotted Heap Pages, Item Pointers, and Physical Tuple IDs (`ctid`).
-- [`W21_VECTOR_SEARCH.md`](docs/rfc/W21_VECTOR_SEARCH.md) — Dense Vector Embeddings, Cosine Similarity & Unit Sphere Normalization.
-- [`W25_TRANSACTIONS_ACID.md`](docs/rfc/W25_TRANSACTIONS_ACID.md) — Transaction Isolation Levels, Dirty Reads, Phantom Reads & Optimistic Locks.
-- [`W27_LOCKS_DEADLOCKS.md`](docs/rfc/W27_LOCKS_DEADLOCKS.md) — Coffman Conditions, Wait-For Graphs (WFG), 3-Color DFS Cycle Detection.
-- [`W28_GIL_CONCURRENCY.md`](docs/rfc/W28_GIL_CONCURRENCY.md) — CPython Reference Counting, GIL Contention & Free-Threaded Python 3.13t.
-- [`W31_TOKEN_ROTATION.md`](docs/rfc/W31_TOKEN_ROTATION.md) — OAuth 2.0 Single-Use Refresh Token Rotation (RTR) & Family Revocation.
-- [`W32_FASTAPI_VALIDATION.md`](docs/rfc/W32_FASTAPI_VALIDATION.md) — Declarative Pydantic Schemas, CPython Boolean Inheritance & HTTP 422.
-- [`W33_ASYNC_POLLING.md`](docs/rfc/W33_ASYNC_POLLING.md) — HTTP 202 Accepted, Reverse Proxy Timeouts & Truncated Exponential Backoff with Jitter.
-- [`W34_RATE_LIMITER.md`](docs/rfc/W34_RATE_LIMITER.md) — Redis Sorted Sets, Sliding Window Log & Atomic Lua Scripts.
-- [`W35_HYBRID_RRF.md`](docs/rfc/W35_HYBRID_RRF.md) — BM25 Lexical + Vector Dense Retrieval & Reciprocal Rank Fusion ($k=60$).
-- [`W36_AGENT_GRAPH.md`](docs/rfc/W36_AGENT_GRAPH.md) — LangGraph Cyclic StateGraphs, Conditional Edge Routing & Step Budget Guards.
-- [`W37_PROMPT_OPTIMIZER.md`](docs/rfc/W37_PROMPT_OPTIMIZER.md) — GEPA Genetic Optimization, Token Budget Penalties & Pareto Frontiers.
-- [`W38_RESUME_GRILL.md`](docs/rfc/W38_RESUME_GRILL.md) — The 4-Part Staff Engineering Defense Matrix (Bottleneck $\rightarrow$ Alternatives $\rightarrow$ Primitives $\rightarrow$ Metrics).
-- [`W39_REDIS_CACHING.md`](docs/rfc/W39_REDIS_CACHING.md) — Cache-Aside, TTL Expiration, and Distributed Mutex Locks against Cache Stampedes.
-- [`W40_DNS_RESOLUTION.md`](docs/rfc/W40_DNS_RESOLUTION.md) — Root, TLD, and Authoritative Nameserver Resolution Hierarchy.
-- [`W41_TCP_HANDSHAKE.md`](docs/rfc/W41_TCP_HANDSHAKE.md) — TCP 3-Way Handshake, ISN Sequence Offsets & SYN Flood SYN Cookies.
-- [`W42_VIRTUAL_MEMORY.md`](docs/rfc/W42_VIRTUAL_MEMORY.md) — 4KB Paging, Hardware Page Fault Traps, Belady's Anomaly & LRU Stack Property.
-
----
-
-## ⚡ Quickstart
-
-### Prerequisites
-- **Python 3.11+**
-- **Node.js 20+**
-
-### 1. Launch Production Server
-```bash
-./run.sh
-```
-Builds the frontend and boots the FastAPI service on **http://127.0.0.1:8010**.
-
-### 2. Launch Development Server (Hot-Reload)
 ```bash
 ./run.sh dev
 ```
-Runs the FastAPI backend daemon on `:8010` and Vite dev server on **http://127.0.0.1:5173**.
 
-### 3. Run Automated Quality & Verification Suite
+Open <http://127.0.0.1:5173>. The API runs at <http://127.0.0.1:8010>. For a built frontend served by the API, use `./run.sh` and open <http://127.0.0.1:8010>.
+
 ```bash
 ./run.sh test
+cd frontend && npm run test:journey && npm run lint && npm run build
 ```
-Executes:
-1. Backend pytest suite (`32 passed, 0 failed`).
-2. Full curriculum test harness (`scripts/validate_content.py`): executes all reference solutions across all 198 problems.
 
----
+`./run.sh test` runs the backend test suite and validates the question content. The frontend checks are separate. The project uses FastAPI, React, Vite and SQLite by default; `backend/.env.example` documents the optional PostgreSQL configuration. The AI coach is optional and requires its own configuration.
 
-## 🛠️ Multi-Runner Execution Architecture
+## Content and progress
 
-ApexCaliber includes specialized code execution runners tailored to distinct engineering disciplines:
+- `content/questions/` holds the existing world and challenge YAML files. See [the content guide](docs/CONTENT_GUIDE.md) and `backend/app/content_schema.py` before adding a challenge.
+- `content/learning_paths.yaml` holds the beginner modules, lessons, prerequisite graph and selected challenge mappings. Its content is checked by `backend/app/lesson_schema.py` and `backend/app/services/learning_paths.py`.
+- Backend lesson and question progress is stored in SQLite by default and mirrored to `backend/backups/user_data.json` when automatic backup is enabled. **System-design completion and some UI preferences are currently stored in browser localStorage**, so the backend backup is not a complete export of every user-visible state.
 
-- **`algorithmic`**: High-performance Python sandbox tracing local frame pointers, array indices, variables, and recursive call trees.
-- **`python_practical`**: Realistic unit-test harness running assertions on production Python classes, generators, and async functions.
-- **`sql_schema`**: In-memory relational database engine evaluating queries against real schemas, table relationships, and window functions.
-- **`bash_terminal`**: Shell command evaluator testing Linux CLI pipes, sed/awk, and process inspection.
+When authoring a lesson, teach the prerequisite before testing it. Use two meaningfully different examples, state the limits of analogies, link technical sources, and add a check that asks the learner to apply the idea in a new situation. Existing lesson examples are in `content/learning_paths.yaml`.
 
----
+## Highest-value improvements
 
-## 💾 Local Storage & Data Portability
+These are **proposals**, not shipped features. They follow from the current content and UI inventory and the [beginner-first curriculum plan](docs/BEGINNER_FIRST_PRODUCT_AND_CURRICULUM_PLAN.md).
 
-- **Zero External Dependencies Required**: Progress, drafts, notes, and pitch recordings are stored in `backend/patternforge.db` (SQLite).
-- **Automated Backup & Restore**: State is automatically mirrored to `backend/backups/user_data.json` after every modification. If the SQLite database is ever reset, the next boot automatically restores your complete progress.
-- **Cloud Database (Optional)**: To connect a remote PostgreSQL/Supabase database, copy `backend/.env.example` to `backend/.env`, set `DATABASE_URL`, and install `requirements-postgres.txt`.
+1. **Complete the foundation paths before expanding the question bank.** The current 28 lessons cover only selected topics. Add reviewed, small lessons for Python beyond names/functions, full HTTP and API fundamentals, networking beyond DNS/TCP, AI from tokens through retrieval/evaluation, and a dedicated system-design foundation graph. Keep DSA's existing structure. Audit each new lesson against its later challenge and interview use; a count of questions alone is not syllabus coverage.
+2. **Expand and review challenge-to-lesson mappings.** Only 18 challenges currently have explicit mappings. The mapped questions now show the full dependency chain and preserve the return path; extend that behavior to the remaining non-DSA questions as their foundations are authored. Add an optional readiness route for learners who already know the material without treating a skip as proof of understanding.
+3. **Make understanding visible without overstating mastery.** Today two correct multiple-choice checks mark a lesson complete. Add a different transfer scenario, explanation or debugging task, meaningful feedback, and a later retrieval check. Record “visited,” “practiced,” and “demonstrated” separately so progress does not imply mastery from a lucky guess. [AERO's explicit-instruction guide](https://www.edresearch.edu.au/guides-resources/practice-guides/explicit-instruction-practice-guide-full-publication) supports small sequenced tasks, worked examples and practice after teaching.
+4. **Unify the system-design journey and saved progress.** The current primer is a good first step, but the syllabus still moves quickly into SOLID, LLD and large-scale HLD. Build a guided path from one request and one service to persistence, failure and scale; connect each new component to a concrete problem it solves. Move system-design completion into the same progress and backup model as other learning areas.
+5. **Audit the interface as one product.** Keep the compact citadel grid and visible first map camp. Standardize navigation labels, control sizes, focus states, theme controls and reading layouts across citadels; check mobile widths, zoom, contrast and reduced motion. The 60–30–10 color rule can be a useful *visual heuristic*—a dominant neutral canvas, supporting surfaces and a restrained accent—but should not be treated as a measured requirement. Consistent component behavior matters more; [W3C's predictable-navigation guidance](https://www.w3.org/WAI/WCAG22/Understanding/predictable) explains why. Audit the current pages before changing their palette.
+6. **Validate with beginners.** Ask first-time learners to find the starting lesson, explain a concept in their own words, apply it to a new example, and resume the route later. Use failures in those tasks to prioritize content and UI changes. Passing builds and content validators cannot establish that students actually understand the material.
 
----
-
-## ⌨️ Keyboard Shortcuts & Power Navigation
-
-| Shortcut | Action |
-| :--- | :--- |
-| `Ctrl+K` or `/` | Global search for any question, topic, citadel, or pattern |
-| `Ctrl+Enter` | Run solution against test suite in active editor |
-| `Alt+1` – `Alt+4` | Switch between unlocked stages / tabs |
-| `←` / `→` | Step backward / forward through an execution trace |
-| `Space` | Play / Pause execution animation |
-
----
-
-## 📜 Adding New Content
-
-To author a new question or concept journey:
-1. Create a YAML file in `content/questions/<NN-world-name>/<slug>.yaml`.
-2. Follow the schema defined in `backend/app/content_schema.py` and [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md).
-3. Validate locally:
-   ```bash
-   backend/.venv/bin/python scripts/validate_content.py <slug>
-   ```
-
----
-
-<div align="center">
-
-Crafted with precision for engineers who refuse to memorize solutions.
-
-</div>
+Detailed design and implementation notes live in [the frontend audit](docs/FRONTEND_DESIGN_AUDIT_AND_PLAN.md), [the syllabus review](docs/BEGINNER_SYLLABUS_REBUILD_REVIEW.md), and the [Phase 3 status](docs/PHASE3_COORDINATION_AND_STORAGE_IMPLEMENTATION.md). Those documents were written at different stages; this README describes the current repository and keeps remaining work explicit.

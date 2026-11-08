@@ -241,6 +241,7 @@ export interface QuestionDetail extends QuestionSummary {
   drafts: Record<string, string>
   prev_slug: string | null
   next_slug: string | null
+  required_lessons: Array<{ id: string; title: string; mastered: boolean }>
 }
 
 export interface RunError {

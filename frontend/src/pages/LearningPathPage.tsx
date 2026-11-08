@@ -46,6 +46,11 @@ export default function LearningPathPage() {
           </Link> : <div className="flex items-center gap-4 rounded-2xl border border-line/70 bg-panel/50 p-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-panel-3 text-muted"><LockKeyhole size={17} /></span><span><span className="block font-semibold text-chalk">{lesson.title}</span><span className="block text-sm text-muted">First learn {lesson.prerequisite_details.filter((parent) => !parent.mastered).map((parent, index) => <span key={parent.id}>{index > 0 ? ', ' : ''}<Link to={`/lesson/${parent.id}`} className="text-cyan underline hover:text-chalk">{parent.title}</Link></span>)}</span></span></div>}
         </li>)}
       </ol>
+      {module.completed && module.practice_challenges.length > 0 && <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+        <h3 className="font-plate text-xl font-semibold text-chalk">Now apply these ideas</h3>
+        <p className="mt-1 text-sm text-muted">These questions use concepts from this module. Pick one and try it in a new setting.</p>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">{module.practice_challenges.map((challenge) => <li key={challenge.slug}><Link to={`/q/${challenge.slug}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-sm font-medium text-chalk transition-colors hover:border-cyan/50 hover:bg-panel-2">{challenge.title}<ArrowRight size={16} className="shrink-0 text-cyan" /></Link></li>)}</ul>
+      </section>}
       {module.cue_card && <div className="rounded-2xl border border-cyan/30 bg-cyan/5 p-5 space-y-4">
         <div><div className="text-xs uppercase tracking-widest text-cyan">High-yield interview playbook</div><h3 className="mt-1 font-plate text-xl text-chalk">Say it clearly, then show the mechanism</h3></div>
         <p className="text-chalk">{module.cue_card.elevator_pitch}</p>

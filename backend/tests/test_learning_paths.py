@@ -17,9 +17,14 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
     assert [item["id"] for item in lessons] == ["os-process", "os-thread", "os-race", "os-mutex"]
     assert lessons[0]["ready"] and not lessons[1]["ready"]
     assert path.json()["modules"][0]["cue_card"] is None
+    assert {item["slug"] for item in path.json()["modules"][0]["practice_challenges"]} == {
+        "memory-isolation-threads-vs-processes", "deterministic-interleaving-counter",
+        "mutex-protected-counter", "processes-vs-threads-memory",
+    }
 
     challenge = client.get("/api/questions/memory-isolation-threads-vs-processes").json()
-    assert challenge["required_lessons"] == [{"id": "os-thread", "title": "What is a thread?", "mastered": False}]
+    assert [item["id"] for item in challenge["required_lessons"]] == ["os-process", "os-thread"]
+    assert all(not item["mastered"] for item in challenge["required_lessons"])
     assert client.post("/api/questions/memory-isolation-threads-vs-processes/run", json={"code": "pass"}).status_code == 409
 
     first = client.get("/api/lessons/os-process").json()
@@ -31,6 +36,8 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
     completed = client.post("/api/lessons/os-process/checks/1", json={"answer": 0}).json()
     assert completed["mastered"]
     assert client.get("/api/lessons/os-thread").json()["ready"]
+    assert [item["mastered"] for item in client.get("/api/questions/memory-isolation-threads-vs-processes").json()["required_lessons"]] == [True, False]
+    assert client.get("/api/questions/mutex-protected-counter").json()["required_lessons"][-1]["id"] == "os-mutex"
     assert len(client.get("/api/lessons/os-race").json()["content"]["visual"]["tracks"]) == 2
 
     summary = client.get("/api/learning-paths/summary").json()
@@ -49,6 +56,15 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
     assert completed_module["completed"]
     assert len(completed_module["cue_card"]["pillars"]) == 4
     assert completed_module["cue_card"]["candidate_trap"]
+    assert all(item["mastered"] for item in client.get("/api/questions/mutex-protected-counter").json()["required_lessons"])
+
+
+def test_challenge_and_deep_link_start_at_first_available_os_idea(client):
+    required = client.get("/api/questions/mutex-protected-counter").json()["required_lessons"]
+    assert [item["id"] for item in required] == ["os-process", "os-thread", "os-race", "os-mutex"]
+    assert [item["id"] for item in client.get("/api/lessons/os-mutex").json()["prerequisite_details"]] == [
+        "os-process", "os-thread", "os-race"
+    ]
 
 
 def test_db_path_starts_with_tables_not_joins(client):
@@ -74,8 +90,8 @@ def test_extended_paths_begin_with_foundations_and_gate_advanced_challenges(clie
     ]
     assert network["lessons"][0]["ready"]
     assert not network["lessons"][1]["ready"]
-    assert client.get("/api/questions/dns-recursive-resolver").json()["required_lessons"][0]["id"] == "net-dns"
-    assert client.get("/api/questions/virtual-memory-page-replacement").json()["required_lessons"][0]["id"] == "os-virtual-memory"
+    assert client.get("/api/questions/dns-recursive-resolver").json()["required_lessons"][-1]["id"] == "net-dns"
+    assert client.get("/api/questions/virtual-memory-page-replacement").json()["required_lessons"][-1]["id"] == "os-virtual-memory"
     assert client.get("/api/lessons/net-client-server").json()["content"]["checks"]
     backend_first = client.get("/api/learning-paths/backend_apis").json()["modules"][0]["lessons"][0]
     assert backend_first["prerequisite_details"] == [{"id": "net-client-server", "title": "What happens when you open a website?", "mastered": False}]
@@ -87,11 +103,11 @@ def test_coordination_and_storage_lessons_gate_matching_practice(client):
     assert [lesson["id"] for lesson in os_modules[-1]["lessons"]] == ["os-semaphore", "os-files", "os-async"]
     async_prereqs = set(os_modules[-1]["lessons"][-1]["prerequisites"])
     assert async_prereqs == {"os-scheduling", "os-thread", "os-files"}
-    assert {lesson["id"] for lesson in client.get("/api/questions/asyncio-event-loop-semaphore").json()["required_lessons"]} == {"os-async", "os-semaphore"}
+    assert {"os-async", "os-semaphore"}.issubset({lesson["id"] for lesson in client.get("/api/questions/asyncio-event-loop-semaphore").json()["required_lessons"]})
 
     db_modules = client.get("/api/learning-paths/sql_dbms").json()["modules"]
     assert [lesson["id"] for lesson in db_modules[-1]["lessons"]] == ["db-normalization", "db-isolation", "db-pages"]
-    assert client.get("/api/questions/heap-pages-and-scans").json()["required_lessons"][0]["id"] == "db-pages"
+    assert client.get("/api/questions/heap-pages-and-scans").json()["required_lessons"][-1]["id"] == "db-pages"
     assert client.get("/api/lessons/db-pages").json()["content"]["checks"][0]["choices"][1].startswith("No, PostgreSQL")
     assert len(client.get("/api/lessons/os-semaphore").json()["content"]["visual"]["tracks"]) == 2
     assert len(client.get("/api/lessons/db-pages").json()["content"]["visual"]["tracks"]) == 2

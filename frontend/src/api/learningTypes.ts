@@ -32,6 +32,7 @@ export type LearningPath = {
     position: number
     completed: boolean
     cue_card: CueCard | null
+    practice_challenges: Array<{ slug: string; title: string }>
     lessons: LessonStep[]
   }>
 }
