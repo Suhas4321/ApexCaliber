@@ -46,6 +46,7 @@ export type LessonDetail = LessonStep & {
     explanation: string
     terms: Array<{ name: string; meaning: string }>
     worked_example: string
+    second_example_prompt: string
     second_example: string
     misconception: string
     visual: LessonVisual | null

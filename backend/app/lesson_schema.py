@@ -51,6 +51,7 @@ class LessonBody(Strict):
     explanation: str
     terms: list[dict[str, str]] = Field(min_length=1)
     worked_example: str
+    second_example_prompt: str
     second_example: str
     misconception: str
     visual: LessonVisual | None = None

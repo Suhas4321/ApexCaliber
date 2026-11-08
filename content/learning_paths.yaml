@@ -29,16 +29,17 @@ modules:
             - {name: Process, meaning: One running instance of a program with its own address space and resources.}
             - {name: Operating system, meaning: Software that manages hardware resources and gives applications controlled services.}
           worked_example: A browser and music app are two running processes. The OS switches CPU time between their work and keeps their ordinary memory separate. Pausing the music app does not erase its saved program.
+          second_example_prompt: "If you open the same editor twice and type different unsaved notes, what is shared and what is separate?"
           second_example: Opening two copies of a text editor can create two processes from one installed program. They may each hold a different unsaved document in memory.
           misconception: A program is the saved instructions; a process is a running instance. Two windows do not always imply two processes.
           checks:
             - prompt: You have one editor installed and open it twice. Which statement is best?
-              choices: [One program can have two running processes., A program is the same thing as a CPU core., Every window must be a separate operating system.]
-              answer: 0
+              choices: ["Every window must be a separate operating system.", "One program can have two running processes.", "A program is the same thing as a CPU core."]
+              answer: 1
               explanation: The program is the stored instructions; each running instance can be a process.
             - prompt: An app wants to read a file. Who normally controls access to that device and file?
-              choices: [The operating system through a service call., Any app directly reading arbitrary disk bytes., The app's screen layout.]
-              answer: 0
+              choices: ["Any app directly reading arbitrary disk bytes.", "The operating system through a service call.", "The app's screen layout."]
+              answer: 1
               explanation: The OS mediates access to resources; applications request those services.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/, https://pdos.csail.mit.edu/6.828/2021/overview.html]
       - id: os-thread
@@ -54,16 +55,17 @@ modules:
             - {name: Shared memory, meaning: Data in a process address space that more than one thread can access.}
             - {name: Execution state, meaning: The position and local state a thread needs to continue its work.}
           worked_example: One photo-app thread handles a button press while another prepares a save. Both may refer to the same document object. If they change it together, the app needs a coordination rule.
+          second_example_prompt: "Two editor windows run as separate processes. Can they normally read each other's unsaved memory directly?"
           second_example: Two separate text-editor processes have separate address spaces. To exchange a document they normally use a file or some other explicit communication mechanism.
           misconception: Threads in one process share its address space, but each still has its own execution state. Separate processes can communicate when they use an explicit mechanism.
           checks:
             - prompt: Which pair can ordinarily access the same process memory directly?
-              choices: [Two threads in one process., Two unrelated processes., Two saved program files.]
-              answer: 0
+              choices: ["Two unrelated processes.", "Two threads in one process.", "Two saved program files."]
+              answer: 1
               explanation: Threads within one process share its address space; processes normally have separate address spaces.
             - prompt: What remains separate for two threads in the same process?
-              choices: [Their execution paths and local execution state., The entire program's address space., Every file the process can use.]
-              answer: 0
+              choices: ["Every file the process can use.", "The entire program's address space.", "Their execution paths and local execution state."]
+              answer: 2
               explanation: Threads share process resources but each needs its own state to resume execution.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/, https://www.cs.cornell.edu/courses/cs3410/2025fa/notes/threads.html]
       - id: os-race
@@ -79,6 +81,7 @@ modules:
             - {name: Race condition, meaning: Correctness depends on an uncontrolled order of concurrent operations.}
             - {name: Lost update, meaning: One change overwrites another because both used an old value.}
           worked_example: Start with count 0. A reads 0; B reads 0; A writes 1; B writes 1. Two increments were requested, but the count is 1.
+          second_example_prompt: "Two cashiers both see one free seat. What can go wrong if each reserves it without checking again?"
           second_example: Two cashiers read that one seat is available and both try to reserve it. Without coordination, each may tell a different customer the seat is theirs.
           misconception: A race does not require two CPU cores. Workers can interleave on one core and still read the same old value.
           visual:
@@ -123,12 +126,12 @@ modules:
                     state: {Shared count: '2', A's local value: '0', B's local value: '1'}
           checks:
             - prompt: Count starts at 0. A and B both read 0, then each writes its calculated value. What is the final count?
-              choices: ['1', '2', '0']
+              choices: ["1", "2", "0"]
               answer: 0
               explanation: Both calculated 1 from the same old value, so the later write overwrites an equivalent value.
             - prompt: Why is this a race condition?
-              choices: [The result can depend on the order of shared reads and writes., Two workers always use two CPU cores., The code contains a loop.]
-              answer: 0
+              choices: ["The code contains a loop.", "Two workers always use two CPU cores.", "The result can depend on the order of shared reads and writes."]
+              answer: 2
               explanation: The uncontrolled interleaving changes whether one update is lost.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
       - id: os-mutex
@@ -144,16 +147,17 @@ modules:
             - {name: Critical section, meaning: The steps that must not overlap with another worker's conflicting steps.}
             - {name: Invariant, meaning: "A rule the program must keep true, such as no lost increments."}
           worked_example: A acquires the lock, reads 0, writes 1 and releases it. B then acquires the lock, reads 1, writes 2 and releases it. The final count is 2.
+          second_example_prompt: "A booking service runs on several servers. Would one in-process mutex protect the last seat for everyone?"
           second_example: For one available seat, a reservation system can protect the check-and-reserve operation so only one customer can claim it. A database transaction is often the real tool for this case; a local process lock alone would not protect multiple servers.
           misconception: Locking only the final write does not fix the lost update; protect the whole read–change–write section. A local mutex is not a lock shared by every server.
           checks:
             - prompt: Which part needs the counter's mutex?
-              choices: [The entire read–change–write sequence., Only the final print statement., Only the arithmetic after both threads already read.]
-              answer: 0
+              choices: ["Only the final print statement.", "The entire read–change–write sequence.", "Only the arithmetic after both threads already read."]
+              answer: 1
               explanation: Protect all steps that must behave as one change to shared state.
             - prompt: Why should a lock usually cover no more work than necessary?
-              choices: [Other workers must wait while it is held., A longer lock changes the data type., Locks prevent all deadlocks automatically.]
-              answer: 0
+              choices: ["A longer lock changes the data type.", "Locks prevent all deadlocks automatically.", "Other workers must wait while it is held."]
+              answer: 2
               explanation: An unnecessarily long critical section increases contention and can reduce responsiveness.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/, https://docs.python.org/3/library/threading.html]
   - id: db-foundations
@@ -185,16 +189,17 @@ modules:
             - {name: Row, meaning: One record in a table.}
             - {name: Column, meaning: One named field shared by the table's rows.}
           worked_example: A students table has columns student_id, name and year. The row (7, Asha, 1) describes one student. Another row can have a different student_id and the same name.
+          second_example_prompt: "In a products table, is a price a new row or a value describing one product?"
           second_example: A products table has product_id, name and price. A price is data about a product, not a separate product row.
           misconception: A table is a logical collection of records. It does not mean every row is stored in one simple flat file on disk.
           checks:
             - prompt: In a students table, what does one row represent?
-              choices: [One student record., Every student name., One database server.]
+              choices: ["One student record.", "Every student name.", "One database server."]
               answer: 0
               explanation: A row is one record; the columns define its fields.
             - prompt: Where does the field name “price” belong in a products table?
-              choices: [In a column definition., As a separate database., In the server's process ID.]
-              answer: 0
+              choices: ["In the server's process ID.", "In a column definition.", "As a separate database."]
+              answer: 1
               explanation: A column names a field that product rows can carry.
           sources: [https://www.postgresql.org/docs/current/tutorial.html]
       - id: db-key
@@ -210,16 +215,17 @@ modules:
             - {name: Foreign key, meaning: A column or columns constrained to refer to a valid row in another table.}
             - {name: Constraint, meaning: A rule the DBMS checks when data changes.}
           worked_example: students has student_id 7 for Asha. enrollments has (student_id 7, course_id 12). The enrollment's student_id is a foreign key to students.student_id. An enrollment with student_id 999 is rejected if no such student exists.
+          second_example_prompt: "An order belongs to a customer. Which value identifies the order, and which value links it to the customer?"
           second_example: orders.order_id identifies an order; orders.customer_id points to customers.customer_id. A customer can have several orders without copying their full address into each order.
           misconception: A foreign key stores a reference value, not a copy of the entire parent row. Its constraint checks that the referenced row exists.
           checks:
             - prompt: Two students share the name Asha. Which field is a safer primary key?
-              choices: [A unique student_id., The name Asha., A random row position on disk.]
+              choices: ["A unique student_id.", "The name Asha.", "A random row position on disk."]
               answer: 0
               explanation: Names may repeat; a stable unique student_id can identify each logical student.
             - prompt: What should happen if an enrollment refers to a nonexistent student_id?
-              choices: [A foreign-key constraint can reject it., The DBMS automatically invents a student., The name column becomes the primary key.]
-              answer: 0
+              choices: ["The name column becomes the primary key.", "The DBMS automatically invents a student.", "A foreign-key constraint can reject it."]
+              answer: 2
               explanation: The foreign key protects the relationship by requiring a matching referenced row.
           sources: [https://www.postgresql.org/docs/current/ddl-constraints.html]
       - id: db-join
@@ -235,6 +241,7 @@ modules:
             - {name: Inner join, meaning: Keeps row pairs that satisfy the match.}
             - {name: Left join, meaning: "Keeps every left row, even without a matching right row."}
           worked_example: Asha (id 7) has two enrollments, so joining students to enrollments produces two rows for her. Bilal (id 8) has none; an inner join omits him, while a left join keeps him with null enrollment fields.
+          second_example_prompt: "How could you find customers who have never placed an order while keeping those customers in the result?"
           second_example: To find customers who never ordered, left join customers to orders and look for rows where the matched order ID is null. A missing join condition would produce many unrelated combinations.
           misconception: A join does not guarantee one output row per left row. One left row can match many right rows.
           visual:
@@ -267,11 +274,11 @@ modules:
                     state: {Students: 'Asha (7), Bilal (8)', Enrollments: '7 → Math; 7 → Physics', Result rows: 'Asha — Math; Asha — Physics; Bilal — null'}
           checks:
             - prompt: Which join keeps students who have not enrolled in any course?
-              choices: [A left join starting from students., An inner join only., A join with no matching condition.]
-              answer: 0
+              choices: ["A join with no matching condition.", "A left join starting from students.", "An inner join only."]
+              answer: 1
               explanation: A left join retains all students, including those with no enrollment match.
             - prompt: One student has two enrollments. How many joined rows can that student produce?
-              choices: ['2', '1 always', '0 always']
+              choices: ["2", "0 always", "1 always"]
               answer: 0
               explanation: The student row matches each of its two enrollment rows.
           sources: [https://www.postgresql.org/docs/current/tutorial-join.html]
@@ -288,16 +295,17 @@ modules:
             - {name: Commit, meaning: Finish a successful transaction so its changes become permanent.}
             - {name: Rollback, meaning: Undo the transaction's uncommitted changes after failure.}
           worked_example: Account A has 100 and B has 50. In one transaction, subtract 20 from A and add 20 to B, then commit. If the second operation fails, roll back; balances remain 100 and 50, not 80 and 50.
+          second_example_prompt: "A shop reduces stock, then fails to create the order. What should happen to the stock change?"
           second_example: An online shop reduces stock and creates an order in one transaction. If order creation fails, the stock reduction should not remain by itself.
           misconception: Atomicity handles all-or-nothing changes; it does not by itself answer every concurrency or business-rule question. Isolation and constraints matter too.
           checks:
             - prompt: A transfer subtracts money but fails before adding it to the destination. What should happen?
-              choices: [Roll back the transaction's uncommitted changes., Keep the subtraction alone., Create a foreign key instead.]
-              answer: 0
+              choices: ["Create a foreign key instead.", "Roll back the transaction's uncommitted changes.", "Keep the subtraction alone."]
+              answer: 1
               explanation: Atomicity means the related operations succeed together or are undone together.
             - prompt: When should the transfer transaction commit?
-              choices: [After both balance changes succeed and required rules hold., Immediately after subtracting from A., Before any statement runs.]
-              answer: 0
+              choices: ["Before any statement runs.", "Immediately after subtracting from A.", "After both balance changes succeed and required rules hold."]
+              answer: 2
               explanation: Commit only when the unit of work is complete and valid.
           sources: [https://www.postgresql.org/docs/current/tutorial-transactions.html]
   - id: os-systems
@@ -329,16 +337,17 @@ modules:
             - {name: Blocked, meaning: Waiting for an event such as completed I/O.}
             - {name: Context switch, meaning: Saving one execution context and resuming another.}
           worked_example: A browser requests a file and waits for the network. While it waits, the scheduler runs the music app so playback continues. When data arrives, the browser becomes runnable again.
+          second_example_prompt: "A calculator needs a long CPU calculation while you type in an editor. How can one CPU keep the editor responsive?"
           second_example: A calculator doing a long computation stays CPU-bound. Sharing the core with a text editor gives the editor a turn, though frequent switching itself has a cost.
           misconception: A waiting task is not necessarily using CPU time. Concurrency on one core does not mean simultaneous execution.
           checks:
             - prompt: A browser is waiting for a network reply. What can the CPU do meanwhile?
-              choices: [Run another runnable task., Only wait for the browser., Turn the browser into a second CPU core.]
+              choices: ["Run another runnable task.", "Turn the browser into a second CPU core.", "Only wait for the browser."]
               answer: 0
               explanation: I/O waiting frees the core to run other ready work.
             - prompt: Two threads take turns on one core. Are they running in parallel?
-              choices: ['No, their work is concurrent but not simultaneous.', 'Yes, every context switch creates a second core.', 'No, they must be separate processes.']
-              answer: 0
+              choices: ["No, they must be separate processes.", "No, their work is concurrent but not simultaneous.", "Yes, every context switch creates a second core."]
+              answer: 1
               explanation: Parallel work executes at the same time; interleaving on one core is concurrency.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
       - id: os-virtual-memory
@@ -354,15 +363,16 @@ modules:
             - {name: Page, meaning: A fixed-size unit used in virtual-memory mappings.}
             - {name: Page fault, meaning: A trap when a referenced virtual page is not currently mapped for the attempted access.}
           worked_example: Game A and game B both use virtual address 0x1000, but their mappings point to different physical pages. Their scores stay separate unless they intentionally share memory.
+          second_example_prompt: "A photo editor touches image data that is not in physical memory yet. What must happen before it can continue?"
           second_example: A photo editor touches a large image page that is not resident. The OS may load the needed data before the editor can continue, making that access slower than a normal memory read.
           misconception: A page fault does not always mean a program bug. Some faults are resolved as part of normal memory management.
           checks:
             - prompt: Why can two processes use the same virtual address safely?
-              choices: [Their mappings can point to different physical memory., The address is always a disk location., The CPU ignores both addresses.]
-              answer: 0
+              choices: ["The CPU ignores both addresses.", "The address is always a disk location.", "Their mappings can point to different physical memory."]
+              answer: 2
               explanation: Address translation and separate mappings give processes isolated views.
             - prompt: An app accesses a valid page that is not resident. What may happen?
-              choices: [The OS resolves a page fault and the app continues., The app must always be deleted., A mutex automatically loads the page.]
+              choices: ["The OS resolves a page fault and the app continues.", "A mutex automatically loads the page.", "The app must always be deleted."]
               answer: 0
               explanation: A valid missing page can be brought into memory or mapped by the OS.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
@@ -379,16 +389,17 @@ modules:
             - {name: Wait-for cycle, meaning: A chain of workers waiting that returns to its starting worker.}
             - {name: Deadlock, meaning: Workers cannot progress because each waits for resources held in the cycle.}
           worked_example: A holds printer then requests scanner. B holds scanner then requests printer. Draw A → B → A. If both acquire printer before scanner, this two-lock cycle cannot form.
+          second_example_prompt: "Two transfers each need to lock two accounts. How can a consistent lock order prevent them waiting forever?"
           second_example: Two bank transfers lock account rows in opposite order. Sorting account IDs and always locking the smaller ID first prevents this specific ordering cycle.
           misconception: A slow task or a single worker waiting for a lock is not necessarily deadlocked. Look for a cycle that cannot resolve without intervention.
           checks:
             - prompt: A holds lock X and waits for Y; B holds Y and waits for X. What is the key problem?
-              choices: [A circular wait with neither worker able to release its held lock., A page fault., Two CPUs executing simultaneously.]
-              answer: 0
+              choices: ["A page fault.", "Two CPUs executing simultaneously.", "A circular wait with neither worker able to release its held lock."]
+              answer: 2
               explanation: The ownership and waiting edges form a cycle.
             - prompt: What simple rule can prevent this two-lock ordering deadlock?
-              choices: [Both workers acquire X before Y., Let each worker choose a random order., Make both locks permanent.]
-              answer: 0
+              choices: ["Make both locks permanent.", "Both workers acquire X before Y.", "Let each worker choose a random order."]
+              answer: 1
               explanation: A consistent global order removes the opposing acquisition order.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
   - id: db-queries-and-storage
@@ -419,16 +430,17 @@ modules:
             - {name: WHERE, meaning: A condition used to filter rows.}
             - {name: ORDER BY, meaning: A requested order for result rows.}
           worked_example: For students (7, Asha, 1) and (8, Bilal, 2), SELECT name FROM students WHERE year = 1 returns Asha. Add ORDER BY name to specify alphabetical order when several rows match.
+          second_example_prompt: "A shop filters products cheaper than 500. Does selecting only the name also sort the results?"
           second_example: A shop can ask for product names WHERE price < 500, then ORDER BY price to show the cheapest first. Selecting only name does not make the rows sorted by name.
           misconception: The order in which rows happen to be stored or returned today is not a guaranteed SQL result order.
           checks:
             - prompt: Which clause keeps only year-1 students?
-              choices: [WHERE year = 1, ORDER BY year, SELECT year]
-              answer: 0
+              choices: ["SELECT year", "ORDER BY year", "WHERE year = 1"]
+              answer: 2
               explanation: WHERE filters the rows before they appear in the result.
             - prompt: How do you guarantee an alphabetical result?
-              choices: [Add ORDER BY name., Rely on insertion order., Add a primary key only.]
-              answer: 0
+              choices: ["Rely on insertion order.", "Add ORDER BY name.", "Add a primary key only."]
+              answer: 1
               explanation: An explicit ORDER BY defines the output order.
           sources: [https://www.postgresql.org/docs/current/tutorial-sql.html]
       - id: db-index
@@ -444,15 +456,16 @@ modules:
             - {name: Index, meaning: An auxiliary structure that helps find rows by key.}
             - {name: Selectivity, meaning: How narrowly a condition limits matching rows.}
           worked_example: An ISBN equality lookup returns one book among a million. An index on ISBN may avoid checking every book row. If a query returns almost every row, a scan can be cheaper.
+          second_example_prompt: "A food app often finds recent orders for one customer. What might an index help, and what does it cost on writes?"
           second_example: A food app finds recent orders for one customer. An index beginning with customer_id may help, but adding indexes to every column makes each order insert more expensive.
           misconception: A primary key is a logical uniqueness rule; an index is a physical access structure. Many databases implement a primary key with an index, but the concepts differ.
           checks:
             - prompt: Which query is a strong index candidate on a large books table?
-              choices: [Find one known ISBN., Read every book row., Count all rows after every write.]
-              answer: 0
+              choices: ["Count all rows after every write.", "Read every book row.", "Find one known ISBN."]
+              answer: 2
               explanation: A selective lookup can benefit from a suitable index.
             - prompt: Why not add an index to every column?
-              choices: [Indexes consume space and add work to writes., Indexes remove all table rows., Indexes disable SELECT.]
+              choices: ["Indexes consume space and add work to writes.", "Indexes disable SELECT.", "Indexes remove all table rows."]
               answer: 0
               explanation: Index maintenance is part of the write path.
           sources: [https://www.postgresql.org/docs/current/indexes-intro.html]
@@ -484,15 +497,16 @@ modules:
             - {name: Server, meaning: Software that listens and responds to requests.}
             - {name: URL, meaning: An address identifying a resource and how to access it.}
           worked_example: The browser requests /timetable from the school's server. The server replies with page data that the browser renders.
+          second_example_prompt: "A weather app asks an API for a forecast. Which side requests data, and which side responds?"
           second_example: A weather app sends a request to an API server and renders the returned forecast. It is still a client-server exchange although no traditional web page appears.
           misconception: A server is a role played by software, not necessarily a special kind of physical machine. One machine can run several servers.
           checks:
             - prompt: Who initiates a timetable request when you open a page?
-              choices: [The browser client., The monitor., The database table.]
-              answer: 0
+              choices: ["The database table.", "The browser client.", "The monitor."]
+              answer: 1
               explanation: The client starts the exchange by requesting a resource.
             - prompt: Can a server return something other than an HTML page?
-              choices: ['Yes, it may return data or an error.', 'No, all responses are HTML.', Only if DNS is disabled.]
+              choices: ["Yes, it may return data or an error.", "No, all responses are HTML.", "Only if DNS is disabled."]
               answer: 0
               explanation: A server response depends on the request and application.
           sources: [https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works]
@@ -509,15 +523,16 @@ modules:
             - {name: DNS resolver, meaning: A service that looks up DNS records for a client.}
             - {name: TTL, meaning: The lifetime a DNS answer may be cached.}
           worked_example: The resolver returns an address for school.example. The browser uses that address to reach the server, then requests /timetable separately.
+          second_example_prompt: "A shop changes its server address. Why might some visitors still reach the old address for a while?"
           second_example: A shop moves its service to a new address. Some clients may briefly use a cached old answer until the TTL allows a fresh lookup.
           misconception: DNS is an address lookup, not the request for the web page. A successful lookup does not prove the server will answer.
           checks:
             - prompt: What does DNS usually give the browser?
-              choices: [Address records for a name., The complete rendered page., A database transaction.]
-              answer: 0
+              choices: ["The complete rendered page.", "A database transaction.", "Address records for a name."]
+              answer: 2
               explanation: DNS resolves names; other protocols handle the application exchange.
             - prompt: Why might a client still use an old address after a DNS change?
-              choices: [A prior answer is cached within its TTL., HTTP forbids address changes., TCP changes the domain name.]
+              choices: ["A prior answer is cached within its TTL.", "HTTP forbids address changes.", "TCP changes the domain name."]
               answer: 0
               explanation: DNS caches can retain an answer for its allowed lifetime.
           sources: [https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works]
@@ -534,16 +549,17 @@ modules:
             - {name: TCP, meaning: A transport protocol that provides an ordered byte stream.}
             - {name: Framing, meaning: A rule for finding application message boundaries in a stream.}
           worked_example: A photo is transmitted in pieces. TCP reassembles an ordered byte stream for the receiving application, which then interprets the bytes as the photo response.
+          second_example_prompt: "A client sends two JSON documents on one TCP connection. Can the server assume each read returns exactly one document?"
           second_example: Two JSON documents sent on one TCP connection do not automatically arrive as two read calls. A length prefix or delimiter can tell the receiver where each document ends.
           misconception: TCP preserves byte order but does not preserve application write boundaries. One send is not guaranteed to equal one receive.
           checks:
             - prompt: Two JSON messages are sent on one TCP connection. How does the receiver know their boundaries?
-              choices: [Use an application framing rule., Assume each read returns one message., Ask DNS to split them.]
+              choices: ["Use an application framing rule.", "Assume each read returns one message.", "Ask DNS to split them."]
               answer: 0
               explanation: TCP is a byte stream; applications define message boundaries.
             - prompt: Does HTTP/3 always use a TCP connection?
-              choices: ['No, HTTP/3 uses QUIC over UDP.', 'Yes, all HTTP versions require TCP.', 'No, it uses DNS as transport.']
-              answer: 0
+              choices: ["Yes, all HTTP versions require TCP.", "No, HTTP/3 uses QUIC over UDP.", "No, it uses DNS as transport."]
+              answer: 1
               explanation: HTTP/3 uses QUIC, which runs over UDP.
           sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview, https://www.rfc-editor.org/rfc/rfc9114]
   - id: backend-web-basics
@@ -574,15 +590,16 @@ modules:
             - {name: Header, meaning: Metadata about the request or response.}
             - {name: Body, meaning: Optional message content such as an order payload.}
           worked_example: GET /menu asks for a menu. The server returns status 200 and JSON describing dishes. A later POST /orders can include JSON describing a chosen dish.
+          second_example_prompt: "A calendar app lists meetings and creates a new one. Which HTTP methods would fit those actions?"
           second_example: A calendar app GETs /events to list meetings and POSTs /events with a new meeting. The same protocol works even though the data is not a web page.
           misconception: HTTP does not mean HTML only. APIs commonly exchange JSON over HTTP.
           checks:
             - prompt: Where should an order's submitted JSON normally go?
-              choices: [In the request body., In the status code., In a DNS record.]
-              answer: 0
+              choices: ["In a DNS record.", "In the request body.", "In the status code."]
+              answer: 1
               explanation: The body carries submitted application data.
             - prompt: What does GET /menu usually express?
-              choices: [A request to retrieve the menu resource., A promise to create a new order., A command to resolve DNS.]
+              choices: ["A request to retrieve the menu resource.", "A promise to create a new order.", "A command to resolve DNS."]
               answer: 0
               explanation: GET requests a representation of the targeted resource.
           sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview]
@@ -599,16 +616,17 @@ modules:
             - {name: 4xx, meaning: A client request that cannot be fulfilled as sent.}
             - {name: 5xx, meaning: A server-side failure to fulfill the request.}
           worked_example: POST /orders with an unknown item ID can receive 400 or 422 depending on the API contract, with a body naming the invalid field. A database outage during a valid order can produce 503.
+          second_example_prompt: "A product ID is missing, then a valid request crashes the server. Which response classes fit these different failures?"
           second_example: GET /products/999 can return 404 if that product does not exist. A server bug that crashes while processing a valid request is a 500-class failure.
           misconception: 500 is not a generic 'anything went wrong' response. A malformed or unauthorized request should not be presented as a server crash.
           checks:
             - prompt: A valid request fails because the database is unavailable. Which class fits?
-              choices: [5xx server failure., 2xx success., 4xx invalid client request.]
-              answer: 0
+              choices: ["2xx success.", "4xx invalid client request.", "5xx server failure."]
+              answer: 2
               explanation: The server failed to fulfill a valid request.
             - prompt: A client asks for a resource that does not exist. Which status is commonly appropriate?
-              choices: [404 Not Found., 200 OK with invented data., 500 Internal Server Error.]
-              answer: 0
+              choices: ["500 Internal Server Error.", "200 OK with invented data.", "404 Not Found."]
+              answer: 2
               explanation: A missing targeted resource is commonly represented by 404.
           sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status]
   - id: python-foundations
@@ -638,16 +656,17 @@ modules:
             - {name: Object, meaning: A value with a type and identity.}
             - {name: Mutable, meaning: Able to change its contents after creation.}
           worked_example: a = [1, 2]; b = a; b.append(3). Both names now show [1, 2, 3] because the one list changed.
+          second_example_prompt: "Two parts of an app refer to the same shopping cart object. What happens if one part mutates it?"
           second_example: A shopping cart object is shared between a page component and a checkout helper. If the helper mutates that cart, the page can observe the updated items.
           misconception: Assignment does not always copy an object. Whether a later change is visible depends on rebinding versus mutation.
           checks:
             - prompt: After b = a for a list, what does b.append(3) do?
-              choices: [Mutates the list both names refer to., Copies a before changing b., Rebinds a to a new integer.]
-              answer: 0
+              choices: ["Copies a before changing b.", "Mutates the list both names refer to.", "Rebinds a to a new integer."]
+              answer: 1
               explanation: Both names refer to one mutable list.
             - prompt: If b is rebound to a new list, what happens to a?
-              choices: [It keeps referring to the original list., It automatically follows b., It becomes a function.]
-              answer: 0
+              choices: ["It automatically follows b.", "It becomes a function.", "It keeps referring to the original list."]
+              answer: 2
               explanation: Rebinding b changes that name's binding, not a's.
           sources: [https://docs.python.org/3/tutorial/classes.html]
       - id: py-functions
@@ -663,16 +682,17 @@ modules:
             - {name: Argument, meaning: The object supplied for a parameter at a call.}
             - {name: Rebinding, meaning: Making a name refer to a different object.}
           worked_example: def add(xs) calls xs.append(3). Calling add(a) mutates a's list. In contrast, def replace(xs) with xs = [3] only rebinds its local xs.
+          second_example_prompt: "A photo filter should preserve the original image. Should it mutate that image or return a new one?"
           second_example: A photo filter can return a new image instead of changing the original. This is useful when the caller should keep the unedited image.
           misconception: Calling a function does not automatically copy every object, and rebinding a parameter does not rebind the caller's name.
           checks:
             - prompt: A function appends to a list supplied by the caller. What may the caller observe?
-              choices: [The same list has a new element., Its local variable name is deleted., The function has created a new process.]
-              answer: 0
+              choices: ["The function has created a new process.", "The same list has a new element.", "Its local variable name is deleted."]
+              answer: 1
               explanation: Mutation changes the shared object.
             - prompt: A function assigns its parameter to a brand-new list. What happens to the caller's name?
-              choices: [It still refers to the original list., It always points to the new list., It becomes an HTTP header.]
-              answer: 0
+              choices: ["It always points to the new list.", "It becomes an HTTP header.", "It still refers to the original list."]
+              answer: 2
               explanation: A local parameter rebinding does not change the caller's binding.
           sources: [https://docs.python.org/3/tutorial/controlflow.html#defining-functions]
   - id: ai-foundations
@@ -702,16 +722,17 @@ modules:
             - {name: Prediction, meaning: An output produced for a new input.}
             - {name: Evaluation, meaning: Measuring how well outputs meet a task goal.}
           worked_example: A spam model trains on labeled mail and predicts whether a new message is spam. Testing on messages it never trained on gives a more meaningful quality estimate.
+          second_example_prompt: "A model labels a photo from a breed it has rarely seen. Why might its prediction be wrong?"
           second_example: A photo app learns examples of cats and dogs, then labels a new photo. Poor lighting or an unfamiliar breed can still cause an error.
           misconception: Training on examples does not make a model a database of verified facts or guarantee correct predictions.
           checks:
             - prompt: Why test on examples the model did not train on?
-              choices: [To measure generalization to new inputs., To force every prediction to be correct., To replace all training data.]
+              choices: ["To measure generalization to new inputs.", "To replace all training data.", "To force every prediction to be correct."]
               answer: 0
               explanation: Held-out evaluation reveals whether learned patterns transfer beyond training examples.
             - prompt: Can a well-trained model still make a wrong prediction?
-              choices: ['Yes, because new inputs and data limitations can expose errors.', 'No, training guarantees correctness.', 'Only when DNS fails.']
-              answer: 0
+              choices: ["Only when DNS fails.", "Yes, because new inputs and data limitations can expose errors.", "No, training guarantees correctness."]
+              answer: 1
               explanation: Learned patterns are estimates, not guarantees.
           sources: [https://developers.google.com/machine-learning/crash-course]
       - id: ai-embedding
@@ -727,15 +748,16 @@ modules:
             - {name: Embedding, meaning: A learned numeric representation of an item.}
             - {name: Similarity, meaning: A measure of closeness between representations.}
           worked_example: The question shared counter may retrieve a note titled mutex and mutual exclusion because their meanings are related in the model's representation.
+          second_example_prompt: "An image search finds a visually similar product. Can similarity alone prove its price or quality?"
           second_example: A shopping site can retrieve visually similar products from image embeddings. Similar appearance does not mean two products have the same price or quality.
           misconception: A close vector match is not a citation or a truth check. Inspect the retrieved source before using it to answer.
           checks:
             - prompt: What does an embedding give a search system?
-              choices: [A numeric representation for comparing items., A guaranteed factual answer., A database transaction.]
-              answer: 0
+              choices: ["A guaranteed factual answer.", "A numeric representation for comparing items.", "A database transaction."]
+              answer: 1
               explanation: Embeddings support similarity comparisons.
             - prompt: A note has high similarity to a question. Is it automatically correct evidence?
-              choices: ['No, similarity alone does not establish truth or relevance to the exact claim.', 'Yes, every close vector is verified.', 'Yes, if the numbers are large.']
+              choices: ["No, similarity alone does not establish truth or relevance to the exact claim.", "Yes, every close vector is verified.", "Yes, if the numbers are large."]
               answer: 0
               explanation: Retrieval candidates still need source and claim checks.
           sources: [https://developers.google.com/machine-learning/crash-course/embeddings]
@@ -767,6 +789,7 @@ modules:
             - {name: Semaphore, meaning: A synchronization primitive that tracks available permits.}
             - {name: Mutex, meaning: A lock for exclusive ownership of a critical section.}
           worked_example: A pool has three database connections. The first three requests acquire one permit each. The fourth waits until a request releases its connection and permit.
+          second_example_prompt: "Only two big media conversions can run at once. What limits capacity, and what protects a separate shared counter?"
           second_example: A media converter limits active large jobs to two to avoid exhausting memory. This is a capacity limit; a separate mutex may still be needed for a shared job counter.
           misconception: A semaphore with three permits does not make updates to one shared counter atomic. Capacity control and exclusive state protection are different jobs.
           visual:
@@ -789,12 +812,12 @@ modules:
                   - {label: Both write one, explanation: Capacity control did not make their counter update atomic., state: {Free permits: '0', Inside: 'A, B', Shared count: '1, not 2'}}
           checks:
             - prompt: A pool allows three active workers. What should the fourth worker do when all permits are held?
-              choices: [Enter anyway because semaphores are only labels., Wait until a permit is released., Delete another worker's data.]
-              answer: 1
+              choices: ["Enter anyway because semaphores are only labels.", "Delete another worker's data.", "Wait until a permit is released."]
+              answer: 2
               explanation: With no permit available, the fourth worker waits for one to be released.
             - prompt: Does a three-permit semaphore by itself make a shared counter update atomic?
-              choices: [Only if the counter is on disk., 'Yes, any semaphore protects every variable.', 'No, several permit holders can still modify the counter together.']
-              answer: 2
+              choices: ["No, several permit holders can still modify the counter together.", "Only if the counter is on disk.", "Yes, any semaphore protects every variable."]
+              answer: 0
               explanation: Protect the counter's read-change-write sequence with an appropriate exclusive rule.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/threads-sema.pdf]
       - id: os-files
@@ -810,16 +833,17 @@ modules:
             - {name: File descriptor, meaning: A process-local handle for an opened file or I/O resource.}
             - {name: Buffer, meaning: Temporary memory holding data before later processing or storage.}
           worked_example: A notes app opens notes.txt, writes new text through a file descriptor, and closes it. The file remains after the process exits, unlike an unsaved string in the app's memory.
+          second_example_prompt: "A payment log exists only in memory when the process exits. Is the payment record durable?"
           second_example: A payment log may require an explicit durability step before telling the user it is safely recorded. Merely changing an in-memory list would disappear on restart.
           misconception: A successful write is not a universal guarantee that a sudden power loss cannot lose the data. Durability depends on the full storage path.
           checks:
             - prompt: Why can a document remain after its app process exits?
-              choices: [The CPU core remembers it forever., The data was stored through the file system., A thread keeps running invisibly.]
-              answer: 1
+              choices: ["The data was stored through the file system.", "A thread keeps running invisibly.", "The CPU core remembers it forever."]
+              answer: 0
               explanation: File-system storage outlives the process's ordinary in-memory state.
             - prompt: What does a file descriptor represent?
-              choices: [A permanent public URL., A process-local handle to an opened I/O resource., The file's visual icon.]
-              answer: 1
+              choices: ["A permanent public URL.", "The file's visual icon.", "A process-local handle to an opened I/O resource."]
+              answer: 2
               explanation: The process uses the descriptor to refer to its opened resource.
           sources: [https://pages.cs.wisc.edu/~remzi/OSTEP/]
       - id: os-async
@@ -835,16 +859,17 @@ modules:
             - {name: Event loop, meaning: A scheduler that resumes ready async tasks and handles supported events.}
             - {name: Blocking call, meaning: An operation that holds the current execution path until it completes.}
           worked_example: A server starts request A and awaits a database response. The loop serves request B while A waits. When A's result is ready, the loop resumes A.
+          second_example_prompt: "A server event loop starts resizing hundreds of large images. Why might other requests stall?"
           second_example: Resizing hundreds of large images is CPU-heavy. Running that computation directly on one event-loop thread can delay every request; a worker process or another suitable execution strategy may be better.
           misconception: Writing async def does not make synchronous disk or CPU work non-blocking. The operation and its library must cooperate with the loop or be offloaded.
           checks:
             - prompt: Request A awaits a supported network operation. What can an event loop do?
-              choices: [Run another ready async task., Force the network reply to finish instantly., Turn one CPU core into two.]
+              choices: ["Run another ready async task.", "Force the network reply to finish instantly.", "Turn one CPU core into two."]
               answer: 0
               explanation: The loop can use the wait time to advance other ready work.
             - prompt: A CPU-heavy loop runs without yielding on the event-loop thread. What happens?
-              choices: [All other tasks automatically run on new CPU cores., The loop may delay other tasks until the work yields or finishes., DNS turns the work into I/O.]
-              answer: 1
+              choices: ["All other tasks automatically run on new CPU cores.", "DNS turns the work into I/O.", "The loop may delay other tasks until the work yields or finishes."]
+              answer: 2
               explanation: CPU work that does not yield blocks progress on that event-loop thread.
           sources: [https://docs.python.org/3/library/asyncio.html, https://docs.python.org/3/library/asyncio-task.html]
   - id: db-data-correctness-and-storage
@@ -876,16 +901,17 @@ modules:
             - {name: Update anomaly, meaning: Repeated copies of a fact can disagree after a partial update.}
             - {name: Normalization, meaning: Organizing relations around dependencies to reduce anomalies.}
           worked_example: Before splitting, Asha's phone appears in Math and Physics enrollments. After splitting, students stores one phone for Asha; enrollments stores two rows referring to her ID.
+          second_example_prompt: "A shop repeats one supplier address on every product. What happens when that address changes?"
           second_example: A shop stores a supplier address on every product row. Moving the supplier means many edits; a suppliers table can hold the address once and products can refer to it.
           misconception: Normalization does not mean creating the maximum possible number of tables. The decomposition must preserve meaning and be joined correctly when needed.
           checks:
             - prompt: A student's phone appears on each of five enrollment rows. What problem can result?
-              choices: [Nothing can ever go wrong., One missed update leaves contradictory phone numbers., The DBMS must stop supporting joins.]
-              answer: 1
+              choices: ["One missed update leaves contradictory phone numbers.", "The DBMS must stop supporting joins.", "Nothing can ever go wrong."]
+              answer: 0
               explanation: Repeated copies of one fact can become inconsistent.
             - prompt: Where should a fact about one student usually live?
-              choices: [On every enrollment row., In a table describing that student, referenced by enrollments., In the server's CPU register.]
-              answer: 1
+              choices: ["In a table describing that student", "In the server's CPU register.", "referenced by enrollments.", "On every enrollment row."]
+              answer: 0
               explanation: A student fact belongs with the student; enrollment rows record relationships.
           sources: [https://www.postgresql.org/docs/current/tutorial-fk.html, https://www.postgresql.org/docs/current/ddl-constraints.html]
       - id: db-isolation
@@ -901,15 +927,16 @@ modules:
             - {name: Lost update, meaning: One transaction's write overwrites an effect based on an earlier read.}
             - {name: Retry, meaning: Repeating a transaction after a detected conflict.}
           worked_example: A and B both read stock 1. A writes stock 0 and commits. B must not blindly write its own stale result and also claim a sale. A conditional update that succeeds only when stock remains positive can make one buyer fail safely.
+          second_example_prompt: "Two editors load the same profile and save different changes. How could the app avoid silently losing one save?"
           second_example: Two editors update one profile. A version-number check can reject the second stale save and ask the user to review changes rather than silently overwriting the first.
           misconception: Atomicity alone does not solve concurrent reads and writes. It protects a transaction's all-or-nothing outcome, while isolation governs overlap with other transactions.
           checks:
             - prompt: Both buyers read one ticket left. What must the system prevent?
-              choices: [Either buyer seeing the product page., Both sales succeeding from the same stale stock value., A transaction containing more than one statement.]
-              answer: 1
+              choices: ["Both sales succeeding from the same stale stock value.", "Either buyer seeing the product page.", "A transaction containing more than one statement."]
+              answer: 0
               explanation: The available-stock rule must hold despite concurrent attempts.
             - prompt: Is rollback after a half-completed transfer the same concern as two buyers racing?
-              choices: ['Yes, both are only about table names.', 'No, rollback is atomicity while the overlap needs isolation or coordination.', 'No, concurrency cannot affect databases.']
+              choices: ["Yes, both are only about table names.", "No, rollback is atomicity while the overlap needs isolation or coordination.", "No, concurrency cannot affect databases."]
               answer: 1
               explanation: Atomicity and isolation address different failure modes.
           sources: [https://www.postgresql.org/docs/current/transaction-iso.html]
@@ -926,6 +953,7 @@ modules:
             - {name: Heap scan, meaning: Reading table pages to inspect rows for a condition.}
             - {name: ctid, meaning: 'A PostgreSQL physical row-version location, not a stable logical ID.'}
           worked_example: A PostgreSQL table with many rows spans multiple pages. A query without a useful index may read pages and test rows. Finding one matching row does not imply reading exactly that row's bytes from storage.
+          second_example_prompt: "A database reads data in pages. Does every engine use the same page size and physical row layout?"
           second_example: A SQLite database normally starts with 4096-byte pages. The same conceptual page/row distinction applies, but its page size and physical row identifiers differ from PostgreSQL's.
           misconception: An 8 KB page is not universal across databases. A physical location such as PostgreSQL ctid should not be used as a permanent customer ID.
           visual:
@@ -947,12 +975,12 @@ modules:
                   - {label: Compare the work, explanation: 'For this selective lookup, the index avoids scanning all table pages; it still consumes storage and write work.', state: {Table pages scanned: 'Fewer in this model', Match: 'ISBN 7', Cost: 'Index maintenance on writes'}}
           checks:
             - prompt: Are all databases required to use 8 KB pages?
-              choices: ['Yes, it is a SQL rule.', 'No, PostgreSQL commonly uses 8 KB while SQLite defaults to 4 KB.', 'No, every row is exactly one byte.']
-              answer: 1
+              choices: ["No, PostgreSQL commonly uses 8 KB while SQLite defaults to 4 KB.", "No, every row is exactly one byte.", "Yes, it is a SQL rule."]
+              answer: 0
               explanation: Page size depends on the database engine and configuration.
             - prompt: Which value should identify a customer across updates?
-              choices: [A stable logical customer key., PostgreSQL ctid alone., The last byte offset read from disk.]
-              answer: 0
+              choices: ["PostgreSQL ctid alone.", "The last byte offset read from disk.", "A stable logical customer key."]
+              answer: 2
               explanation: A logical key identifies the row as a business entity; physical locations can change.
           sources: [https://www.postgresql.org/docs/current/storage-page-layout.html, https://www.postgresql.org/docs/current/ddl-system-columns.html, https://www.sqlite.org/pragma.html]
 challenges:

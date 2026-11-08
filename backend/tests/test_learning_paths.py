@@ -1,6 +1,7 @@
 """The authored pilot should teach and gate practice without changing challenge progress."""
 
 import json
+from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
@@ -8,6 +9,17 @@ import pytest
 import yaml
 
 from app.services.learning_paths import read_learning_paths
+
+
+LESSON_CHECKS = {
+    lesson["id"]: lesson["content"]["checks"]
+    for module in yaml.safe_load((Path(__file__).resolve().parents[2] / "content" / "learning_paths.yaml").read_text())["modules"]
+    for lesson in module["lessons"]
+}
+
+
+def correct_answer(lesson_id, check_index):
+    return LESSON_CHECKS[lesson_id][check_index]["answer"]
 
 
 def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
@@ -30,10 +42,10 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
     first = client.get("/api/lessons/os-process").json()
     assert "answer" not in first["content"]["checks"][0]
     assert client.post("/api/lessons/os-thread/checks/0", json={"answer": 0}).status_code == 409
-    wrong = client.post("/api/lessons/os-process/checks/0", json={"answer": 1}).json()
+    wrong = client.post("/api/lessons/os-process/checks/0", json={"answer": (correct_answer("os-process", 0) + 1) % 3}).json()
     assert not wrong["correct"] and not wrong["mastered"]
-    assert client.post("/api/lessons/os-process/checks/0", json={"answer": 0}).json()["passed_checks"] == [0]
-    completed = client.post("/api/lessons/os-process/checks/1", json={"answer": 0}).json()
+    assert client.post("/api/lessons/os-process/checks/0", json={"answer": correct_answer("os-process", 0)}).json()["passed_checks"] == [0]
+    completed = client.post("/api/lessons/os-process/checks/1", json={"answer": correct_answer("os-process", 1)}).json()
     assert completed["mastered"]
     assert client.get("/api/lessons/os-thread").json()["ready"]
     assert [item["mastered"] for item in client.get("/api/questions/memory-isolation-threads-vs-processes").json()["required_lessons"]] == [True, False]
@@ -49,7 +61,7 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
 
     for lesson_id in ("os-thread", "os-race", "os-mutex"):
         for check_index in (0, 1):
-            result = client.post(f"/api/lessons/{lesson_id}/checks/{check_index}", json={"answer": 0})
+            result = client.post(f"/api/lessons/{lesson_id}/checks/{check_index}", json={"answer": correct_answer(lesson_id, check_index)})
             assert result.status_code == 200
             assert result.json()["correct"]
     completed_module = client.get("/api/learning-paths/os_concurrency").json()["modules"][0]
@@ -74,6 +86,23 @@ def test_db_path_starts_with_tables_not_joins(client):
     assert lessons[0]["ready"] and not lessons[2]["ready"]
     assert client.get("/api/lessons/db-table").json()["content"]["worked_example"]
     assert len(client.get("/api/lessons/db-join").json()["content"]["visual"]["tracks"]) == 2
+
+
+def test_every_lesson_has_an_authored_transfer_prompt(client):
+    for citadel in ("os_concurrency", "sql_dbms", "computer_networking", "backend_apis", "python_data", "ai_resume"):
+        path = client.get(f"/api/learning-paths/{citadel}")
+        assert path.status_code == 200
+        for module in path.json()["modules"]:
+            for step in module["lessons"]:
+                content = client.get(f"/api/lessons/{step['id']}").json()["content"]
+                assert content["second_example_prompt"].strip()
+                assert content["second_example"].strip()
+                assert all("answer" not in check for check in content["checks"])
+
+
+def test_check_answers_are_not_concentrated_in_the_first_choice():
+    positions = Counter(check["answer"] for checks in LESSON_CHECKS.values() for check in checks)
+    assert max(positions.values()) - min(positions.values()) <= 3
 
 
 def test_extended_paths_begin_with_foundations_and_gate_advanced_challenges(client):
@@ -108,7 +137,7 @@ def test_coordination_and_storage_lessons_gate_matching_practice(client):
     db_modules = client.get("/api/learning-paths/sql_dbms").json()["modules"]
     assert [lesson["id"] for lesson in db_modules[-1]["lessons"]] == ["db-normalization", "db-isolation", "db-pages"]
     assert client.get("/api/questions/heap-pages-and-scans").json()["required_lessons"][-1]["id"] == "db-pages"
-    assert client.get("/api/lessons/db-pages").json()["content"]["checks"][0]["choices"][1].startswith("No, PostgreSQL")
+    assert any(choice.startswith("No, PostgreSQL") for choice in client.get("/api/lessons/db-pages").json()["content"]["checks"][0]["choices"])
     assert len(client.get("/api/lessons/os-semaphore").json()["content"]["visual"]["tracks"]) == 2
     assert len(client.get("/api/lessons/db-pages").json()["content"]["visual"]["tracks"]) == 2
 
