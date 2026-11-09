@@ -5,7 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import type { QuestionSummary, World } from '../api/types'
 import { Button, DifficultyBadge, LeetCodeLink } from '../components/ui'
-import { isResult, QUESTIONS, RESULTS, type PatternResult } from '../lib/patternFinder'
+import { isResult, QUESTIONS, RESULTS, resolvePatternPath, type PatternResult } from '../lib/patternFinder'
 import { questUrl } from '../lib/journey'
 
 /**
@@ -14,8 +14,7 @@ import { questUrl } from '../lib/journey'
  */
 export default function PatternFinder() {
   const [search, setSearch] = useSearchParams()
-  const path = (search.get('path') ?? '').split('.').filter(Boolean)
-  const nodeId = path.length ? path[path.length - 1] : 'start'
+  const { path, nodeId, invalid } = resolvePatternPath(search.get('path'))
   const reduce = useReducedMotion()
   const [worlds, setWorlds] = useState<World[] | null>(null)
 
@@ -38,6 +37,11 @@ export default function PatternFinder() {
           interview: input shape first, then what is being asked, then the constraint that decides it.
         </p>
       </header>
+
+      {invalid && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber/35 bg-amber/10 px-4 py-3 text-sm text-chalk">
+        <span>This saved route is no longer available. Continue from the last valid step or start again.</span>
+        <button type="button" onClick={() => go([])} className="font-semibold text-amber underline underline-offset-4 hover:text-chalk">Start again</button>
+      </div>}
 
       {/* Steps so far (NN/g: show steps, not just a spinner) */}
       <ol className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -116,26 +120,27 @@ function QuestionCard({ id, onPick, onBack }: { id: string; onPick: (next: strin
 
 /** Number keys pick a choice, Backspace goes back. */
 function KeyboardPick({ count, onPick, onBack }: { count: number; onPick: (i: number) => void; onBack?: () => void }) {
+  const shortcutCount = Math.min(count, 9)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target instanceof Element ? e.target : null
-      if (t?.closest('input, textarea, select, button[role="option"]') || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.defaultPrevented || e.repeat || t?.closest('input, textarea, select, button, a, [contenteditable], [role="dialog"]') || e.metaKey || e.ctrlKey || e.altKey) return
       const n = Number(e.key)
-      if (n >= 1 && n <= count) onPick(n - 1)
+      if (n >= 1 && n <= shortcutCount) onPick(n - 1)
       else if (e.key === 'Backspace' && onBack) onBack()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [count, onPick, onBack])
+  }, [shortcutCount, onPick, onBack])
   return (
     <p className="mt-4 text-2xs text-faint">
-      Tip: press <kbd className="keycap">1</kbd>–<kbd className="keycap">{count}</kbd> to choose
+      Tip: press <kbd className="keycap">1</kbd>–<kbd className="keycap">{shortcutCount}</kbd> for the first {shortcutCount} options.
+      {count > 9 && ` Choose options 10–${count} with the buttons.`}
       {onBack && (
         <>
-          , <kbd className="keycap">⌫</kbd> to go back
+          {' '}Press <kbd className="keycap">⌫</kbd> to go back.
         </>
       )}
-      .
     </p>
   )
 }

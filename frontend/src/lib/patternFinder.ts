@@ -327,4 +327,18 @@ export const RESULTS: Record<string, PatternResult> = {
   },
 }
 
-export const isResult = (id: string) => id in RESULTS
+export const isResult = (id: string) => Object.hasOwn(RESULTS, id)
+
+/** Follow only edges in the authored decision tree so stale or edited links stay usable. */
+export function resolvePatternPath(rawPath: string | null): { path: string[]; nodeId: string; invalid: boolean } {
+  const requested = rawPath ? rawPath.split('.').filter(Boolean) : []
+  const path: string[] = []
+  let nodeId = 'start'
+  for (const next of requested) {
+    const choice = QUESTIONS[nodeId]?.choices.find((item) => item.next === next)
+    if (!choice) return { path, nodeId, invalid: true }
+    path.push(next)
+    nodeId = next
+  }
+  return { path, nodeId, invalid: false }
+}

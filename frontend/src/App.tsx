@@ -178,7 +178,7 @@ function TopBar() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {(!auth.enabled || auth.session) && <TopBarHUD />}
+            {(!auth.enabled || auth.session) && <div className="hidden xl:block"><TopBarHUD /></div>}
             <button
               onClick={openCommandPalette}
               aria-label="Search (Ctrl+K)"
@@ -231,9 +231,10 @@ function AppShell() {
 
   return (
     <div className={isFullscreenIde ? 'h-screen w-screen overflow-hidden bg-void text-chalk' : 'min-h-screen bg-void text-chalk'}>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-panel focus:px-4 focus:py-2 focus:text-chalk focus:shadow-xl">Skip to main content</a>
       {!isFullscreenIde && !isAuthRoute && <TopBar />}
       <CommandPalette />
-      <main className={isFullscreenIde ? 'h-full w-full overflow-hidden' : ''}>
+      <main id="main-content" tabIndex={-1} className={isFullscreenIde ? 'h-full w-full overflow-hidden' : ''}>
         <ErrorBoundary fallbackTitle="Workspace encountered an unexpected error">
           <Outlet />
         </ErrorBoundary>

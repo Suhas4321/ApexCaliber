@@ -68,3 +68,5 @@ These are **proposals**, not shipped features. They follow from the current cont
 6. **Validate with beginners.** Ask first-time learners to find the starting lesson, explain a concept in their own words, apply it to a new example, and resume the route later. Use failures in those tasks to prioritize content and UI changes. Passing builds and content validators cannot establish that students actually understand the material.
 
 Detailed design and implementation notes live in [the frontend audit](docs/FRONTEND_DESIGN_AUDIT_AND_PLAN.md), [the syllabus review](docs/BEGINNER_SYLLABUS_REBUILD_REVIEW.md), and the [Phase 3 status](docs/PHASE3_COORDINATION_AND_STORAGE_IMPLEMENTATION.md). Those documents were written at different stages; this README describes the current repository and keeps remaining work explicit.
+
+The current frontend assessment, visual contract, and shipped UI changes are recorded in [the UI/UX audit](docs/APEXCALIBER_UI_UX_AUDIT.md), [the design system](docs/APEXCALIBER_DESIGN_SYSTEM.md), and [the frontend changelog](docs/APEXCALIBER_FRONTEND_CHANGELOG.md).

@@ -470,6 +470,11 @@ kbd.keycap {
   box-shadow: 0 1px 0 0 var(--color-line-strong);
 }
 
+/* The shared keycap styling must not override the compact header's hidden shortcut. */
+@media (max-width: 639px) {
+  kbd.keycap.hidden { display: none; }
+}
+
 /* Markdown body inside content panels */
 .prose-forge {
   @apply text-chalk font-normal;

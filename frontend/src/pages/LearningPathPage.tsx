@@ -12,13 +12,17 @@ export default function LearningPathPage() {
   const [error, setError] = useState<string | null>(null)
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({})
   useEffect(() => {
+    let active = true
+    setPath(null)
+    setError(null)
     setOpenModules({})
-    api.learningPath(citadelId).then(setPath).catch((e) => setError(e.message))
+    api.learningPath(citadelId).then((item) => { if (active) setPath(item) }).catch((e) => { if (active) setError(e.message) })
+    return () => { active = false }
   }, [citadelId])
   const citadel = getCitadel(citadelId)
 
   if (error) return <div className="shell py-8"><ErrorNote message={error} /></div>
-  if (!path) return <div className="shell py-8"><Skeleton className="h-64 rounded-2xl" /></div>
+  if (!path || path.citadel_id !== citadelId) return <div className="shell py-8"><Skeleton className="h-64 rounded-2xl" /></div>
   const lessons = path.modules.flatMap((module) => module.lessons)
   const done = lessons.filter((lesson) => lesson.mastered).length
   const nextLesson = lessons.find((lesson) => lesson.ready && !lesson.mastered)
@@ -28,9 +32,9 @@ export default function LearningPathPage() {
       <Link to={`/citadel/${citadelId}`} className="inline-flex items-center gap-2 text-sm text-muted hover:text-chalk"><ArrowLeft size={16} /> Back to {citadel.shortName}</Link>
       <div className="rounded-3xl border border-line bg-panel p-6 sm:p-8">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan"><BookOpen size={16} /> Concept route</div>
-        <h1 className="mt-3 font-plate text-3xl font-semibold text-chalk">Start with the foundations</h1>
+        <h1 className="mt-3 font-plate text-3xl font-semibold text-chalk">{citadel.shortName}: start with the foundations</h1>
         <p className="mt-2 max-w-2xl text-muted">One small idea at a time. See it in a real situation, work through an example, then check your understanding.</p>
-        <div className="mt-6 flex items-center gap-4"><div className="h-2 flex-1 rounded-full bg-panel-3 overflow-hidden"><div className="h-full rounded-full bg-cyan" style={{ width: `${lessons.length ? done / lessons.length * 100 : 0}%` }} /></div><span className="text-sm text-muted">{done} of {lessons.length} concepts</span></div>
+        <div className="mt-6 flex items-center gap-4"><div role="progressbar" aria-label={`${citadel.shortName} concept progress`} aria-valuenow={done} aria-valuemin={0} aria-valuemax={lessons.length} className="h-2 flex-1 overflow-hidden rounded-full bg-panel-3"><div className="h-full rounded-full bg-cyan" style={{ width: `${lessons.length ? done / lessons.length * 100 : 0}%` }} /></div><span className="text-sm text-muted">{done} of {lessons.length} concepts</span></div>
         {nextLesson ? <Link to={`/lesson/${nextLesson.id}`} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan px-5 py-3 text-sm font-semibold text-[#06121a]">Continue: {nextLesson.title} <ArrowRight size={16} /></Link> : done === lessons.length ? <p className="mt-5 text-sm font-semibold text-emerald-300">Route complete. Revisit any lesson or try a practice challenge.</p> : null}
       </div>
     </header>
