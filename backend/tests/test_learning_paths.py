@@ -54,7 +54,7 @@ def test_os_foundations_unlock_in_order_and_backup_mastery(client, backup_dir):
 
     summary = client.get("/api/learning-paths/summary").json()
     assert summary["concepts_mastered"] >= 1
-    assert summary["total_concepts"] == 28
+    assert summary["total_concepts"] == 30
     assert "challenges_solved" in summary
     saved = json.loads((backup_dir / "user_data.json").read_text())
     assert any(row["lesson_id"] == "os-process" and row["mastered"] for row in saved["tables"]["lesson_progress"])
@@ -115,11 +115,16 @@ def test_extended_paths_begin_with_foundations_and_gate_advanced_challenges(clie
 
     network = client.get("/api/learning-paths/computer_networking").json()["modules"][0]
     assert [lesson["id"] for lesson in network["lessons"]] == [
-        "net-client-server", "net-dns", "net-transport"
+        "net-client-server", "net-address-port", "net-dns", "net-transport", "net-handshake"
     ]
     assert network["lessons"][0]["ready"]
     assert not network["lessons"][1]["ready"]
+    assert network["lessons"][2]["prerequisites"] == ["net-address-port"]
     assert client.get("/api/questions/dns-recursive-resolver").json()["required_lessons"][-1]["id"] == "net-dns"
+    assert [item["id"] for item in client.get("/api/questions/tcp-three-way-handshake").json()["required_lessons"]] == [
+        "net-client-server", "net-address-port", "net-dns", "net-transport", "net-handshake"
+    ]
+    assert len(client.get("/api/lessons/net-handshake").json()["content"]["visual"]["tracks"]) == 2
     assert client.get("/api/questions/virtual-memory-page-replacement").json()["required_lessons"][-1]["id"] == "os-virtual-memory"
     assert client.get("/api/lessons/net-client-server").json()["content"]["checks"]
     backend_first = client.get("/api/learning-paths/backend_apis").json()["modules"][0]["lessons"][0]

@@ -472,14 +472,15 @@ modules:
   - id: network-foundations
     citadel_id: computer_networking
     title: From a web address to a response
-    summary: Follow a request from client to server before diagnosing DNS or TCP failures.
+    summary: Follow a request from client to server through addresses, DNS and TCP before diagnosing failures.
     position: 1
     cue_card:
       elevator_pitch: A browser resolves a name, connects to a server using a transport, sends an application request and interprets the response.
       pillars:
+        - IP addresses help route packets toward a host; transport ports select a listening service or connection endpoint.
         - DNS maps a name to address records; it does not fetch the page.
         - TCP provides an ordered byte stream; applications define message boundaries.
-        - HTTP defines request and response meaning above the transport.
+        - A TCP connection begins with SYN, SYN-ACK and ACK; HTTP defines request and response meaning above the transport.
       tradeoffs:
         - Caches reduce lookup latency but changes may take time to propagate.
         - Reliable delivery and security need protocols and state beyond a raw packet.
@@ -510,11 +511,37 @@ modules:
               answer: 0
               explanation: A server response depends on the request and application.
           sources: [https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works]
+      - id: net-address-port
+        title: What are an IP address and a port?
+        summary: Separate finding a host from finding the service listening on it.
+        position: 2
+        prerequisites: [net-client-server]
+        content:
+          situation: A server runs a website and an API. Both are reachable through the same machine, so how does a request reach the right service?
+          explanation: An IP address helps the network route packets toward a destination interface. A transport port helps the receiving computer direct traffic to a listening service or connection endpoint. A URL can include a port; a scheme such as HTTPS usually supplies a default port when none is written. The pair matters because one host can run several services. A port number alone is not a global address, and DNS answers normally identify addresses rather than opening the service for you.
+          terms:
+            - {name: IP address, meaning: A network-layer address used to route packets toward an interface.}
+            - {name: Port, meaning: A transport-layer number used to distinguish services and connection endpoints.}
+            - {name: Listening service, meaning: A program waiting for traffic on an address and port.}
+          worked_example: A browser finds an address for school.example and connects to the site's HTTPS service, usually on port 443. The address helps reach the host; the port helps reach the intended service.
+          second_example_prompt: "Your computer runs two local apps at 127.0.0.1:5174 and 127.0.0.1:8010. Why do the URLs show different apps?"
+          second_example: Both URLs use the loopback address for your own computer. The different ports lead to different listening services. Changing only the port can change which local app answers.
+          misconception: An IP address does not uniquely identify one website or application. The host may serve many services, and proxies or network address translation can add further routing steps.
+          checks:
+            - prompt: Two local services use the same IP address. What helps the computer send a connection to the intended service?
+              choices: ["The page title.", "The transport port.", "The DNS cache alone."]
+              answer: 1
+              explanation: The destination port distinguishes listening services using the same destination address and transport protocol.
+            - prompt: Does knowing a server's IP address alone prove that its website is listening and healthy?
+              choices: ["Yes, the address contains the page content.", "Yes, DNS guarantees that every service is running.", "No, the service and its port may still be unavailable."]
+              answer: 2
+              explanation: Addressing tells the client where to try; it does not guarantee a response from the intended service.
+          sources: [https://www.rfc-editor.org/rfc/rfc8200, https://www.rfc-editor.org/rfc/rfc6335]
       - id: net-dns
         title: How does a name lead to a server address?
         summary: Learn DNS resolution and caching before tracing a recursive lookup.
-        position: 2
-        prerequisites: [net-client-server]
+        position: 3
+        prerequisites: [net-address-port]
         content:
           situation: You know the name school.example, but your browser needs a network address to reach it.
           explanation: DNS resolves a domain name to records such as an IP address. A resolver may answer from a cache or ask other DNS servers. A cached record can remain until its time-to-live expires. DNS supplies addressing information; it does not itself open the web page or guarantee that the application server is healthy.
@@ -539,7 +566,7 @@ modules:
       - id: net-transport
         title: How does information cross the network?
         summary: Compare packets and TCP's ordered byte stream before the handshake exercise.
-        position: 3
+        position: 4
         prerequisites: [net-dns]
         content:
           situation: A large photo cannot fit in one network packet, but it arrives intact in your browser.
@@ -562,6 +589,49 @@ modules:
               answer: 1
               explanation: HTTP/3 uses QUIC, which runs over UDP.
           sources: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview, https://www.rfc-editor.org/rfc/rfc9114]
+      - id: net-handshake
+        title: How does a TCP connection begin?
+        summary: Walk through SYN, SYN-ACK and ACK before simulating a lost message.
+        position: 5
+        prerequisites: [net-transport]
+        content:
+          situation: Your browser knows the server's address and port. Before sending an HTTP request over TCP, how do both sides agree to start a connection?
+          explanation: In the usual TCP opening, the client sends a SYN with its initial sequence number. The server replies with SYN-ACK, acknowledging the client's SYN and introducing its own sequence number. The client acknowledges the server's SYN with a final ACK. Each SYN consumes one sequence number, so acknowledging a SYN at 100 means expecting 101 next. If a message is lost, one or both sides may remain in a waiting state and retry; a sent message is not proof that the other side received it. The handshake establishes TCP state, not the identity or trustworthiness of the server; TLS is a separate step for HTTPS.
+          terms:
+            - {name: SYN, meaning: A TCP control flag used to start synchronizing a connection and its sequence numbers.}
+            - {name: ACK, meaning: A TCP acknowledgment of what has been received and what sequence number is expected next.}
+            - {name: ESTABLISHED, meaning: The TCP state in which a connection can carry application data.}
+          worked_example: The client sends SYN seq 100. The server sends SYN-ACK seq 500, ack 101. The client replies ACK seq 101, ack 501. After receiving that last ACK, the server has confirmation of the exchange.
+          second_example_prompt: "The server sends SYN-ACK, but that reply is lost before the client sees it. Has the three-message exchange finished at both ends?"
+          second_example: The client still waits for a reply to its SYN, while the server has sent SYN-ACK and awaits the final ACK. TCP may retransmit and eventually complete or time out; the exchange has not completed at both ends yet.
+          misconception: SYN-ACK is not the final message. It acknowledges the client's SYN while starting the server's side; the client must still acknowledge the server's SYN. TCP's handshake also does not encrypt the later data.
+          visual:
+            kind: model
+            title: Trace the three messages before any HTTP request
+            tracks:
+              - id: success
+                title: All three messages arrive
+                steps:
+                  - {label: Client sends SYN, explanation: 'The client proposes sequence number 100 and waits for a reply.', state: {Client: SYN-SENT, Server: LISTEN, Message: 'SYN seq 100'}}
+                  - {label: Server sends SYN-ACK, explanation: 'The server acknowledges 100 by expecting 101 and proposes its own sequence number 500.', state: {Client: SYN-SENT, Server: SYN-RECEIVED, Message: 'SYN-ACK seq 500, ack 101'}}
+                  - {label: Client sends final ACK, explanation: 'The client acknowledges the server''s SYN by expecting 501.', state: {Client: ESTABLISHED, Server: SYN-RECEIVED, Message: 'ACK seq 101, ack 501'}}
+                  - {label: Server receives ACK, explanation: 'Both sides have completed the exchange and application data can flow.', state: {Client: ESTABLISHED, Server: ESTABLISHED, Next: HTTP request}}
+              - id: lost-reply
+                title: The server's reply is lost
+                steps:
+                  - {label: Client sends SYN, explanation: 'The client asks to start a connection and waits.', state: {Client: SYN-SENT, Server: LISTEN, Message: 'SYN seq 100'}}
+                  - {label: Server sends SYN-ACK, explanation: 'The server sends a reply, but the network does not deliver it to the client.', state: {Client: SYN-SENT, Server: SYN-RECEIVED, Message: 'SYN-ACK lost'}}
+                  - {label: No final ACK yet, explanation: 'The client cannot acknowledge a SYN it never received. A retry may follow; neither side has a confirmed completed exchange.', state: {Client: SYN-SENT, Server: SYN-RECEIVED, Next: Retry or timeout}}
+          checks:
+            - prompt: A client sends SYN with sequence number 100. What acknowledgment number should the server include in SYN-ACK?
+              choices: ["101, because the SYN consumes one sequence number.", "100, because SYN is invisible to sequence numbers.", "500, regardless of the client's sequence number."]
+              answer: 0
+              explanation: TCP acknowledges the client's SYN by saying it expects sequence number 101 next.
+            - prompt: A client never receives the server's SYN-ACK. What is the best description of the connection?
+              choices: ["The final ACK has already reached the server.", "The handshake is not complete at both ends; a retry or timeout may follow.", "The HTTP request is automatically encrypted."]
+              answer: 1
+              explanation: The client remains waiting for SYN-ACK and cannot send the normal final ACK for a message it did not receive.
+          sources: [https://www.rfc-editor.org/rfc/rfc9293]
   - id: backend-web-basics
     citadel_id: backend_apis
     title: From a web request to a reliable API
@@ -994,7 +1064,7 @@ challenges:
   - {slug: deadlock-cycle-detector, requires: [os-deadlock]}
   - {slug: btree-vs-hash-indexes, requires: [db-index]}
   - {slug: dns-recursive-resolver, requires: [net-dns]}
-  - {slug: tcp-three-way-handshake, requires: [net-transport]}
+  - {slug: tcp-three-way-handshake, requires: [net-handshake]}
   - {slug: http-status-code-diagnostics, requires: [backend-status]}
   - {slug: processes-vs-threads-memory, requires: [os-mutex]}
   - {slug: bounded-semaphore-simulator, requires: [os-semaphore]}
