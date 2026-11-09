@@ -82,8 +82,8 @@ export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute right-0 top-full mt-2 z-[100] w-72 rounded-2xl border border-line-strong bg-panel p-3.5 text-chalk shadow-2xl"
           >
-              {/* Mobile / Tablet nav links (hidden on desktop lg: >=1024px) */}
-              <div className="lg:hidden flex flex-col gap-1 pb-2 border-b border-line mb-2">
+              {/* Navigation stays in this menu until the full header has room. */}
+              <div className="2xl:hidden flex flex-col gap-1 pb-2 border-b border-line mb-2">
                 <span className="px-2 py-1 text-2xs font-semibold uppercase tracking-wider text-faint">
                   Navigation
                 </span>

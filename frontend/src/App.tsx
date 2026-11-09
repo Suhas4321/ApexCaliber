@@ -1,7 +1,7 @@
 import { ChevronRight, Compass, Flame, FlaskConical, Mountain, ScrollText, Search } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
 import CommandPalette, { openCommandPalette } from './components/CommandPalette'
 import ErrorBoundary from './components/ErrorBoundary'
 import MoreMenu from './components/MoreMenu'
@@ -12,6 +12,7 @@ import { GlassSurface } from './components/vendor/vsrc/glass-surface'
 import { citadelForWorld, getCitadel } from './lib/citadels'
 import { GrimoireProvider, useGrimoire } from './lib/grimoire'
 import { hostedAuthEnabled, useAuth } from './lib/auth'
+import { signInPath } from './lib/authNavigation'
 
 const itemClass = (active: boolean) =>
   `relative z-10 flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-medium transition-colors ${
@@ -142,8 +143,8 @@ function TopBar() {
             <ApexCaliberLogo size="sm" />
           </Link>
 
-          {/* Center: Navigation (collapses on <1024px) */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Center: Navigation (collapses before it crowds account controls) */}
+          <nav className="hidden 2xl:flex items-center gap-1">
             <DockItem active={onJourney}>
               <NavLink to="/" aria-label="Journey" className={() => itemClass(onJourney)}>
                 <Mountain size={14} /> <span>Journey</span>
@@ -189,6 +190,7 @@ function TopBar() {
             </button>
             <ThemeToggle compact />
             <MoreMenu onOpenGrimoire={() => openGrimoire(worldMatch ? Number(worldMatch[1]) : undefined)} />
+            {!auth.enabled && <Link to="/sign-in" className="hidden h-8 items-center rounded-lg border border-line bg-panel-2 px-3 text-xs font-medium text-muted hover:text-chalk sm:inline-flex" title="Accounts are off in this local preview">Local preview</Link>}
             {auth.enabled && !auth.session ? <Link
               to={`/sign-in?next=${encodeURIComponent(pathname)}`}
               className="inline-flex h-8 items-center rounded-lg border border-violet-400/40 bg-violet-400/10 px-3 text-xs font-semibold text-violet-200 hover:bg-violet-400/20"
@@ -213,7 +215,7 @@ function TopBar() {
 }
 
 function AppShell() {
-  const { pathname } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const auth = useAuth()
   // Hide the website header on full-screen IDE routes (/q/:slug and /playground)
   const isFullscreenIde = pathname.startsWith('/q/') || pathname === '/playground'
@@ -222,9 +224,14 @@ function AppShell() {
     return <div className="grid min-h-screen place-items-center bg-void text-muted" role="status">Loading your learning path…</div>
   }
 
+  const isAuthRoute = pathname === '/sign-in' || pathname === '/auth/callback'
+  if (auth.enabled && !auth.session && !isAuthRoute) {
+    return <Navigate to={signInPath(`${pathname}${search}${hash}`)} replace />
+  }
+
   return (
     <div className={isFullscreenIde ? 'h-screen w-screen overflow-hidden bg-void text-chalk' : 'min-h-screen bg-void text-chalk'}>
-      {!isFullscreenIde && <TopBar />}
+      {!isFullscreenIde && !isAuthRoute && <TopBar />}
       <CommandPalette />
       <main className={isFullscreenIde ? 'h-full w-full overflow-hidden' : ''}>
         <ErrorBoundary fallbackTitle="Workspace encountered an unexpected error">

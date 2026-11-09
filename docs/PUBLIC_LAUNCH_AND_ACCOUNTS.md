@@ -6,7 +6,7 @@ The inventory below records the risks identified in the original local applicati
 
 ## Product decision
 
-Let visitors browse the homepage, citadels, and concept lessons without an account. Ask them to sign in when they choose **Save my climb**, submit practice, write a draft, use the coach, or resume on another device. Keep their lesson and return path through the sign-in flow. This serves the beginner who wants to see whether the teaching is approachable before sharing an email address. An account gives each student private progress and reliable cross-device resume; it should not become the first obstacle to learning.
+The hosted student site starts with sign-in, as requested for the current product journey. Preserve the requested lesson or practice path through the email-link callback. A returning student with a valid saved session goes straight to that path. Local development stays account-free so the curriculum can be previewed without Supabase. The API may still expose non-personal curriculum reads; the hosted browser entry gate is a product decision, while verified backend identity remains the security boundary for personal data.
 
 For the first public release, use **Supabase Auth** for email magic-link sign-in, then add Google sign-in if students ask for it. Keep FastAPI as the application API and use Supabase PostgreSQL as the durable database. Do not build password storage, reset flows, or session signing from scratch. The existing `DATABASE_URL` support is only a database connection; it does not provide authentication or data isolation. Supabase's [React quickstart](https://supabase.com/docs/guides/auth/quickstarts/react) covers the Vite client and its publishable key. The key is public by design; a service-role key or JWT signing secret must never be placed in `VITE_` variables or the browser.
 
@@ -34,7 +34,7 @@ Keep today's local workflow unchanged for development. Add an explicit hosted co
 
 ### 2. Add accounts and ownership together
 
-Add the Supabase browser client and one shared `AuthProvider`. The API client sends the current access token as a bearer token. FastAPI verifies it using the project's asymmetric signing keys, with a fixed allowed algorithm and explicit issuer/audience checks, and creates a typed current-student dependency. Make curriculum reads public, but require that dependency on every student-specific read or write. Do **not** put a sign-in button in front of the current global progress tables.
+The Supabase browser client and shared `AuthProvider` restore a saved session before the hosted entry gate chooses a route. The API client sends the current access token as a bearer token. FastAPI verifies it using the project's asymmetric signing keys, with a fixed allowed algorithm and explicit issuer/audience checks, and creates a typed current-student dependency. Curriculum reads can remain public at the API layer, but every student-specific read or write requires that dependency. The hosted browser takes unsigned visitors to sign-in before rendering the curriculum.
 
 Several current curriculum responses combine lesson/question content with the learner's progress. Split those into public content and authenticated personal state, or return an explicitly empty anonymous progress view. Do not let an anonymous read of a lesson, world, or question inherit another student's state.
 
@@ -59,7 +59,7 @@ Treat professional quality as a learner journey, not just a polished homepage: o
 ## Release gates
 
 1. **Two-account isolation:** A cannot read, overwrite, export, or infer B's progress, drafts, pitches, submissions, stats, or system-design work; check every route and cached response.
-2. **Anonymous behavior:** Curriculum pages load without login; writes and personal reads fail with `401`, and the UI preserves the requested destination through sign-in.
+2. **Anonymous behavior:** The hosted browser opens sign-in before curriculum pages and preserves the requested destination. Direct unauthenticated API writes and personal reads fail with `401`; public curriculum API reads never include another student's state.
 3. **Session behavior:** Expired or forged tokens fail; sign-out removes personal data from the visible page; refresh and a second device resume the same account.
 4. **Administration:** Backup/restore and content reload cannot be called from the public site, even by an ordinary signed-in user.
 5. **Execution:** No arbitrary learner code runs in the API process or on a machine holding production secrets; timeout, resource, network, output, and abuse tests pass.

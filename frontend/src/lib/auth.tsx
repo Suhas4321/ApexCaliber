@@ -6,7 +6,7 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined
 
 export const hostedAuthEnabled = Boolean(url && key)
 export const supabase: SupabaseClient | null = hostedAuthEnabled ? createClient(url!, key!, {
-  auth: { flowType: 'pkce', detectSessionInUrl: false },
+  auth: { flowType: 'pkce', detectSessionInUrl: false, persistSession: true, autoRefreshToken: true },
 }) : null
 let activeStudentId: string | null = null
 export function currentStudentId() { return activeStudentId }
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         syncDesignProgress(data.session)
         setLoading(false)
       }
-    })
+    }).catch(() => { if (active) setLoading(false) })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
       if (active) {
         if (event === 'SIGNED_OUT') localStorage.removeItem('apex-last-auth-user')
