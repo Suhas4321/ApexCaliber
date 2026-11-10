@@ -22,11 +22,11 @@ const ApexCaliberLogo: FC<ApexCaliberLogoProps> = ({
 
   return (
     <span className={`inline-flex items-center ${dimensions.gap} ${className}`}>
-      <span className={`grid ${dimensions.mark} shrink-0 place-items-center rounded-lg border border-[#d8b46a]/30 bg-[#121b2a]`}>
+      <span className={`grid ${dimensions.mark} shrink-0 place-items-center rounded-lg border border-[#537d60] bg-[#203c2b]`}>
         <svg viewBox="0 0 40 40" fill="none" className="h-[78%] w-[78%]" aria-hidden="true">
-          <path d="M4 30 12 23l4 3L25 8l11 22" stroke="#E2C27D" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M11 33c4-7 8-3 12-9 2-3 3-6 2-10" stroke="#A8BBD3" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2.4 3.2" />
-          <circle cx="25" cy="8" r="2.2" fill="#F4D99B" />
+          <path d="M4 30 12 23l4 3L25 8l11 22" stroke="#EAF4E9" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M11 33c4-7 8-3 12-9 2-3 3-6 2-10" stroke="#9BC7A5" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2.4 3.2" />
+          <circle cx="25" cy="8" r="2.2" fill="#B4D9B7" />
         </svg>
       </span>
       {showText && variant !== 'icon-only' && (

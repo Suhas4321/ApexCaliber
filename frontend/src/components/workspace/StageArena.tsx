@@ -12,11 +12,12 @@ import {
   LayoutGrid,
   Lightbulb,
   Maximize2,
+  LoaderCircle,
+  Play,
   RotateCcw,
   Sparkles,
   Zap,
 } from 'lucide-react'
-import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../../api/client'
 import type { Progress, QuestionDetail, RunResult, TestCase } from '../../api/types'
@@ -28,10 +29,6 @@ import RunResults from '../RunResults'
 import { Button, ErrorNote, Kbd, Markdown } from '../ui'
 import { usePlayback } from '../visualizers/stage/usePlayback'
 import VisualizerHost from '../visualizers/VisualizerHost'
-import { ShimmerButton } from '../vendor/magicui/shimmer-button'
-import { PlayIcon } from '../vendor/lucide-animated'
-import OrbitRing from './OrbitRing'
-import XpRewardToast, { type RewardPayload } from './XpRewardToast'
 
 interface Props {
   question: QuestionDetail
@@ -73,7 +70,6 @@ export default function StageArena({ question, progress, blind, onProgress, onCo
   const [resultTests, setResultTests] = useState<TestCase[]>(content.tests)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [reward, setReward] = useState<RewardPayload | null>(null)
   const [shakeFailed, setShakeFailed] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -185,21 +181,7 @@ export default function StageArena({ question, progress, blind, onProgress, onCo
         setPlaying(!!r.trace?.steps.length)
 
         const allPassed = r.results.length > 0 && r.results.every((res) => res.passed) && !r.compile_error
-        if (allPassed) {
-          const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          if (!isReducedMotion) {
-            confetti({
-              particleCount: 75,
-              spread: 70,
-              origin: { y: 0.6 },
-            })
-          }
-          setReward({
-            xp: 50,
-            title: progress.solved ? 'Lesson Re-climbed!' : 'Lesson Solved!',
-            subtitle: question.title,
-          })
-        } else {
+        if (!allPassed) {
           setShakeFailed(true)
           setTimeout(() => setShakeFailed(false), 450)
         }
@@ -484,16 +466,15 @@ export default function StageArena({ question, progress, blind, onProgress, onCo
         {/* Bottom Editor Toolbar with Primary Action & Floating Keyboard Shortcut Badges */}
         <div className="flex flex-wrap items-center justify-between border-t border-line bg-panel-2/90 px-3.5 py-2.5 gap-2">
           <div className="flex items-center gap-2">
-            <ShimmerButton
+            <button
+              type="button"
               onClick={() => run()}
               disabled={running}
-              background="var(--peak-accent, #6EE7B7)"
-              shimmerColor="#FFFFFF"
-              className="h-8 text-xs px-4 flex items-center gap-2 font-mono font-bold text-void shadow-[0_0_16px_rgba(110,231,183,0.35)]"
+              className="study-button min-h-0 h-9 px-4 text-xs"
             >
-              {running ? <OrbitRing size={13} /> : <PlayIcon size={14} className="fill-current text-void" />}
-              <span>{running ? 'Tracing…' : 'Run & Trace'}</span>
-            </ShimmerButton>
+              {running ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
+              <span>{running ? 'Running…' : 'Run and trace'}</span>
+            </button>
 
             {/* Floating Keyboard Shortcut Badges */}
             <span className="hidden sm:inline-flex items-center gap-1.5 text-2xs font-mono text-muted bg-panel px-2.5 py-1 rounded-md border border-line shadow-xs">
@@ -859,7 +840,6 @@ export default function StageArena({ question, progress, blind, onProgress, onCo
       )}
 
       {/* Reward notification toast */}
-      <XpRewardToast reward={reward} onDismiss={() => setReward(null)} />
     </div>
   )
 }

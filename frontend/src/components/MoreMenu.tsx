@@ -1,203 +1,109 @@
-import { BarChart3, BookMarked, Compass, FlaskConical, HardDriveDownload, MoreHorizontal, ShieldCheck, Sparkles } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { BarChart3, BookMarked, Compass, FlaskConical, HardDriveDownload, MoreHorizontal, Shapes, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
-import { useBackgroundEffects, type BackgroundEffectLevel } from './effects'
-import { Button } from './ui'
 import { hostedAuthEnabled } from '../lib/auth'
 
 type Status = Awaited<ReturnType<typeof api.backupStatus>>
 
-interface MoreMenuProps {
-  onOpenGrimoire: () => void
-}
-
-export default function MoreMenu({ onOpenGrimoire }: MoreMenuProps) {
+export default function MoreMenu({ onOpenGrimoire }: { onOpenGrimoire: () => void }) {
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [confirmRestore, setConfirmRestore] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const { pathname } = useLocation()
-  const { level: bgLevel, setLevel: setBgLevel } = useBackgroundEffects()
 
-  // Close when clicking outside
+  useEffect(() => { setOpen(false); setConfirmRestore(false) }, [pathname])
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+    if (!open) return
+    const closeOutside = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setConfirmRestore(false)
         setOpen(false)
+        triggerRef.current?.focus()
       }
     }
-    if (open) {
-      document.addEventListener('mousedown', onDocClick)
-      setMessage(null)
-      if (!hostedAuthEnabled) api.backupStatus().then(setStatus).catch((e) => setMessage(e.message))
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
     }
-    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+  useEffect(() => {
+    if (!open || hostedAuthEnabled) return
+    setMessage(null)
+    api.backupStatus().then(setStatus).catch(() => setMessage('Could not check for a local backup. Try opening this menu again.'))
   }, [open])
 
-  // Close on route change
-  useEffect(() => {
-    setOpen(false)
-  }, [pathname])
-
-  const dump = async () => {
+  async function backUp() {
+    setBusy(true)
+    setMessage(null)
     try {
       await api.backupDump()
       setStatus(await api.backupStatus())
-      setMessage('Backup complete.')
-    } catch (e) {
-      setMessage((e as Error).message)
+      setMessage('Your local backup is ready.')
+    } catch {
+      setMessage('Could not create a backup. Try again.')
+    } finally {
+      setBusy(false)
     }
   }
 
-  const restore = async () => {
-    if (!window.confirm('Replace all progress, pitches and drafts with the contents of the backup file?')) return
+  async function restore() {
+    setBusy(true)
+    setMessage(null)
     try {
-      const r = await api.backupRestore()
-      setMessage(`Restored ${r.restored.progress} questions. Reloading…`)
-      setTimeout(() => window.location.reload(), 900)
-    } catch (e) {
-      setMessage((e as Error).message)
+      await api.backupRestore()
+      setMessage('Your progress has been restored. Reloading…')
+      window.setTimeout(() => window.location.reload(), 900)
+    } catch {
+      setMessage('Could not restore the backup. Your current progress is still here.')
+      setConfirmRestore(false)
+      setBusy(false)
     }
   }
 
-  return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setOpen((prev) => !prev)}
-        aria-expanded={open}
-        aria-label="More navigation and options"
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-panel-2 text-muted transition-colors hover:border-line-strong hover:text-chalk"
-      >
-        <MoreHorizontal size={16} />
-      </button>
+  const navItem = 'flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-panel-2 hover:text-chalk'
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 z-[100] w-72 rounded-2xl border border-line-strong bg-panel p-3.5 text-chalk shadow-2xl"
-          >
-              {/* Navigation stays in this menu until the full header has room. */}
-              <div className="2xl:hidden flex flex-col gap-1 pb-2 border-b border-line mb-2">
-                <span className="px-2 py-1 text-2xs font-semibold uppercase tracking-wider text-faint">
-                  Navigation
-                </span>
-                <Link
-                  to="/resume-grill"
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    pathname === '/resume-grill'
-                      ? 'bg-panel-2 text-chalk font-semibold'
-                      : 'text-muted hover:bg-panel-2 hover:text-chalk'
-                  }`}
-                >
-                  <ShieldCheck size={14} className="text-[var(--accent-ai-resume,#38BDF8)]" />
-                  <span>Resume Grill</span>
-                </Link>
-              <button
-                onClick={() => {
-                  setOpen(false)
-                  onOpenGrimoire()
-                }}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted hover:bg-panel-2 hover:text-chalk transition-colors text-left"
-              >
-                <BookMarked size={14} />
-                <span>Grimoire (Revision Sheets)</span>
-              </button>
-              <Link
-                to="/finder"
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                  pathname === '/finder'
-                    ? 'bg-panel-2 text-chalk font-semibold'
-                    : 'text-muted hover:bg-panel-2 hover:text-chalk'
-                }`}
-              >
-                <Compass size={14} />
-                <span>Pattern Finder</span>
-              </Link>
-              {!hostedAuthEnabled && <Link
-                to="/playground"
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                  pathname === '/playground'
-                    ? 'bg-panel-2 text-chalk font-semibold'
-                    : 'text-muted hover:bg-panel-2 hover:text-chalk'
-                }`}
-              >
-                <FlaskConical size={14} />
-                <span>Playground</span>
-              </Link>}
-              <Link
-                to="/stats"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-panel-2 hover:text-chalk sm:hidden"
-              >
-                <BarChart3 size={14} />
-                <span>Progress and profile</span>
-              </Link>
+  return <div ref={rootRef} className="relative">
+    <button ref={triggerRef} type="button" onClick={() => setOpen((value) => !value)} aria-label="More learning tools" aria-expanded={open} aria-controls="more-tools-panel" className="flex size-9 items-center justify-center rounded-lg border border-line bg-panel text-muted transition-colors hover:border-line-strong hover:text-chalk">
+      <MoreHorizontal size={18} aria-hidden="true" />
+    </button>
+    {open && <div id="more-tools-panel" className="absolute right-0 top-full z-[100] mt-2 w-[min(290px,calc(100vw-24px))] rounded-xl border border-line-strong bg-panel p-2 text-chalk shadow-xl">
+      <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-faint">Learning tools</p>
+      <Link to="/citadel/dsa" onClick={() => setOpen(false)} className={`${navItem} min-[951px]:hidden`} aria-current={pathname === '/citadel/dsa' || pathname.startsWith('/world/') ? 'page' : undefined}><Shapes size={17} aria-hidden="true" />Practice</Link>
+      <Link to="/resume-grill" onClick={() => setOpen(false)} className={navItem} aria-current={pathname === '/resume-grill' ? 'page' : undefined}><ShieldCheck size={17} aria-hidden="true" />Interview practice</Link>
+      <button type="button" onClick={() => { setOpen(false); onOpenGrimoire() }} className={`${navItem} w-full text-left`}><BookMarked size={17} aria-hidden="true" />Revision sheets</button>
+      <Link to="/finder" onClick={() => setOpen(false)} className={navItem} aria-current={pathname === '/finder' ? 'page' : undefined}><Compass size={17} aria-hidden="true" />Pattern Finder</Link>
+      {!hostedAuthEnabled && <Link to="/playground" onClick={() => setOpen(false)} className={navItem} aria-current={pathname === '/playground' ? 'page' : undefined}><FlaskConical size={17} aria-hidden="true" />Playground</Link>}
+      <Link to="/stats" onClick={() => setOpen(false)} className={`${navItem} min-[951px]:hidden`} aria-current={pathname === '/stats' ? 'page' : undefined}><BarChart3 size={17} aria-hidden="true" />Progress</Link>
+      {!hostedAuthEnabled && <details className="more-data-details mt-2 border-t border-line pt-2">
+        <summary className={`${navItem} cursor-pointer list-none`}><HardDriveDownload size={17} aria-hidden="true" />Local data</summary>
+        <div className="px-3 pb-2 pt-1">
+          {confirmRestore ? <>
+            <p className="text-sm leading-5 text-chalk">Restore your saved backup?</p>
+            <p className="mt-1 text-xs leading-5 text-muted">This replaces your current progress and code drafts with the saved copy.</p>
+            <div className="mt-3 flex gap-2">
+              <button type="button" disabled={busy} onClick={() => void restore()} className="min-h-9 rounded-lg bg-action px-3 text-xs font-semibold text-surface-0 disabled:opacity-50">Restore backup</button>
+              <button type="button" disabled={busy} onClick={() => setConfirmRestore(false)} className="min-h-9 rounded-lg border border-line px-3 text-xs text-muted hover:text-chalk">Cancel</button>
             </div>
-
-            {/* Background Effects */}
-            <div className="flex flex-col gap-2 pb-2 border-b border-line mb-2">
-              <div className="flex items-center gap-1.5 px-2 text-2xs font-semibold uppercase tracking-wider text-faint">
-                <Sparkles size={12} />
-                <span>Background Effects</span>
-              </div>
-              <div className="flex gap-1.5 px-1">
-                {(['off', 'subtle', 'full'] as BackgroundEffectLevel[]).map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setBgLevel(opt)}
-                    className={`flex-1 rounded-lg py-1 text-xs font-medium transition-colors capitalize ${
-                      bgLevel === opt
-                        ? 'bg-panel-2 text-chalk border border-line-strong'
-                        : 'text-muted hover:bg-panel-2 hover:text-chalk border border-transparent'
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
+          </> : <>
+            <p className="text-xs leading-5 text-muted">Save a copy of your progress and code drafts on this computer.</p>
+            <div className="mt-3 flex gap-2">
+              <button type="button" disabled={busy} onClick={() => void backUp()} className="min-h-9 rounded-lg border border-line-strong px-3 text-xs font-semibold text-chalk hover:bg-panel-2 disabled:opacity-50">Back up now</button>
+              <button type="button" disabled={busy || !status?.exists} onClick={() => setConfirmRestore(true)} className="min-h-9 rounded-lg border border-line px-3 text-xs text-muted hover:bg-panel-2 hover:text-chalk disabled:cursor-not-allowed disabled:opacity-40">Restore</button>
             </div>
-
-            {/* Backup & System Section */}
-            {!hostedAuthEnabled && <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5 px-2 text-2xs font-semibold uppercase tracking-wider text-faint">
-                <HardDriveDownload size={12} />
-                <span>Local Snapshot Backup</span>
-              </div>
-              <p className="px-2 text-xs text-muted leading-relaxed">
-                Save or restore your code drafts, pitches, and quest completion history.
-              </p>
-              {status && (
-                <p className="px-2 font-mono text-caption text-faint break-all leading-snug">
-                  {status.exists ? `${status.path}\nSaved: ${status.modified_at}` : 'No local backup yet.'}
-                </p>
-              )}
-              <div className="flex items-center gap-2 px-1 pt-1">
-                <Button variant="outline" className="text-xs h-7 px-2.5 flex-1" onClick={dump}>
-                  Back up now
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="text-xs h-7 px-2.5 flex-1 text-muted hover:text-chalk"
-                  onClick={restore}
-                  disabled={!status?.exists}
-                >
-                  Restore
-                </Button>
-              </div>
-              {message && <p className="px-2 text-2xs text-cyan">{message}</p>}
-            </div>}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
+          </>}
+          {message && <p role="status" className="mt-3 text-xs leading-5 text-muted">{message}</p>}
+        </div>
+      </details>}
+    </div>}
+  </div>
 }

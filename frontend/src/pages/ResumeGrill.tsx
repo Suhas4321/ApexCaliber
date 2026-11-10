@@ -11,13 +11,11 @@ import {
   EyeOff,
   FileCode2,
   Play,
-  ShieldCheck,
   Sparkles,
   Terminal,
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
-import Sky from '../components/Sky'
 import { ChatComposer } from '../components/vendor/chat/chat-composer'
 import { ChatMessage } from '../components/vendor/chat/chat-message'
 
@@ -524,44 +522,20 @@ export default function ResumeGrill() {
   if (screen === 'rounds') {
     return (
       <div className="shell max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col gap-6">
-        {/* Compact Hero (200px) with Sky Galaxy — Always dark surface with crisp white text */}
-        <div
-          data-zone="night"
-          className="relative h-[200px] w-full overflow-hidden rounded-3xl border border-line p-6 sm:p-8 flex flex-col justify-between shadow-2xl bg-[#05070E] text-white"
-        >
-          <Sky variant="galaxy" accent="#38BDF8" />
-          <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30">
-                <ShieldCheck size={18} />
-              </span>
-              <span className="font-plate text-xs font-bold uppercase tracking-wider text-sky-300">
-                Citadel VI Special Simulation
-              </span>
-            </div>
-            <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-2xs font-semibold text-emerald-300 border border-emerald-400/30">
-              8 Scenarios · 100% Resume Mapped
-            </span>
-          </div>
-
-          <div className="relative z-10">
-            <h1 className="font-plate text-2xl sm:text-3xl font-bold text-white tracking-tight drop-shadow-md">
-              Resume Grill & Systems Defense Simulator
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl leading-relaxed drop-shadow-xs">
-              Master the exact high-pressure technical follow-ups and trap questions interviewers ask about your production architectures.
-            </p>
-          </div>
-        </div>
+        <header className="study-heading">
+          <span className="study-eyebrow">Interview practice · 8 scenarios</span>
+          <h1>Explain the work behind your résumé.</h1>
+          <p>Practice the technical follow-up questions behind real engineering projects, then compare your answer with a worked response.</p>
+        </header>
 
         {/* 8 Scenario Cards in a responsive 3/2/1 grid */}
         <section aria-label="Available Interview Rounds" className="w-full">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-chalk flex items-center gap-2">
-              <Terminal size={16} className="text-sky-400" /> Choose Your Round
+              <Terminal size={16} className="text-cyan" /> Choose a scenario
             </h2>
             <span className="text-2xs text-muted">
-              {Object.values(statusMap).filter((s) => s === 'defended').length} / 8 Defended
+              {Object.values(statusMap).filter((s) => s === 'defended').length} / 8 completed
             </span>
           </div>
 
@@ -572,10 +546,11 @@ export default function ResumeGrill() {
               const SIcon = s.icon
 
               return (
-                <div
+                <button
                   key={s.id}
+                  type="button"
                   onClick={() => handleSelectScenario(s.id)}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-line bg-panel p-5 transition-all duration-300 hover:border-line-strong hover:bg-panel-2 hover:-translate-y-1 cursor-pointer shadow-sm"
+                  className="group relative flex w-full flex-col justify-between rounded-xl border border-line bg-panel p-5 text-left transition-colors hover:border-line-strong hover:bg-panel-2"
                 >
                   <div>
                     {/* Top row: Company chip + status */}
@@ -593,7 +568,7 @@ export default function ResumeGrill() {
                         }`}
                       >
                         {status === 'defended'
-                          ? `Defended${rating ? ` (${rating})` : ''}`
+                          ? `Completed${rating ? ` (${rating})` : ''}`
                           : status === 'attempted'
                           ? 'Attempted'
                           : 'Not started'}
@@ -628,10 +603,10 @@ export default function ResumeGrill() {
                       {s.impactBadge.split('·')[0]}
                     </span>
                     <span className="flex items-center gap-1 font-semibold text-chalk group-hover:text-accent transition-colors">
-                      Enter Round <ChevronRight size={13} />
+                      Open scenario <ChevronRight size={13} />
                     </span>
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>

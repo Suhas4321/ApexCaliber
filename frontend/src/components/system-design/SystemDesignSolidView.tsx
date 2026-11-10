@@ -50,15 +50,15 @@ export default function SystemDesignSolidView({ index, onNavigate, completedIds,
       {/* 1. Mental Model & Scenario */}
       <section id="section-concept" className="space-y-4">
         <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-violet-500/15 font-mono text-2xs font-semibold text-violet-600 dark:text-violet-400">1</span>
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-cyan/15 font-mono text-2xs font-semibold text-cyan dark:text-cyan">1</span>
           <span>Core Mental Model & Production Code Review</span>
         </h2>
         <p className="text-sm leading-relaxed text-chalk">
           <strong className="text-chalk font-semibold">Mental Model:</strong>{' '}
           <span className="text-muted">{solid.analogy}</span>
         </p>
-        <blockquote className="rounded-r-md border-l-[3px] border-violet-500 bg-panel-2 px-4 py-3 text-sm leading-relaxed text-chalk shadow-xs">
-          <span className="block font-mono text-2xs uppercase tracking-wider text-violet-600 dark:text-violet-400 font-semibold mb-1">
+        <blockquote className="rounded-r-md border-l-[3px] border-cyan bg-panel-2 px-4 py-3 text-sm leading-relaxed text-chalk shadow-xs">
+          <span className="block font-mono text-2xs uppercase tracking-wider text-cyan dark:text-cyan font-semibold mb-1">
             Production Scenario
           </span>
           {solid.companyScenario}
@@ -70,7 +70,7 @@ export default function SystemDesignSolidView({ index, onNavigate, completedIds,
       {/* 2. When to Use vs Not Use */}
       <section id="section-tradeoffs" className="space-y-3 pt-4 border-t border-line">
         <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-violet-500/15 font-mono text-2xs font-semibold text-violet-600 dark:text-violet-400">2</span>
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-cyan/15 font-mono text-2xs font-semibold text-cyan dark:text-cyan">2</span>
           <span>When to Apply vs. When NOT to Apply (YAGNI)</span>
         </h2>
         <div className="overflow-hidden rounded-lg border border-line bg-panel">
@@ -102,7 +102,7 @@ export default function SystemDesignSolidView({ index, onNavigate, completedIds,
       {/* 3. Before vs After ChatGPT Code Blocks */}
       <section id="section-code" className="space-y-4 pt-4 border-t border-line">
         <h2 className="flex items-center gap-2 text-base font-semibold text-chalk">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-violet-500/15 font-mono text-2xs font-semibold text-violet-600 dark:text-violet-400">3</span>
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-cyan/15 font-mono text-2xs font-semibold text-cyan dark:text-cyan">3</span>
           <span>Production Python Refactor: Before vs. After</span>
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

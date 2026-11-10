@@ -1,16 +1,21 @@
-"""Verify Supabase identities at the API boundary; local mode keeps one local learner."""
+"""Verify hosted Supabase identities or the local account session at the API boundary."""
 
 from functools import lru_cache
+from hashlib import sha256
 from urllib.parse import urlparse
 from uuid import UUID
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.db import get_session
+from app.models import LocalSession, utcnow
 
 LOCAL_USER_ID = "local"
+LOCAL_COOKIE = "apex_local_session"
 bearer = HTTPBearer(auto_error=False)
 
 
@@ -59,9 +64,13 @@ def verify_access_token(token: str) -> str:
         raise HTTPException(401, "Invalid or expired session", headers={"WWW-Authenticate": "Bearer"}) from exc
 
 
-def optional_student(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> str | None:
+def optional_student(request: Request, session: Session = Depends(get_session), credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> str | None:
     if settings.app_mode == "local":
-        return LOCAL_USER_ID
+        token = request.cookies.get(LOCAL_COOKIE)
+        if not token:
+            return None
+        saved = session.get(LocalSession, sha256(token.encode()).hexdigest())
+        return saved.user_id if saved and saved.expires_at > utcnow() else None
     if credentials is None:
         return None
     if credentials.scheme.lower() != "bearer":

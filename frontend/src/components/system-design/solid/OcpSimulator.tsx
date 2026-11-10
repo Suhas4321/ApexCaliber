@@ -11,7 +11,7 @@ export default function OcpSimulator() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 border-b border-line pb-2.5">
-        <span className="flex h-6 w-6 items-center justify-center rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 font-mono text-xs font-bold">
+        <span className="flex h-6 w-6 items-center justify-center rounded bg-cyan/15 text-cyan dark:text-cyan font-mono text-xs font-bold">
           <Sparkles size={13} />
         </span>
         <span className="font-plate text-sm font-bold text-chalk">

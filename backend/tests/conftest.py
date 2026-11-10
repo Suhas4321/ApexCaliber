@@ -19,6 +19,13 @@ from app.main import app  # noqa: E402
 @pytest.fixture(scope="session")
 def client():
     with TestClient(app) as c:
+        status = c.get("/api/local-auth/session").json()
+        if status["needs_setup"]:
+            response = c.post("/api/local-auth/setup", json={"username": "test-student", "password": "test-password-for-local-auth"})
+            assert response.status_code == 201
+        else:
+            response = c.post("/api/local-auth/login", json={"username": "test-student", "password": "test-password-for-local-auth"})
+            assert response.status_code == 200
         yield c
 
 

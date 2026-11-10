@@ -15,12 +15,12 @@ test('keeps a deep link and its practice context after sign-in', () => {
 
 test('rejects external and active-scheme return targets', () => {
   for (const target of [null, '', 'https://evil.example', '//evil.example', '/\\evil.example', 'javascript:alert(1)']) {
-    assert.equal(safeReturnPath(target), '/')
+    assert.equal(safeReturnPath(target), '/app')
   }
 })
 
 test('does not send a completed sign-in back into the auth flow', () => {
   for (const target of ['/sign-in', '/sign-in?next=%2F', '/auth/callback?code=secret']) {
-    assert.equal(safeReturnPath(target), '/')
+    assert.equal(safeReturnPath(target), '/app')
   }
 })

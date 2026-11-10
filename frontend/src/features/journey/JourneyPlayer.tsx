@@ -175,7 +175,7 @@ function Prediction({ stage, committed, onCommit }: { stage: JourneyStage; commi
       <div className="lesson-prose"><Markdown>{stage.scenario}</Markdown></div>
       <p className="lesson-aside-note">Start with your intuition.<br />You’ll explore the behavior before seeing the explanation.</p>
     </div>
-    <form onSubmit={e => { e.preventDefault(); if (selected) onCommit(selected) }}>
+    <form noValidate onSubmit={e => { e.preventDefault(); if (selected) onCommit(selected) }}>
       <fieldset disabled={Boolean(committed)}>
         <legend>{prediction.prompt}</legend>
         <div className="prediction-options">{prediction.choices.map((choice, i) => <label key={choice.id} className={`prediction-option ${selected === choice.id ? 'is-selected' : ''}`}>

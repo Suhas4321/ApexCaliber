@@ -99,11 +99,11 @@ export function GlassCard({ children, className = '' }: { children: ReactNode; c
 type ButtonVariant = 'primary' | 'emerald' | 'glass' | 'outline' | 'ghost'
 
 const BUTTON_STYLES: Record<ButtonVariant, string> = {
-  // Solid, high-contrast pills with a hover lift (same in every zone)
+  // Quiet, consistent actions across lessons and tools.
   primary:
-    'bg-action text-surface-0 font-semibold shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)] hover:brightness-110 hover:-translate-y-px',
+    'bg-action text-surface-0 font-semibold hover:brightness-110',
   emerald:
-    'bg-success text-white font-semibold shadow-[0_6px_16px_-6px_rgb(5_150_105/0.55)] hover:bg-emerald hover:-translate-y-px',
+    'bg-success text-white font-semibold hover:bg-emerald',
   glass: 'text-chalk border border-line-strong bg-panel hover:bg-panel-2 hover:border-chalk/25',
   outline: 'text-chalk border border-line-strong bg-panel hover:bg-panel-2 hover:border-chalk/25',
   ghost: 'text-muted hover:text-chalk hover:bg-chalk/[0.05]',
@@ -113,11 +113,15 @@ export function Button({
   children,
   variant = 'primary',
   className = '',
+  onClick,
+  type = 'button',
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm transition-[background-color,box-shadow,border-color,transform] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 ${BUTTON_STYLES[variant]} ${className}`}
+      type={type}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm transition-[background-color,border-color] duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${BUTTON_STYLES[variant]} ${className}`}
       {...props}
     >
       {children}

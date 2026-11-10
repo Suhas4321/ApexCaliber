@@ -13,7 +13,7 @@ export default function SystemDesignSyllabusView({ completedIds, onOpenItem }: P
       key: 'solid' as const,
       title: 'Module 1: OOP & SOLID Principles',
       icon: ShieldCheck,
-      color: 'text-violet-400',
+      color: 'text-cyan',
       items: SOLID_PLAYBOOK.map((s, i) => ({ id: `solid-${s.letter}`, num: `0${i + 1}`, title: s.name, subtitle: s.tagline })),
     },
     {
@@ -35,8 +35,8 @@ export default function SystemDesignSyllabusView({ completedIds, onOpenItem }: P
   return (
     <div className="space-y-8 pb-16">
       <div className="border-b border-line pb-6 space-y-2">
-        <span className="font-mono text-2xs uppercase tracking-wider text-violet-600 dark:text-violet-400 font-semibold">
-          Citadel VIII · Architecture Master Syllabus
+        <span className="font-mono text-2xs uppercase tracking-wider text-cyan dark:text-cyan font-semibold">
+          System Design · Complete syllabus
         </span>
         <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-chalk">
           Learn to design systems, one layer at a time
@@ -46,14 +46,14 @@ export default function SystemDesignSyllabusView({ completedIds, onOpenItem }: P
         </p>
       </div>
 
-      <section aria-label="Start with one request" className="rounded-2xl border border-violet-500/25 bg-violet-500/5 p-5 sm:p-6">
-        <span className="font-mono text-2xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">Base camp · Before system design</span>
+      <section aria-label="Start with one request" className="rounded-2xl border border-cyan/25 bg-cyan/5 p-5 sm:p-6">
+        <span className="font-mono text-2xs font-semibold uppercase tracking-wider text-cyan">Start with a request</span>
         <h2 className="mt-2 text-xl font-semibold text-chalk">What happens when you place one food order?</h2>
-        <p className="mt-2 max-w-[70ch] text-sm leading-6 text-muted">You tap “Place order” in an app. Your phone asks a server to create the order. The server checks it, saves it in a database, and replies with a confirmation. That small journey is the foundation for every larger design in this citadel.</p>
+        <p className="mt-2 max-w-[70ch] text-sm leading-6 text-muted">You tap “Place order” in an app. Your phone asks a server to create the order. The server checks it, saves it in a database, and replies with a confirmation. That small journey is the foundation for every larger system design.</p>
         <ol className="mt-5 grid gap-3 sm:grid-cols-3">
-          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-violet-600 dark:text-violet-300">01 · Client</span><strong className="mt-1 block text-sm text-chalk">The app asks</strong><span className="mt-1 block text-xs leading-5 text-muted">The client is the phone or browser the person uses. It sends a request.</span></li>
-          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-violet-600 dark:text-violet-300">02 · Server</span><strong className="mt-1 block text-sm text-chalk">The app decides</strong><span className="mt-1 block text-xs leading-5 text-muted">The server runs the rules: Is the restaurant open? Is the order valid?</span></li>
-          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-violet-600 dark:text-violet-300">03 · Database</span><strong className="mt-1 block text-sm text-chalk">The app remembers</strong><span className="mt-1 block text-xs leading-5 text-muted">The database stores the order so it is still there after the request ends.</span></li>
+          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-cyan dark:text-cyan">01 · Client</span><strong className="mt-1 block text-sm text-chalk">The app asks</strong><span className="mt-1 block text-xs leading-5 text-muted">The client is the phone or browser the person uses. It sends a request.</span></li>
+          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-cyan dark:text-cyan">02 · Server</span><strong className="mt-1 block text-sm text-chalk">The app decides</strong><span className="mt-1 block text-xs leading-5 text-muted">The server runs the rules: Is the restaurant open? Is the order valid?</span></li>
+          <li className="rounded-xl border border-line bg-panel p-4"><span className="text-xs font-semibold text-cyan dark:text-cyan">03 · Database</span><strong className="mt-1 block text-sm text-chalk">The app remembers</strong><span className="mt-1 block text-xs leading-5 text-muted">The database stores the order so it is still there after the request ends.</span></li>
         </ol>
         <p className="mt-4 max-w-[70ch] text-sm leading-6 text-muted">First we give each piece of the server a clear job. Then we connect the pieces. Only after one order works do we ask what changes when thousands of people order together.</p>
       </section>

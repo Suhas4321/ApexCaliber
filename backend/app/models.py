@@ -11,6 +11,25 @@ def utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
+class LocalAccount(Base):
+    """The single account for an offline/local installation."""
+
+    __tablename__ = "local_account"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    username: Mapped[str] = mapped_column(String(32), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(256))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class LocalSession(Base):
+    __tablename__ = "local_sessions"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("local_account.id"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class World(Base):
     __tablename__ = "worlds"
 

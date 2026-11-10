@@ -1,0 +1,7 @@
+{
+  "profile": "learning-product",
+  "sourceRoots": ["frontend/src"],
+  "ownership": {
+    "Select/Listbox": "native"
+  }
+}

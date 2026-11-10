@@ -4,13 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.auth import require_student
 from app.services import backup_manager
 
 router = APIRouter(prefix="/api/backup", tags=["backup"])
 
 
 @router.get("/status")
-def backup_status():
+def backup_status(_user_id: str = Depends(require_student)):
     path = backup_manager.backup_path()
     if not path.exists():
         return {"path": str(path), "exists": False, "modified_at": None, "size_bytes": 0}
@@ -24,13 +25,13 @@ def backup_status():
 
 
 @router.post("/dump")
-def dump(session: Session = Depends(get_session)):
+def dump(session: Session = Depends(get_session), _user_id: str = Depends(require_student)):
     path = backup_manager.dump_to_file(session)
     return {"path": str(path), **backup_status()}
 
 
 @router.post("/restore")
-def restore(session: Session = Depends(get_session)):
+def restore(session: Session = Depends(get_session), _user_id: str = Depends(require_student)):
     try:
         counts = backup_manager.restore_from_file(session)
     except FileNotFoundError as exc:

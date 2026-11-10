@@ -2,12 +2,13 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.content_schema import ValueType
 from app.runner.python_runner import run_python
 from app.config import settings
+from app.auth import require_student
 
 router = APIRouter(prefix="/api/playground", tags=["playground"])
 
@@ -21,7 +22,7 @@ class PlaygroundIn(BaseModel):
 
 
 @router.post("/run")
-def run_playground(body: PlaygroundIn):
+def run_playground(body: PlaygroundIn, _user_id: str = Depends(require_student)):
     if settings.app_mode == "hosted":
         raise HTTPException(503, "Playground is unavailable until isolated runners are deployed")
     params = [

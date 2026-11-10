@@ -1,14 +1,14 @@
 # Public launch and student accounts
 
-**Status:** The account foundation implements managed email sign-in, verified API identity, owner-keyed progress tables, and a hosted mode for a concept-learning beta. It has not been connected to a real Supabase project or deployed. The code runner remains deliberately disabled in hosted mode. Do not put the local FastAPI server on a public address.
+**Status:** Local mode now has a single username/password account with a server-side password hash and HTTP-only session cookie. Hosted mode implements managed email sign-in, verified API identity, and owner-keyed progress tables, but has not been connected to a real Supabase project or deployed. The code runner remains deliberately disabled in hosted mode. Do not put the local FastAPI server on a public address.
 
 The inventory below records the risks identified in the original local application. The implementation resolves the identity and backend ownership foundation, keeps admin routes out of hosted mode, and disables public execution; the remaining launch gates still apply.
 
 ## Product decision
 
-The hosted student site starts with sign-in, as requested for the current product journey. Preserve the requested lesson or practice path through the email-link callback. A returning student with a valid saved session goes straight to that path. Local development stays account-free so the curriculum can be previewed without Supabase. The API may still expose non-personal curriculum reads; the hosted browser entry gate is a product decision, while verified backend identity remains the security boundary for personal data.
+The hosted student site starts with sign-in, as requested for the current product journey. Preserve the requested lesson or practice path through the email-link callback. A returning student with a valid saved session goes straight to that path. Local development requires one local account and keeps all pre-existing local progress under that identity. The API may still expose non-personal curriculum reads; verified backend identity remains the security boundary for personal data.
 
-For the first public release, use **Supabase Auth** for email magic-link sign-in, then add Google sign-in if students ask for it. Keep FastAPI as the application API and use Supabase PostgreSQL as the durable database. Do not build password storage, reset flows, or session signing from scratch. The existing `DATABASE_URL` support is only a database connection; it does not provide authentication or data isolation. Supabase's [React quickstart](https://supabase.com/docs/guides/auth/quickstarts/react) covers the Vite client and its publishable key. The key is public by design; a service-role key or JWT signing secret must never be placed in `VITE_` variables or the browser.
+For the first public release, use **Supabase Auth** for managed email sign-in, then add Google sign-in after its provider credentials and redirect URLs are configured. Keep FastAPI as the application API and use Supabase PostgreSQL as the durable database. The local password implementation is deliberately limited to a single localhost account and must not be used as a public account service. The existing `DATABASE_URL` support is only a database connection; it does not provide authentication or data isolation. Supabase's [React quickstart](https://supabase.com/docs/guides/auth/quickstarts/react) covers the Vite client and its publishable key. The key is public by design; a service-role key or JWT signing secret must never be placed in `VITE_` variables or the browser.
 
 ## Baseline inventory and public requirements
 
@@ -30,7 +30,7 @@ The server must determine ownership from the **verified token**, not a `user_id`
 
 ### 1. Separate local and hosted modes
 
-Keep today's local workflow unchanged for development. Add an explicit hosted configuration that fails startup unless the auth project URL, database URL, HTTPS origin, and required secrets are present. In hosted mode, remove public backup and content-reload routes, disable AI coach until quotas exist, and disable all server-side code execution until an isolated worker is ready. This makes a lesson-only beta possible without claiming that the coding playground is safe. Add a clear health/readiness check for the deployed API.
+Local mode now requires setup and sign-in before the browser opens the learning app; its backup and content-reload actions require the same session. Hosted configuration must fail startup unless the auth project URL, database URL, and HTTPS origin are present. In hosted mode, remove backup and content-reload routes, disable AI coach until quotas exist, and disable all server-side code execution until an isolated worker is ready. This makes a lesson-only beta possible without claiming that the coding playground is safe. Add a clear health/readiness check for the deployed API.
 
 ### 2. Add accounts and ownership together
 
@@ -54,7 +54,7 @@ Run submitted code in a separate worker with no application/database secrets, no
 
 Start with one managed HTTPS container serving the existing built React app and FastAPI under the same origin, plus managed Supabase Auth/Postgres. This keeps routing and CORS simple. Deploy an isolated runner separately later. Add a staging environment, reproducible build, CI checks, database migration step, error monitoring, privacy notice, data export/deletion path, and a tested database restore procedure. Keep payment and gamification out of the first release; measure whether new learners can find the starting lesson, explain a concept in their own words, and return to it later.
 
-Treat professional quality as a learner journey, not just a polished homepage: one obvious **Start learning** action per citadel; a visible path from basics to application; consistent buttons, labels, spacing, and loading/error/empty states; keyboard and mobile usability; readable lesson widths; and a reliable **Resume where I stopped** action. Test these on the homepage, citadel entry, lesson, question, and account screens as one system. Use the existing visual language and mountain metaphor consistently rather than adding unrelated effects to make sign-in feel exciting.
+Treat professional quality as a learner journey, not just a polished homepage: one obvious **Start learning** action per learning area; a visible path from basics to application; consistent buttons, labels, spacing, and loading/error/empty states; keyboard and mobile usability; readable lesson widths; and a reliable **Resume where I stopped** action. Test these on the homepage, learning-area entry, lesson, question, and account screens as one system. Keep category accents distinct while making the mountain map an optional way to explore rather than a required first step.
 
 ## Release gates
 

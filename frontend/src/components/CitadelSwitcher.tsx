@@ -72,7 +72,7 @@ export default function CitadelSwitcher() {
                     key={citadel.id}
                     onClick={() => {
                       setOpen(false)
-                      navigate(citadel.id === 'dsa' ? '/' : `/citadel/${citadel.id}`)
+                      navigate(citadel.id === 'dsa' ? '/app' : `/citadel/${citadel.id}`)
                     }}
                     className={`flex items-start gap-3 rounded-xl p-2.5 text-left transition-all ${
                       isActive

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check, Compass, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, RotateCcw } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -27,12 +27,10 @@ export default function PatternFinder() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header>
-        <p className="flex items-center gap-2 text-sm font-medium text-sky-400">
-          <Compass size={16} /> Pattern Finder
-        </p>
-        <h1 className="mt-1 font-plate text-3xl font-semibold text-chalk">Which pattern is this problem?</h1>
-        <p className="mt-2 max-w-[62ch] text-muted">
+      <header className="study-heading">
+        <span className="study-eyebrow">Pattern finder</span>
+        <h1>Which pattern fits this problem?</h1>
+        <p>
           Answer two or three questions about the problem in front of you, the same way you should reason out loud in an
           interview: input shape first, then what is being asked, then the constraint that decides it.
         </p>
@@ -55,7 +53,7 @@ export default function PatternFinder() {
                 disabled={last}
                 onClick={() => go(path.slice(0, i))}
                 className={`max-w-[22ch] truncate rounded-full border px-2.5 py-1 ${
-                  last ? 'border-sky-500/40 bg-sky-500/10 font-medium text-sky-400' : 'border-line bg-panel text-muted hover:text-chalk'
+                  last ? 'border-cyan/40 bg-cyan/10 font-medium text-cyan' : 'border-line bg-panel text-muted hover:text-chalk'
                 }`}
                 title={label}
               >
@@ -88,23 +86,23 @@ export default function PatternFinder() {
 function QuestionCard({ id, onPick, onBack }: { id: string; onPick: (next: string) => void; onBack?: () => void }) {
   const q = QUESTIONS[id]
   return (
-    <section className="card rounded-3xl p-6">
+    <section className="card rounded-xl p-6">
       <h2 className="font-plate text-xl font-semibold text-chalk">{q.prompt}</h2>
       <div className="mt-4 flex flex-col gap-2">
         {q.choices.map((c, i) => (
           <button
             key={c.label}
             onClick={() => onPick(c.next)}
-            className="group flex items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-left transition-[border-color,background-color,transform] duration-150 hover:-translate-y-px hover:border-sky-500/50 hover:bg-sky-500/[0.04]"
+            className="group flex items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-left transition-[border-color,background-color,transform] duration-150 hover:border-cyan/50 hover:bg-cyan/[0.04]"
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-line bg-panel-2 font-mono text-2xs text-muted group-hover:border-sky-500/40 group-hover:text-sky-400">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-line bg-panel-2 font-mono text-2xs text-muted group-hover:border-cyan/40 group-hover:text-cyan">
               {i + 1}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-ui text-chalk">{c.label}</span>
               {c.hint && <span className="block text-xs text-muted">{c.hint}</span>}
             </span>
-            <ArrowRight size={16} className="shrink-0 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-sky-400" />
+            <ArrowRight size={16} className="shrink-0 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-cyan" />
           </button>
         ))}
       </div>
@@ -150,14 +148,14 @@ function ResultCard({ result: r, worlds, onRestart, onBack }: { result: PatternR
   const world = worlds?.find((w) => w.id === r.worldId)
   const bySlug = useMemo(() => new Map((worlds ?? []).flatMap((w) => w.questions).map((q) => [q.slug, q] as [string, QuestionSummary])), [worlds])
   return (
-    <section className="card overflow-hidden rounded-3xl">
+    <section className="card overflow-hidden rounded-xl">
       <div className="border-b border-line p-6">
         <p className="text-sm text-muted">This is most likely</p>
         <h2 className="mt-0.5 font-plate text-3xl font-semibold text-chalk">{r.pattern}</h2>
         <p className="mt-2 max-w-[62ch] text-chalk">{r.idea}</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {r.signals.map((s) => (
-            <span key={s} className="rounded-full border border-sky-500/25 bg-sky-500/[0.07] px-2.5 py-0.5 text-xs text-sky-400">
+            <span key={s} className="rounded-full border border-cyan/25 bg-cyan/[0.07] px-2.5 py-0.5 text-xs text-cyan">
               {s}
             </span>
           ))}
@@ -177,13 +175,13 @@ function ResultCard({ result: r, worlds, onRestart, onBack }: { result: PatternR
               const q = bySlug.get(slug)
               return (
                 <li key={slug}>
-                  <Link to={q ? questUrl(q) : `/q/${slug}`} className="group flex items-center gap-3 rounded-xl border border-line px-3 py-2 hover:border-sky-500/40">
+                  <Link to={q ? questUrl(q) : `/q/${slug}`} className="group flex items-center gap-3 rounded-xl border border-line px-3 py-2 hover:border-cyan/40">
                     <span
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${q?.progress.solved ? 'bg-emerald/15 text-emerald' : 'bg-chalk/[0.06] text-faint'}`}
                     >
                       {q?.progress.solved ? <Check size={12} /> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm text-chalk group-hover:text-sky-400">{q?.title ?? slug}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-chalk group-hover:text-cyan">{q?.title ?? slug}</span>
                     {q && <DifficultyBadge difficulty={q.difficulty} />}
                     {q?.citadel_id === 'dsa' && <LeetCodeLink lc={q.lc} url={q.leetcode_url} />}
                   </Link>
@@ -192,7 +190,7 @@ function ResultCard({ result: r, worlds, onRestart, onBack }: { result: PatternR
             })}
           </ul>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button onClick={() => navigate(`/world/${r.worldId}`)}>Open World {r.worldId}{world ? `: ${world.name.replace(/ — .*/, '')}` : ''}</Button>
+            <Button onClick={() => navigate(`/world/${r.worldId}`)}>Explore {world?.name.replace(/ — .*/, '') ?? 'this topic'}</Button>
             <Button variant="outline" onClick={onBack}>
               <ArrowLeft size={14} /> Back
             </Button>

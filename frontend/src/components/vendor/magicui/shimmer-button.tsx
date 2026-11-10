@@ -30,12 +30,16 @@ export const ShimmerButton = React.forwardRef<
       background = "rgba(0, 0, 0, 1)",
       className,
       children,
+      onClick,
+      type = 'button',
       ...props
     },
     ref
   ) => {
     return (
       <button
+        type={type}
+        onClick={onClick}
         style={
           {
             "--spread": "90deg",

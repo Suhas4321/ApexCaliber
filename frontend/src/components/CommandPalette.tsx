@@ -102,7 +102,7 @@ export default function CommandPalette() {
             },
           ]
         : []),
-      { id: 'journey', group: 'Actions', label: 'Journey map', icon: <Map size={16} />, haystack: 'journey dashboard home constellation map', run: close(() => navigate('/')) },
+      { id: 'journey', group: 'Actions', label: 'Journey map', icon: <Map size={16} />, haystack: 'journey dashboard home constellation map', run: close(() => navigate('/app')) },
       { id: 'finder', group: 'Actions', label: 'Pattern Finder', detail: 'Which pattern is this problem?', icon: <Compass size={16} />, haystack: 'pattern finder which pattern flowchart decide', run: close(() => navigate('/finder')) },
       { id: 'grimoire', group: 'Actions', label: 'Open the Grimoire', detail: 'Revision sheets', icon: <BookMarked size={16} />, haystack: 'grimoire cheat sheet revision notes pitch', run: close(() => openGrimoire()) },
       ...(!hostedAuthEnabled ? [{ id: 'playground', group: 'Actions' as const, label: 'Playground', detail: 'Trace any code', icon: <FlaskConical size={16} />, haystack: 'playground trace visualize code', run: close(() => navigate('/playground')) }] : []),

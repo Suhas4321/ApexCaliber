@@ -10,9 +10,9 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     if (exchanged.current) return
     exchanged.current = true
-    let requested = '/'
+    let requested = '/app'
     try {
-      requested = localStorage.getItem(AUTH_RETURN_KEY) || '/'
+      requested = localStorage.getItem(AUTH_RETURN_KEY) || '/app'
       localStorage.removeItem(AUTH_RETURN_KEY)
     } catch { /* continue at home */ }
     const next = safeReturnPath(requested)

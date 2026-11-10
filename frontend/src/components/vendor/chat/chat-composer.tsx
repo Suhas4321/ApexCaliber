@@ -72,6 +72,7 @@ export function ChatComposer({
 
   return (
     <form
+      noValidate
       onSubmit={handleSubmit}
       className={cn(
         'relative rounded-2xl border border-line bg-surface-2 p-3 shadow-md transition-all focus-within:border-accent/60 focus-within:ring-1 focus-within:ring-accent/20',

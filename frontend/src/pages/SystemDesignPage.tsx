@@ -83,8 +83,8 @@ export default function SystemDesignPage() {
             title="Drag to resize sidebar · Double-click to reset"
             onPointerDown={(e) => { e.preventDefault(); setDraggingLeft(true) }}
             onDoubleClick={() => setLeftWidth(280)}
-            className={`hidden md:block w-1 shrink-0 cursor-col-resize bg-line hover:bg-violet-400/60 active:bg-violet-500 transition-colors z-20 select-none ${
-              draggingLeft ? 'bg-violet-500 w-1.5' : ''
+            className={`hidden md:block w-1 shrink-0 cursor-col-resize bg-line hover:bg-cyan/60 active:bg-cyan transition-colors z-20 select-none ${
+              draggingLeft ? 'bg-cyan w-1.5' : ''
             }`}
           />
         </>
@@ -103,7 +103,7 @@ export default function SystemDesignPage() {
                     aria-expanded={leftOpen}
                     aria-controls="system-design-curriculum"
                   >
-                    <PanelLeftOpen size={14} className="text-violet-500 dark:text-violet-400" />
+                    <PanelLeftOpen size={14} className="text-cyan dark:text-cyan" />
                     <span>{leftOpen ? 'Focus reading' : 'Show curriculum'}</span>
                   </button>
               </div>
@@ -116,7 +116,7 @@ export default function SystemDesignPage() {
                     className="inline-flex items-center gap-1.5 rounded-md border border-line bg-panel px-2.5 py-1 font-medium text-muted hover:text-chalk hover:bg-panel-2 transition-colors"
                     title="Open Table of Contents"
                   >
-                    <ListTree size={14} className="text-violet-500 dark:text-violet-400" />
+                    <ListTree size={14} className="text-cyan dark:text-cyan" />
                     <span>On This Page</span>
                   </button>
                 )}
@@ -168,8 +168,8 @@ export default function SystemDesignPage() {
             title="Drag to resize TOC · Double-click to reset"
             onPointerDown={(e) => { e.preventDefault(); setDraggingRight(true) }}
             onDoubleClick={() => setRightWidth(240)}
-            className={`hidden 2xl:block w-1 shrink-0 cursor-col-resize bg-line hover:bg-violet-400/60 active:bg-violet-500 transition-colors z-20 select-none ${
-              draggingRight ? 'bg-violet-500 w-1.5' : ''
+            className={`hidden 2xl:block w-1 shrink-0 cursor-col-resize bg-line hover:bg-cyan/60 active:bg-cyan transition-colors z-20 select-none ${
+              draggingRight ? 'bg-cyan w-1.5' : ''
             }`}
           />
 
@@ -195,10 +195,10 @@ export default function SystemDesignPage() {
             <nav className="flex flex-col space-y-2 text-xs text-muted">
               {selected.kind === 'solid' && (
                 <>
-                  <a href="#section-concept" className="hover:text-violet-600 dark:hover:text-violet-300 transition-colors">1. Mental Model & Scenario</a>
-                  <a href="#section-tradeoffs" className="hover:text-violet-600 dark:hover:text-violet-300 transition-colors">2. When to Apply vs YAGNI</a>
-                  <a href="#section-code" className="hover:text-violet-600 dark:hover:text-violet-300 transition-colors">3. Before vs After Refactor</a>
-                  <a href="#section-lab" className="hover:text-violet-600 dark:hover:text-violet-300 transition-colors">4. Hands-On Coding Lab</a>
+                  <a href="#section-concept" className="hover:text-cyan dark:hover:text-cyan transition-colors">1. Mental Model & Scenario</a>
+                  <a href="#section-tradeoffs" className="hover:text-cyan dark:hover:text-cyan transition-colors">2. When to Apply vs YAGNI</a>
+                  <a href="#section-code" className="hover:text-cyan dark:hover:text-cyan transition-colors">3. Before vs After Refactor</a>
+                  <a href="#section-lab" className="hover:text-cyan dark:hover:text-cyan transition-colors">4. Hands-On Coding Lab</a>
                 </>
               )}
 
@@ -225,7 +225,7 @@ export default function SystemDesignPage() {
 
             <div className="mt-auto pt-4 border-t border-line text-2xs text-muted">
               <span className="block font-semibold text-chalk mb-1">Pass to Complete</span>
-              Solve the hands-on lab in each lesson to track completion in Citadel VIII.
+              Solve the hands-on lab in each lesson to track completion in System Design.
             </div>
           </aside>
         </>

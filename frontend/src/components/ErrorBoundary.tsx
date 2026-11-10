@@ -31,6 +31,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const staleChunk = /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(this.state.error?.message ?? '')
       return (
         <div
           role="alert"
@@ -41,15 +42,15 @@ export default class ErrorBoundary extends Component<Props, State> {
           </span>
           <div>
             <h3 className="font-plate text-base font-semibold text-chalk">
-              {this.props.fallbackTitle ?? 'Something went wrong in this stage'}
+              {staleChunk ? 'A newer version is ready' : this.props.fallbackTitle ?? 'Something went wrong in this stage'}
             </h3>
             <p className="mt-1 max-w-md font-mono text-2xs text-muted">
-              {this.state.error?.message || 'An unexpected rendering error occurred.'}
+              {staleChunk ? 'Reload the page to finish opening this screen.' : this.state.error?.message || 'An unexpected rendering error occurred.'}
             </p>
           </div>
-          <Button variant="outline" className="mt-1 h-8 px-3 text-xs" onClick={this.handleReset}>
+          <Button variant="outline" className="mt-1 h-8 px-3 text-xs" onClick={staleChunk ? () => window.location.reload() : this.handleReset}>
             <RotateCcw size={13} />
-            <span>Reset View</span>
+            <span>{staleChunk ? 'Reload page' : 'Reset view'}</span>
           </Button>
         </div>
       )

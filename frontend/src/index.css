@@ -6,7 +6,7 @@
 }
 
 /* Design language: see DESIGN_REFERENCES.md. Dual-theme system:                           */
-/* Dark: "Night Expedition" (Nebula Plum) | Light: "Alpine Morning" (Warm Ivory)            */
+/* Study themes: quiet forest charcoal and warm neutral paper.                              */
 @theme {
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-plate: 'IBM Plex Sans Condensed', 'IBM Plex Sans', ui-sans-serif, sans-serif;
@@ -80,264 +80,190 @@
 
 /* ---- Type Scale & Tokens v2 (CSS custom props — usable anywhere incl. canvas/SVG) ------- */
 
+/* Study surfaces use one calm action color. Subject colors are small orientation cues. */
 :root,
 html[data-theme='dark'],
 html[data-theme='carbon-dark'] {
   color-scheme: dark;
-
-  /* Surfaces: Deep Cosmic Void (Linear / Vercel / Raycast precision) */
-  --surface-0: #090D16;
-  --surface-1: #0F1624;
-  --surface-2: #161F33;
-  --surface-3: #1E2942;
-  --line: rgba(241, 245, 249, 0.08);
-  --line-strong: rgba(241, 245, 249, 0.16);
-  --surface-line: rgba(241, 245, 249, 0.08);
-  --surface-line-strong: rgba(241, 245, 249, 0.16);
-
-  /* Text tokens (WCAG AAA / AA+ Slate) */
-  --text-1: #F1F5F9;
-  --text-2: #94A3B8; /* 6.8:1 on surface-1 */
-  --text-3: #64748B; /* 4.5:1 metadata / faint */
-  --code: #F8FAFC;
-  --reward: #FBBF24;
-
-  /* Direct Tailwind color variable mappings */
-  --color-surface-0: #090D16;
-  --color-surface-1: #0F1624;
-  --color-surface-2: #161F33;
-  --color-surface-3: #1E2942;
-  --color-void: #090D16;
-  --color-panel: #0F1624;
-  --color-panel-2: #161F33;
-  --color-panel-3: #1E2942;
-  --color-ink: #161F33;
-  --color-line: rgba(241, 245, 249, 0.08);
-  --color-line-strong: rgba(241, 245, 249, 0.16);
-  --color-fog: #1E2942;
-  --color-text-1: #F1F5F9;
-  --color-text-2: #94A3B8;
-  --color-text-3: #64748B;
-  --color-chalk: #F1F5F9;
-  --color-muted: #94A3B8;
-  --color-faint: #64748B;
-  --color-code: #F8FAFC;
-  --color-reward: #FBBF24;
-
-  /* Type scale */
-  --text-caption: 13px;   --lh-caption: 1.4;   /* metadata labels, keycaps, counters ONLY */
-  --text-ui:      15px;   --lh-ui:      1.45;  /* nav, buttons, badges, secondary UI text  */
-  --text-body:    17px;   --lh-body:    1.6;   /* body copy, prose                         */
-  --text-lead:    19px;   --lh-lead:    1.6;   /* section intros, card subtitles            */
-  --text-h3:      22px;   --lh-h3:      1.3;   /* card headings                             */
-  --text-h2:      28px;   --lh-h2:      1.25;  /* section headings                          */
-  --text-h1:      36px;   --lh-h1:      1.15;  /* page titles                               */
-  --text-code:    15px;   --lh-code:    1.6;   /* mono code                                 */
-
-  /* Layout containers */
-  --shell-max:   1680px;
-  --shell-px:    clamp(16px, 3vw, 48px);
-  --measure-max: 68ch;
-
-  /* Per-peak accent colours (bright, saturated neon/aurora variants) */
-  --accent-dsa:            #8B5CF6;
-  --accent-python-data:    #F2B866;
-  --accent-sql-dbms:       #67E8F9;
-  --accent-os-concurrency: #FB923C;
-  --accent-backend-apis:   #FB7185;
-  --accent-ai-resume:      #38BDF8;
-  --peak-accent:           var(--accent-dsa, #8B5CF6);
-
-  --color-cyan: #A78BFA;
-  --color-indigo: #A78BFA;
-  --color-forge: #8B5CF6;
-  --color-emerald: #10B981;
-  --color-emerald-hi: #6EE7B7;
-  --color-verdigris: #8B5CF6;
-  --color-amber: #F2B866;
-  --color-ochre: #F2B866;
-  --color-rust: #FB923C;
-  --color-crimson: #FB7185;
-  --color-oxide: #FB7185;
-  --color-sky: #A78BFA;
-  --color-orchid: #A89FC0;
-  --color-gold: #F5C451;
-
-  --color-action: var(--peak-accent, #8B5CF6);
-  --color-action-hi: color-mix(in srgb, var(--peak-accent, #8B5CF6) 88%, white);
-  --color-success: #10B981;
-
-  /* Card elevation: deep cosmic navy-black tint, soft 24px blur + 1px light-catcher border */
-  --page-dot: #161F33;
-  --card-shadow: 0 8px 28px -4px rgba(2, 6, 23, 0.65), 0 1px 2px -1px rgba(2, 6, 23, 0.5);
-  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --stage-bg: #070A12;
-  --stage-frame: rgba(241, 245, 249, 0.09);
-  --stage-glow: inset 0 2px 16px -4px rgba(0, 0, 0, 0.85);
-
-  /* Semantic Visualizer Tokens (Dark) */
-  --viz-compare: #67E8F9;
-  --viz-swap:    #FB923C;
-  --viz-write:   #6EE7B7;
-  --viz-read:    #A78BFA;
-  --viz-target:  #FB7185;
-  --viz-done:    #34D399;
-  --viz-idle:    var(--surface-3, #2A2140);
-
-  --viz-glow-compare: 0 0 16px rgba(103, 232, 249, 0.35);
-  --viz-glow-swap:    0 0 18px rgba(251, 146, 60, 0.40);
-  --viz-glow-write:   0 0 16px rgba(110, 231, 183, 0.35);
-  --viz-glow-target:  0 0 16px rgba(251, 113, 133, 0.40);
-  --viz-glow-done:    0 0 16px rgba(52, 211, 153, 0.35);
+  --surface-0: #141b18;
+  --surface-1: #1c2520;
+  --surface-2: #26312a;
+  --surface-3: #303d34;
+  --line: #35443a;
+  --line-strong: #526457;
+  --surface-line: var(--line);
+  --surface-line-strong: var(--line-strong);
+  --text-1: #f1f4ef;
+  --text-2: #bec9be;
+  --text-3: #a3b1a4;
+  --code: #f5f6f1;
+  --reward: #dbc28b;
+  --study-accent: #a8d5af;
+  --study-on-accent: #15251b;
+  --accent-dsa: #9bbca5;
+  --accent-python-data: #c3b58d;
+  --accent-sql-dbms: #9db9b2;
+  --accent-os-concurrency: #bda595;
+  --accent-backend-apis: #b5aaa9;
+  --accent-ai-resume: #a5b2c5;
+  --peak-accent: var(--study-accent);
+  --color-cyan: var(--study-accent);
+  --color-indigo: var(--study-accent);
+  --color-forge: var(--study-accent);
+  --color-emerald: #91c9a3;
+  --color-emerald-hi: #91c9a3;
+  --color-verdigris: var(--study-accent);
+  --color-amber: #d3bb87;
+  --color-ochre: #d3bb87;
+  --color-rust: #c6a28d;
+  --color-crimson: #e1a6a2;
+  --color-oxide: #e1a6a2;
+  --color-sky: var(--study-accent);
+  --color-orchid: var(--text-2);
+  --color-gold: var(--reward);
+  --color-action: var(--study-accent);
+  --color-action-hi: #bce3c2;
+  --color-success: #91c9a3;
+  --text-caption: 12px; --lh-caption: 1.4;
+  --text-ui: 14px; --lh-ui: 1.45;
+  --text-body: 16px; --lh-body: 1.6;
+  --text-lead: 18px; --lh-lead: 1.55;
+  --text-h3: 21px; --lh-h3: 1.3;
+  --text-h2: 28px; --lh-h2: 1.25;
+  --text-h1: 36px; --lh-h1: 1.15;
+  --text-code: 14px; --lh-code: 1.6;
+  --shell-max: 1280px;
+  --shell-px: clamp(20px, 4vw, 48px);
+  --measure-max: 72ch;
+  --page-dot: transparent;
+  --card-shadow: 0 1px 3px rgb(0 0 0 / .08);
+  --card-highlight: none;
+  --stage-bg: #19221d;
+  --stage-frame: var(--line);
+  --stage-glow: none;
+  --viz-compare: #9bbec3;
+  --viz-swap: #d3bb87;
+  --viz-write: #91c9a3;
+  --viz-read: #b6b6cc;
+  --viz-target: #dda7a1;
+  --viz-done: #91c9a3;
+  --viz-idle: var(--surface-3);
+  --viz-glow-compare: none;
+  --viz-glow-swap: none;
+  --viz-glow-write: none;
+  --viz-glow-target: none;
+  --viz-glow-done: none;
 }
 
 html[data-theme='light'],
 html[data-theme='paper'],
 html[data-theme='studio-contrast'] {
   color-scheme: light;
-
-  /* Surfaces: Alpine Morning (Warm Ivory page canvas, NOT stark white) */
-  --surface-0: #F7F4EF;
-  --surface-1: #FFFFFF;
-  --surface-2: #F1EDE6;
-  --surface-3: #E8E2D8;
-  --line: rgba(30, 27, 46, 0.08);       /* subtle 1px hairline */
-  --line-strong: rgba(30, 27, 46, 0.16);
-  --surface-line: rgba(30, 27, 46, 0.08);
-  --surface-line-strong: rgba(30, 27, 46, 0.16);
-
-  /* Text Tokens (Warm Obsidian & Slate Violet) */
-  --text-1: #1E1B2E; /* 13:1 on surface-1 */
-  --text-2: #5B5670; /* slate-violet, 5.8:1 on surface-1 */
-  --text-3: #8B859E; /* faint, >= 3:1 for metadata only */
-  --code: #12101C;
-  --reward: #B45309;
-
-  /* Direct Tailwind color variable mappings */
-  --color-surface-0: #F7F4EF;
-  --color-surface-1: #FFFFFF;
-  --color-surface-2: #F1EDE6;
-  --color-surface-3: #E8E2D8;
-  --color-void: #F7F4EF;
-  --color-panel: #FFFFFF;
-  --color-panel-2: #F1EDE6;
-  --color-panel-3: #E8E2D8;
-  --color-ink: #F1EDE6;
-  --color-line: rgba(30, 27, 46, 0.08);
-  --color-line-strong: rgba(30, 27, 46, 0.16);
-  --color-fog: #E8E2D8;
-  --color-text-1: #1E1B2E;
-  --color-text-2: #5B5670;
-  --color-text-3: #8B859E;
-  --color-chalk: #1E1B2E;
-  --color-muted: #5B5670;
-  --color-faint: #8B859E;
-  --color-code: #12101C;
-  --color-reward: #B45309;
-
-  /* Accents (Deep & accessible jewel-toned variants >= 4.5:1 against white/surface-1) */
-  --color-cyan: #6D28D9;
-  --color-indigo: #7C3AED;
-  --color-forge: #7C3AED;
-  --color-emerald: #047857;
-  --color-emerald-hi: #047857;
-  --color-verdigris: #7C3AED;
-  --color-amber: #B45309;
-  --color-ochre: #B45309;
-  --color-rust: #C2410C;
-  --color-crimson: #BE123C;
-  --color-oxide: #BE123C;
-  --color-sky: #6D28D9;
-  --color-orchid: #5B5670;
-  --color-gold: #B45309;
-
-  /* Per-peak accent colours calibrated for light background */
-  --accent-dsa:            #7C3AED;
-  --accent-python-data:    #B45309;
-  --accent-sql-dbms:       #0E7490;
-  --accent-os-concurrency: #C2410C;
-  --accent-backend-apis:   #BE123C;
-  --accent-ai-resume:      #0284C7;
-  --peak-accent:           var(--accent-dsa, #7C3AED);
-
-  --color-action: var(--peak-accent, #7C3AED);
-  --color-action-hi: color-mix(in srgb, var(--peak-accent, #7C3AED) 88%, black);
-  --color-success: #047857;
-
-  /* Card elevation: diffuse, warm-tinted (0 8px 24px rgba(30,27,46,.08)) */
-  --page-dot: #E8E2D8;
-  --card-shadow: 0 8px 24px -4px rgba(30, 27, 46, 0.08), 0 1px 3px rgba(30, 27, 46, 0.04);
-  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --stage-bg: #F7F4EF;
-  --stage-frame: rgba(30, 27, 46, 0.08);
-  --stage-glow: 0 12px 32px -8px rgba(30, 27, 46, 0.08);
-
-  /* Semantic Visualizer Tokens (Light: darker fills, high contrast on light canvas) */
-  --viz-compare: #0891B2;
-  --viz-swap:    #C2410C;
-  --viz-write:   #047857;
-  --viz-read:    #6D28D9;
-  --viz-target:  #BE123C;
-  --viz-done:    #059669;
-  --viz-idle:    var(--surface-3, #E8E2D8);
-
-  --viz-glow-compare: 0 0 12px rgba(8, 145, 178, 0.22);
-  --viz-glow-swap:    0 0 12px rgba(194, 65, 12, 0.22);
-  --viz-glow-write:   0 0 12px rgba(4, 120, 87, 0.22);
-  --viz-glow-target:  0 0 12px rgba(190, 18, 60, 0.22);
-  --viz-glow-done:    0 0 12px rgba(5, 150, 105, 0.22);
+  --surface-0: #f6f7f3;
+  --surface-1: #ffffff;
+  --surface-2: #eef1ea;
+  --surface-3: #e4eae1;
+  --line: #d9e0d7;
+  --line-strong: #bac9bb;
+  --surface-line: var(--line);
+  --surface-line-strong: var(--line-strong);
+  --text-1: #1e2a22;
+  --text-2: #526357;
+  --text-3: #697a6d;
+  --code: #1b2921;
+  --reward: #795d2c;
+  --study-accent: #245c42;
+  --study-on-accent: #ffffff;
+  --accent-dsa: #4d7860;
+  --accent-python-data: #8b7549;
+  --accent-sql-dbms: #527c78;
+  --accent-os-concurrency: #916b56;
+  --accent-backend-apis: #8b6668;
+  --accent-ai-resume: #5a6e91;
+  --peak-accent: var(--study-accent);
+  --color-cyan: var(--study-accent);
+  --color-indigo: var(--study-accent);
+  --color-forge: var(--study-accent);
+  --color-emerald: #26754a;
+  --color-emerald-hi: #26754a;
+  --color-verdigris: var(--study-accent);
+  --color-amber: #80642d;
+  --color-ochre: #80642d;
+  --color-rust: #9a6246;
+  --color-crimson: #a45252;
+  --color-oxide: #a45252;
+  --color-sky: var(--study-accent);
+  --color-orchid: var(--text-2);
+  --color-gold: var(--reward);
+  --color-action: var(--study-accent);
+  --color-action-hi: #1b4d36;
+  --color-success: #26754a;
+  --text-caption: 12px; --lh-caption: 1.4;
+  --text-ui: 14px; --lh-ui: 1.45;
+  --text-body: 16px; --lh-body: 1.6;
+  --text-lead: 18px; --lh-lead: 1.55;
+  --text-h3: 21px; --lh-h3: 1.3;
+  --text-h2: 28px; --lh-h2: 1.25;
+  --text-h1: 36px; --lh-h1: 1.15;
+  --text-code: 14px; --lh-code: 1.6;
+  --shell-max: 1280px;
+  --shell-px: clamp(20px, 4vw, 48px);
+  --measure-max: 72ch;
+  --page-dot: transparent;
+  --card-shadow: 0 1px 3px rgb(30 42 34 / .04);
+  --card-highlight: none;
+  --stage-bg: #f2f4ef;
+  --stage-frame: var(--line);
+  --stage-glow: none;
+  --viz-compare: #397d85;
+  --viz-swap: #9b692f;
+  --viz-write: #26754a;
+  --viz-read: #696890;
+  --viz-target: #a45252;
+  --viz-done: #26754a;
+  --viz-idle: var(--surface-3);
+  --viz-glow-compare: none;
+  --viz-glow-swap: none;
+  --viz-glow-write: none;
+  --viz-glow-target: none;
+  --viz-glow-done: none;
 }
 
-/* ---- Zone 3 & Night Zone: always-dark stages, sky banners & visualizers ---- */
-
+/* Code and visualizations retain their own dark, still canvas in both themes. */
 .stage,
 [data-zone='night'] {
   color-scheme: dark;
-  --surface-0: #090D16;
-  --surface-1: #0F1624;
-  --surface-2: #161F33;
-  --surface-3: #1E2942;
-  --line: rgba(241, 245, 249, 0.10);
-  --line-strong: rgba(241, 245, 249, 0.18);
-  --text-1: #F8FAFC;
-  --text-2: #CBD5E1;
-  --text-3: #94A3B8;
-  --code: #F8FAFC;
-
-  --color-surface-0: #090D16;
-  --color-surface-1: #0F1624;
-  --color-surface-2: #161F33;
-  --color-surface-3: #1E2942;
-  --color-void: #090D16;
-  --color-panel: #0F1624;
-  --color-panel-2: #161F33;
-  --color-panel-3: #1E2942;
-  --color-ink: #161F33;
-  --color-line: rgba(241, 245, 249, 0.10);
-  --color-line-strong: rgba(241, 245, 249, 0.18);
-  --color-text-1: #F8FAFC;
-  --color-text-2: #CBD5E1;
-  --color-text-3: #94A3B8;
-  --color-chalk: #F8FAFC;
-  --color-muted: #CBD5E1;
-  --color-faint: #94A3B8;
-  --color-code: #F8FAFC;
-  --color-cyan: #A78BFA;
-  --color-emerald: #34D399;
-  --color-emerald-hi: #34D399;
-  --color-amber: #FBBF24;
-  --color-crimson: #FB7185;
-  --color-sky: #A78BFA;
+  --surface-0: #141b18;
+  --surface-1: #1c2520;
+  --surface-2: #26312a;
+  --surface-3: #303d34;
+  --line: #35443a;
+  --line-strong: #526457;
+  --text-1: #f1f4ef;
+  --text-2: #bec9be;
+  --text-3: #a3b1a4;
+  --code: #f5f6f1;
+  --study-accent: #a8d5af;
+  --color-void: var(--surface-0);
+  --color-panel: var(--surface-1);
+  --color-panel-2: var(--surface-2);
+  --color-panel-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-chalk: var(--text-1);
+  --color-muted: var(--text-2);
+  --color-faint: var(--text-3);
+  --color-cyan: var(--study-accent);
+  --color-emerald: #91c9a3;
+  --color-amber: #d3bb87;
+  --color-crimson: #e1a6a2;
 }
-
 .stage {
-  background-color: #070A12;
-  background-image: radial-gradient(rgba(241, 245, 249, 0.10) 1px, transparent 1px);
-  background-size: 20px 20px;
-  color: #F8FAFC;
-  border: 1px solid rgba(241, 245, 249, 0.12);
-  border-radius: 20px;
-  box-shadow: var(--stage-glow);
+  background: #19221d;
+  color: #f1f4ef;
+  border: 1px solid #35443a;
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 @layer base {
@@ -357,9 +283,7 @@ html[data-theme='studio-contrast'] {
     @apply text-chalk font-sans antialiased;
     background-color: var(--surface-0);
     color: var(--text-1);
-    background-image: radial-gradient(var(--page-dot) 1.2px, transparent 1.2px);
-    background-size: 22px 22px;
-    background-attachment: fixed;
+    background-image: none;
     font-size: var(--text-body);    /* 17px */
     line-height: var(--lh-body);   /* 1.6  */
     min-height: 100vh;
@@ -382,8 +306,8 @@ html[data-theme='studio-contrast'] {
 @utility card {
   background-color: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: 16px;
-  box-shadow: var(--card-highlight), var(--card-shadow);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
 }
 
 /* Glass: only the floating navbar and the stage capsule. Adapts to the zone it sits in. */

@@ -1,4 +1,4 @@
-import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -11,7 +11,10 @@ export const supabase: SupabaseClient | null = hostedAuthEnabled ? createClient(
 let activeStudentId: string | null = null
 export function currentStudentId() { return activeStudentId }
 
-function syncDesignProgress(next: Session | null) {
+export type StudentSession = { user: { id: string; email?: string; name?: string }; access_token?: string }
+type LocalAuthStatus = { authenticated: boolean; needs_setup: boolean; username: string | null }
+
+function syncDesignProgress(next: StudentSession | null) {
   const id = next?.user.id
   if (id && localStorage.getItem('apex-last-auth-user') !== id) {
     for (const name of Object.keys(localStorage)) {
@@ -22,7 +25,7 @@ function syncDesignProgress(next: Session | null) {
   activeStudentId = next?.user.id ?? null
   window.dispatchEvent(new Event('pf_sysdesign_progress_updated'))
   if (!next) return
-  void fetch('/api/me/system-design', { headers: { Authorization: `Bearer ${next.access_token}` } })
+  void fetch('/api/me/system-design', { headers: next.access_token ? { Authorization: `Bearer ${next.access_token}` } : {} })
     .then(res => res.ok ? res.json() : null)
     .then((data: { completed_ids?: string[] } | null) => {
       if (activeStudentId !== id || !Array.isArray(data?.completed_ids)) return
@@ -33,20 +36,50 @@ function syncDesignProgress(next: Session | null) {
 }
 
 type AuthState = {
-  session: Session | null
+  session: StudentSession | null
   loading: boolean
   enabled: boolean
+  needsSetup: boolean
+  authError: string | null
+  refreshSession: () => Promise<StudentSession | null>
   signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthState>({ session: null, loading: false, enabled: false, signOut: async () => {} })
+const AuthContext = createContext<AuthState>({ session: null, loading: true, enabled: true, needsSetup: false, authError: null, refreshSession: async () => null, signOut: async () => {} })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(hostedAuthEnabled)
+  const [session, setSession] = useState<StudentSession | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [needsSetup, setNeedsSetup] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  async function refreshSession(): Promise<StudentSession | null> {
+    if (supabase) {
+      const { data, error } = await supabase.auth.getSession()
+      if (error) throw error
+      setSession(data.session)
+      syncDesignProgress(data.session)
+      setLoading(false)
+      return data.session
+    }
+    const response = await fetch('/api/local-auth/session')
+    if (!response.ok) throw new Error('Could not check your local account. Start the backend and try again.')
+    const status = await response.json() as LocalAuthStatus
+    const next: StudentSession | null = status.authenticated && status.username
+      ? { user: { id: 'local', name: status.username } } : null
+    setNeedsSetup(status.needs_setup)
+    setSession(next)
+    syncDesignProgress(next)
+    setAuthError(null)
+    setLoading(false)
+    return next
+  }
 
   useEffect(() => {
-    if (!supabase) return
+    if (!supabase) {
+      void refreshSession().catch((error) => { setAuthError(error.message); setLoading(false) })
+      return
+    }
     let active = true
     void supabase.auth.getSession().then(({ data }) => {
       if (active) {
@@ -54,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         syncDesignProgress(data.session)
         setLoading(false)
       }
-    }).catch(() => { if (active) setLoading(false) })
+    }).catch(() => { if (active) { setAuthError('Could not check your saved session. Try again.'); setLoading(false) } })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
       if (active) {
         if (event === 'SIGNED_OUT') localStorage.removeItem('apex-last-auth-user')
@@ -69,9 +102,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={{
     session,
     loading,
-    enabled: hostedAuthEnabled,
+    enabled: true,
+    needsSetup,
+    authError,
+    refreshSession,
     signOut: async () => {
-      await supabase?.auth.signOut()
+      if (supabase) {
+        const { error } = await supabase.auth.signOut()
+        if (error) throw error
+      } else {
+        const response = await fetch('/api/local-auth/logout', { method: 'POST' })
+        if (!response.ok) throw new Error('Could not log out. Try again.')
+      }
+      setSession(null)
       activeStudentId = null
       // Clear per-student browser state before another account uses this device.
       for (const name of Object.keys(localStorage)) {

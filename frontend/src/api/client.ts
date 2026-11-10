@@ -1,6 +1,6 @@
 import type { ActivityEvent, CheatSheet, CoachReply, CoachStatus, Pitch, Progress, QuestionDetail, ReviewQueue, RunResult, StatsResponse, Trace, World } from './types'
 import type { CheckResult, LearningPath, LearningSummary, LessonDetail } from './learningTypes'
-import { accessToken, hostedAuthEnabled } from '../lib/auth'
+import { accessToken } from '../lib/auth'
 
 export class ApiError extends Error {
   status: number
@@ -22,7 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(0, 'Backend is not reachable. Start it with ./run.sh (or uvicorn on port 8010).')
   }
   if (!res.ok) {
-    if (res.status === 401 && hostedAuthEnabled && !window.location.pathname.startsWith('/sign-in')) {
+    if (res.status === 401 && !window.location.pathname.startsWith('/sign-in')) {
       const next = window.location.pathname + window.location.search
       window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`)
     }

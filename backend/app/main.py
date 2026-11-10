@@ -1,18 +1,18 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import MetaData, Table, func, inspect, select
 
-from app.auth import LOCAL_USER_ID, validate_hosted_settings
+from app.auth import LOCAL_USER_ID, require_student, validate_hosted_settings
 from app.config import PROJECT_DIR, settings
 from app.db import Base, SessionLocal, engine
 from app.models import Draft, LessonProgress, PitchNote, Progress, Submission
-from app.routers import backup, learning, playground, questions, stats, student, worlds
+from app.routers import backup, learning, local_auth, playground, questions, stats, student, worlds
 from app.services import backup_manager
 from app.services.content_loader import sync_content
 from app.services.learning_paths import sync_learning_paths
@@ -78,6 +78,7 @@ app.include_router(questions.router)
 app.include_router(stats.router)
 app.include_router(student.router)
 if settings.app_mode == "local":
+    app.include_router(local_auth.router)
     app.include_router(backup.router)
 app.include_router(playground.router)
 
@@ -88,7 +89,7 @@ def health():
 
 
 @app.post("/api/content/reload")
-def reload_content():
+def reload_content(_user_id: str = Depends(require_student)):
     """Re-read content/ without restarting the server (handy while editing question files)."""
     if settings.app_mode != "local":
         raise HTTPException(404)
@@ -110,4 +111,4 @@ if FRONTEND_DIST.exists():
         candidate = FRONTEND_DIST / path
         if path and candidate.is_file() and FRONTEND_DIST in candidate.resolve().parents:
             return FileResponse(candidate)
-        return FileResponse(FRONTEND_DIST / "index.html")
+        return FileResponse(FRONTEND_DIST / "index.html", headers={"Cache-Control": "no-cache, must-revalidate"})

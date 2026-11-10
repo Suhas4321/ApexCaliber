@@ -8,12 +8,12 @@ import {
   Play,
   ScrollText,
 } from 'lucide-react'
-import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Progress, QuestionDetail, RunResult, Trace } from '../api/types'
 import { ThemeToggle } from '../components/effects'
+import AccountMenu from '../components/AccountMenu'
 import { Button, DifficultyBadge, ErrorNote, Skeleton } from '../components/ui'
 import VictoryModal from '../components/VictoryModal'
 import { usePlayback } from '../components/visualizers/stage/usePlayback'
@@ -177,13 +177,6 @@ function QuestionWorkspace() {
           setPlaying(true)
         }
       }
-      if (r.passed && activeTarget === 'main' && !r.custom) {
-        try {
-          confetti({ particleCount: 55, spread: 65, origin: { y: 0.6 } })
-        } catch {
-          /* ignore */
-        }
-      }
     } catch (e) {
       setRunError((e as Error).message)
     } finally {
@@ -244,7 +237,7 @@ function QuestionWorkspace() {
   if (missingLessons.length > 0) {
     return <div className="shell max-w-3xl py-10 space-y-6">
       <Link to={`/world/${question.world_id}`} className="inline-flex items-center gap-2 text-sm text-muted hover:text-chalk"><ArrowLeft size={16} /> Back to {question.world_name}</Link>
-      <div className="rounded-3xl border border-line bg-panel p-7 sm:p-9"><div className="text-xs font-semibold uppercase tracking-widest text-cyan">Your route to this question</div><h1 className="mt-2 font-plate text-3xl font-semibold text-chalk">Start with the first idea</h1><p className="mt-3 leading-7 text-muted">Before {question.title}, learn these ideas in order. Each short lesson uses a familiar situation and a worked example. We will bring you back here when you finish.</p><ol className="mt-6 space-y-3">{prerequisiteLessons.map((lesson, index) => <li key={lesson.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel-2 p-4"><span className="flex items-center gap-3 text-chalk"><span className="font-mono text-xs text-muted">{String(index + 1).padStart(2, '0')}</span>{lesson.title}</span><span className="shrink-0 text-sm text-cyan">{lesson.mastered ? 'Done' : lesson.id === missingLessons[0].id ? 'Up next' : 'Later'}</span></li>)}</ol><Link to={`/lesson/${missingLessons[0].id}?practice=${encodeURIComponent(slug)}`} className="mt-6 inline-flex rounded-xl bg-cyan px-5 py-3 text-sm font-semibold text-[#06121a]">{prerequisiteLessons.length === missingLessons.length ? 'Start' : 'Continue'}: {missingLessons[0].title} →</Link></div>
+      <div className="rounded-3xl border border-line bg-panel p-7 sm:p-9"><div className="text-xs font-semibold uppercase tracking-widest text-cyan">Your route to this question</div><h1 className="mt-2 font-plate text-3xl font-semibold text-chalk">Start with the first idea</h1><p className="mt-3 leading-7 text-muted">Before {question.title}, learn these ideas in order. Each short lesson uses a familiar situation and a worked example. We will bring you back here when you finish.</p><ol className="mt-6 space-y-3">{prerequisiteLessons.map((lesson, index) => <li key={lesson.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel-2 p-4"><span className="flex items-center gap-3 text-chalk"><span className="font-mono text-xs text-muted">{String(index + 1).padStart(2, '0')}</span>{lesson.title}</span><span className="shrink-0 text-sm text-cyan">{lesson.mastered ? 'Done' : lesson.id === missingLessons[0].id ? 'Up next' : 'Later'}</span></li>)}</ol><Link to={`/lesson/${missingLessons[0].id}?practice=${encodeURIComponent(slug)}`} className="mt-6 inline-flex rounded-xl bg-cyan px-5 py-3 text-sm font-semibold text-[var(--study-on-accent)]">{prerequisiteLessons.length === missingLessons.length ? 'Start' : 'Continue'}: {missingLessons[0].title} →</Link></div>
     </div>
   }
 
@@ -276,18 +269,21 @@ function QuestionWorkspace() {
         <div className="question-tools">
           {workspaceStep === 'code' && <div className="question-code-tools flex items-center gap-2">
             <Button className="h-7 px-3 text-xs" onClick={() => runCode()} disabled={running || hostedAuthEnabled}><Play size={12} />{running ? 'Running…' : 'Run'}</Button>
-            <button className="question-icon" title="Run and visualize" aria-label="Run and visualize" onClick={() => runCode(undefined, true)} disabled={running || hostedAuthEnabled}><Eye size={15} /></button>
-            <button className="question-icon" title={leftCollapsed ? 'Show problem' : 'Expand editor'} aria-label={leftCollapsed ? 'Show problem' : 'Expand editor'} onClick={() => setLeftCollapsed(c => !c)}>{leftCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}</button>
           </div>}
           <details className="question-resource-menu">
-            <summary aria-label="Question resources" title="Question resources"><ScrollText size={16} /></summary>
+            <summary aria-label="More question tools and resources" title="More tools"><ScrollText size={16} /></summary>
             <div>
-              <button onClick={() => openGrimoire(question.world_id)}>World reference sheet</button>
+              {workspaceStep === 'code' && <>
+                <button type="button" onClick={() => runCode(undefined, true)} disabled={running || hostedAuthEnabled}><Eye size={15} /> Run and visualize</button>
+                <button type="button" onClick={() => setLeftCollapsed(c => !c)}>{leftCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}{leftCollapsed ? 'Show problem' : 'Expand editor'}</button>
+              </>}
+              <button type="button" onClick={() => openGrimoire(question.world_id)}>Topic reference sheet</button>
               {question.prev_slug && <Link to={`/q/${question.prev_slug}`}><ChevronLeft size={13} /> Previous question</Link>}
               {question.next_slug && <Link to={`/q/${question.next_slug}`}>Next question <ChevronRight size={13} /></Link>}
             </div>
           </details>
           <ThemeToggle compact />
+          <AccountMenu />
         </div>
       </header>
       {hostedAuthEnabled && workspaceStep === 'code' && <p className="border-b border-amber/30 bg-amber/10 px-4 py-2 text-xs text-amber" role="status">You can read and draft here. Running code is paused on the hosted site until a secure practice worker is ready.</p>}

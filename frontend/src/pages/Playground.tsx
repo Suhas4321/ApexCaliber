@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import type { RunError, Trace, VisualizerKind } from '../api/types'
 import CodeEditor from '../components/CodeEditor'
 import { ThemeToggle } from '../components/effects'
+import AccountMenu from '../components/AccountMenu'
 import { Button, ErrorNote } from '../components/ui'
 import VisualizerHost from '../components/visualizers/VisualizerHost'
 import ResizableSplit from '../components/workspace/ResizableSplit'
@@ -315,7 +316,7 @@ export default function Playground() {
       <header className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-line bg-panel px-3 select-none">
         <div className="flex items-center gap-2.5">
           <Link
-            to="/"
+            to="/app"
             className="flex items-center gap-1 rounded-lg border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-muted hover:text-chalk"
           >
             <ArrowLeft size={13} />
@@ -354,6 +355,7 @@ export default function Playground() {
             <span>{running ? 'Running…' : 'Run & Visualize'}</span>
           </Button>
           <ThemeToggle compact />
+          <AccountMenu />
         </div>
       </header>
       <div className="flex-1 min-h-0 w-full overflow-hidden">

@@ -259,7 +259,7 @@ export default function LeetCodeRightPanel({
                     value={customJson}
                     onChange={(e) => setCustomJson(e.target.value)}
                     rows={3}
-                    className="w-full rounded-xl border border-line bg-void p-2.5 font-mono text-xs text-chalk focus:border-cyan focus:outline-none"
+                    className="w-full resize-none rounded-xl border border-line bg-void p-2.5 font-mono text-xs text-chalk focus:border-cyan focus:outline-none"
                   />
                   {customErr && <ErrorNote message={customErr} />}
                   <div className="flex justify-end">

@@ -21,24 +21,25 @@ import { Spinner } from './components/ui'
 import { AuthProvider, hostedAuthEnabled } from './lib/auth'
 import SignInPage from './pages/SignInPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
+import LandingPage from './pages/LandingPage'
+import StatsPage from './pages/StatsPage'
 
 // Lazy-load heavier interactive pages
 const QuestionPage = lazy(() => import('./pages/QuestionPage'))
 const Playground = lazy(() => import('./pages/Playground'))
 const ResumeGrill = lazy(() => import('./pages/ResumeGrill'))
 const SystemDesignPage = lazy(() => import('./pages/SystemDesignPage'))
-const StatsPage = lazy(() => import('./pages/StatsPage'))
 
 const withSpinner = (el: ReactNode) => (
   <Suspense fallback={<div className="p-8"><Spinner label="Loading workspace" /></div>}>{el}</Suspense>
 )
 
 const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
   {
-    path: '/',
     element: <App />,
     children: [
-      { index: true, element: <Dashboard /> },
+      { path: 'app', element: <Dashboard /> },
       { path: 'citadel/:citadelId', element: <Dashboard /> },
       { path: 'world/:id', element: <WorldPage /> },
       { path: 'learn/:citadelId', element: <LearningPathPage /> },
@@ -48,7 +49,7 @@ const router = createBrowserRouter([
       { path: 'finder', element: <PatternFinder /> },
       { path: 'resume-grill', element: withSpinner(<ResumeGrill />) },
       { path: 'system-design', element: withSpinner(<SystemDesignPage />) },
-      { path: 'stats', element: withSpinner(<StatsPage />) },
+      { path: 'stats', element: <StatsPage /> },
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: '*', element: <NotFound /> },
