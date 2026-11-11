@@ -19,7 +19,7 @@
             localStorage.setItem('pf-chapter-intro-' + id, 'true');
           });
         }
-        var raw = localStorage.getItem('pf-theme') || 'system';
+        var raw = localStorage.getItem('pf-theme') || 'light';
         var resolved = 'dark';
         if (raw === 'light' || raw === 'paper' || raw === 'studio-contrast') {
           resolved = 'light';
@@ -31,7 +31,7 @@
         }
         document.documentElement.dataset.theme = resolved;
       } catch (e) {
-        document.documentElement.dataset.theme = 'dark';
+        document.documentElement.dataset.theme = 'light';
       }
     </script>
   </head>

@@ -22,16 +22,16 @@ const ApexCaliberLogo: FC<ApexCaliberLogoProps> = ({
 
   return (
     <span className={`inline-flex items-center ${dimensions.gap} ${className}`}>
-      <span className={`grid ${dimensions.mark} shrink-0 place-items-center rounded-lg border border-[#537d60] bg-[#203c2b]`}>
+      <span className={`grid ${dimensions.mark} shrink-0 place-items-center rounded-lg border border-[#315efb] bg-[#315efb]`}>
         <svg viewBox="0 0 40 40" fill="none" className="h-[78%] w-[78%]" aria-hidden="true">
-          <path d="M4 30 12 23l4 3L25 8l11 22" stroke="#EAF4E9" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M11 33c4-7 8-3 12-9 2-3 3-6 2-10" stroke="#9BC7A5" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2.4 3.2" />
-          <circle cx="25" cy="8" r="2.2" fill="#B4D9B7" />
+          <path d="M4 30 12 23l4 3L25 8l11 22" stroke="#FFFFFF" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M11 33c4-7 8-3 12-9 2-3 3-6 2-10" stroke="#B7CBFF" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2.4 3.2" />
+          <circle cx="25" cy="8" r="2.2" fill="#FFFFFF" />
         </svg>
       </span>
       {showText && variant !== 'icon-only' && (
         <span className={`whitespace-nowrap font-plate ${dimensions.text} font-semibold tracking-[0.085em] text-chalk`}>
-          APEX<span className="ml-1.5 text-reward">CALIBER</span>
+          APEX<span className="ml-1.5 text-cyan">CALIBER</span>
         </span>
       )}
     </span>

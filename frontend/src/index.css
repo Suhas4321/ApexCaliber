@@ -6,10 +6,10 @@
 }
 
 /* Design language: see DESIGN_REFERENCES.md. Dual-theme system:                           */
-/* Study themes: quiet forest charcoal and warm neutral paper.                              */
+/* Study themes: cool platinum and cobalt, with a navy dark theme.                              */
 @theme {
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-plate: 'IBM Plex Sans Condensed', 'IBM Plex Sans', ui-sans-serif, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-plate: 'Sora', 'Inter', ui-sans-serif, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* Surfaces (Linear Enterprise: surface-0 to surface-3) */
@@ -85,27 +85,29 @@
 html[data-theme='dark'],
 html[data-theme='carbon-dark'] {
   color-scheme: dark;
-  --surface-0: #141b18;
-  --surface-1: #1c2520;
-  --surface-2: #26312a;
-  --surface-3: #303d34;
-  --line: #35443a;
-  --line-strong: #526457;
+  --surface-0: #101522;
+  --surface-1: #182132;
+  --surface-2: #212d42;
+  --surface-3: #2b3951;
+  --line: #303e55;
+  --line-strong: #566984;
   --surface-line: var(--line);
   --surface-line-strong: var(--line-strong);
-  --text-1: #f1f4ef;
-  --text-2: #bec9be;
-  --text-3: #a3b1a4;
-  --code: #f5f6f1;
+  --text-1: #f0f4fc;
+  --text-2: #bdc8dc;
+  --text-3: #9caac1;
+  --code: #edf3ff;
   --reward: #dbc28b;
-  --study-accent: #a8d5af;
-  --study-on-accent: #15251b;
-  --accent-dsa: #9bbca5;
+  --study-accent: #91adff;
+  --study-on-accent: #101b35;
+  --accent-dsa: #9ab5ff;
   --accent-python-data: #c3b58d;
   --accent-sql-dbms: #9db9b2;
   --accent-os-concurrency: #bda595;
   --accent-backend-apis: #b5aaa9;
-  --accent-ai-resume: #a5b2c5;
+  --accent-ai-resume: #b5ace4;
+  --accent-computer-networking: #8bbbd0;
+  --accent-system-design: #9baad0;
   --peak-accent: var(--study-accent);
   --color-cyan: var(--study-accent);
   --color-indigo: var(--study-accent);
@@ -122,7 +124,7 @@ html[data-theme='carbon-dark'] {
   --color-orchid: var(--text-2);
   --color-gold: var(--reward);
   --color-action: var(--study-accent);
-  --color-action-hi: #bce3c2;
+  --color-action-hi: #b3c6ff;
   --color-success: #91c9a3;
   --text-caption: 12px; --lh-caption: 1.4;
   --text-ui: 14px; --lh-ui: 1.45;
@@ -138,7 +140,7 @@ html[data-theme='carbon-dark'] {
   --page-dot: transparent;
   --card-shadow: 0 1px 3px rgb(0 0 0 / .08);
   --card-highlight: none;
-  --stage-bg: #19221d;
+  --stage-bg: #151e30;
   --stage-frame: var(--line);
   --stage-glow: none;
   --viz-compare: #9bbec3;
@@ -159,27 +161,29 @@ html[data-theme='light'],
 html[data-theme='paper'],
 html[data-theme='studio-contrast'] {
   color-scheme: light;
-  --surface-0: #f6f7f3;
+  --surface-0: #f3f5f9;
   --surface-1: #ffffff;
-  --surface-2: #eef1ea;
-  --surface-3: #e4eae1;
-  --line: #d9e0d7;
-  --line-strong: #bac9bb;
+  --surface-2: #edf2fc;
+  --surface-3: #e3e9f4;
+  --line: #dce3ee;
+  --line-strong: #b9c7db;
   --surface-line: var(--line);
   --surface-line-strong: var(--line-strong);
-  --text-1: #1e2a22;
-  --text-2: #526357;
-  --text-3: #697a6d;
-  --code: #1b2921;
+  --text-1: #162033;
+  --text-2: #526078;
+  --text-3: #687487;
+  --code: #22324d;
   --reward: #795d2c;
-  --study-accent: #245c42;
+  --study-accent: #315efb;
   --study-on-accent: #ffffff;
-  --accent-dsa: #4d7860;
+  --accent-dsa: #496bca;
   --accent-python-data: #8b7549;
   --accent-sql-dbms: #527c78;
   --accent-os-concurrency: #916b56;
   --accent-backend-apis: #8b6668;
-  --accent-ai-resume: #5a6e91;
+  --accent-ai-resume: #7068a5;
+  --accent-computer-networking: #467b98;
+  --accent-system-design: #5a6d9b;
   --peak-accent: var(--study-accent);
   --color-cyan: var(--study-accent);
   --color-indigo: var(--study-accent);
@@ -196,7 +200,7 @@ html[data-theme='studio-contrast'] {
   --color-orchid: var(--text-2);
   --color-gold: var(--reward);
   --color-action: var(--study-accent);
-  --color-action-hi: #1b4d36;
+  --color-action-hi: #244cda;
   --color-success: #26754a;
   --text-caption: 12px; --lh-caption: 1.4;
   --text-ui: 14px; --lh-ui: 1.45;
@@ -212,7 +216,7 @@ html[data-theme='studio-contrast'] {
   --page-dot: transparent;
   --card-shadow: 0 1px 3px rgb(30 42 34 / .04);
   --card-highlight: none;
-  --stage-bg: #f2f4ef;
+  --stage-bg: #edf2fa;
   --stage-frame: var(--line);
   --stage-glow: none;
   --viz-compare: #397d85;
@@ -233,17 +237,17 @@ html[data-theme='studio-contrast'] {
 .stage,
 [data-zone='night'] {
   color-scheme: dark;
-  --surface-0: #141b18;
-  --surface-1: #1c2520;
-  --surface-2: #26312a;
-  --surface-3: #303d34;
-  --line: #35443a;
-  --line-strong: #526457;
-  --text-1: #f1f4ef;
-  --text-2: #bec9be;
-  --text-3: #a3b1a4;
-  --code: #f5f6f1;
-  --study-accent: #a8d5af;
+  --surface-0: #101522;
+  --surface-1: #182132;
+  --surface-2: #212d42;
+  --surface-3: #2b3951;
+  --line: #303e55;
+  --line-strong: #566984;
+  --text-1: #f0f4fc;
+  --text-2: #bdc8dc;
+  --text-3: #9caac1;
+  --code: #edf3ff;
+  --study-accent: #91adff;
   --color-void: var(--surface-0);
   --color-panel: var(--surface-1);
   --color-panel-2: var(--surface-2);
@@ -259,9 +263,9 @@ html[data-theme='studio-contrast'] {
   --color-crimson: #e1a6a2;
 }
 .stage {
-  background: #19221d;
-  color: #f1f4ef;
-  border: 1px solid #35443a;
+  background: #151e30;
+  color: #f0f4fc;
+  border: 1px solid #303e55;
   border-radius: 12px;
   box-shadow: none;
 }
@@ -657,3 +661,16 @@ kbd.keycap {
     border-color: #ccc !important;
   }
 }
+
+/* Canonical scrollbar treatment, inherited by every application-owned overflow region. */
+:root { --scroll-track: transparent; --scroll-thumb: var(--line-strong); --scroll-thumb-hover: var(--text-3); --scroll-thumb-active: var(--text-2); }
+* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) var(--scroll-track); }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: var(--scroll-track); }
+::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: var(--scroll-thumb); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:active { background: var(--scroll-thumb-active); background-clip: padding-box; }
+html { scrollbar-gutter: stable; scroll-padding-top: 130px; }
+@media (forced-colors: active) { * { scrollbar-color: auto; } }
+button:not(:disabled), a[href], summary, [role='button']:not([aria-disabled='true']) { cursor: pointer; }
+button:disabled { cursor: not-allowed; }

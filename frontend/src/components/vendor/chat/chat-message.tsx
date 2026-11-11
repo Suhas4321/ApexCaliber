@@ -1,7 +1,7 @@
 /**
  * ChatMessage component
  * Source: 21st.dev / shadcn/ui chat patterns (MIT License)
- * Adapted for PatternForge design tokens (Nebula Plum palette, text tokens)
+ * Adapted for PatternForge design tokens (Cobalt Studio palette, text tokens)
  */
 
 import type { ReactNode } from 'react'
@@ -50,10 +50,10 @@ export function ChatMessage({
         {avatar && (
           <div
             className={cn(
-              'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border text-xs font-bold shadow-sm',
-              isInterviewer && 'border-amber/40 bg-amber/10 text-amber',
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold',
+              isInterviewer && 'border-line bg-panel-2 text-muted',
               isCandidate && 'border-line bg-panel-2 text-chalk',
-              isSenior && 'border-sky-500/40 bg-sky-500/10 text-sky-400',
+              isSenior && 'border-cyan/30 bg-cyan/10 text-cyan',
             )}
           >
             {avatar}
@@ -66,9 +66,9 @@ export function ChatMessage({
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
-              isInterviewer && 'bg-amber/15 text-amber border border-amber/30',
+              isInterviewer && 'bg-panel-2 text-muted border border-line',
               isCandidate && 'bg-line/40 text-muted border border-line',
-              isSenior && 'bg-sky-500/15 text-sky-400 border border-sky-500/30',
+              isSenior && 'bg-cyan/10 text-cyan border border-cyan/30',
             )}
           >
             {badge}
@@ -83,9 +83,9 @@ export function ChatMessage({
           isCandidate &&
             'max-w-[85%] border border-line bg-surface-2 text-chalk rounded-tr-xs shadow-sm',
           isInterviewer &&
-            'w-full border border-amber/25 bg-surface-1 text-chalk rounded-tl-xs shadow-sm',
+            'w-full border border-line bg-surface-1 text-chalk rounded-tl-xs shadow-sm',
           isSenior &&
-            'w-full border border-sky-500/30 bg-surface-1 text-chalk rounded-tl-xs shadow-md',
+            'w-full border border-line bg-surface-1 text-chalk rounded-tl-xs shadow-sm',
         )}
       >
         {children}

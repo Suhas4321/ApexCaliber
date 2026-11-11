@@ -158,7 +158,7 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 function resolveStoredTheme(stored: string | null): { preference: ThemePreference; resolved: ResolvedTheme } {
-  if (stored === 'light' || stored === 'paper' || stored === 'studio-contrast') {
+  if (!stored || stored === 'light' || stored === 'paper' || stored === 'studio-contrast') {
     return { preference: 'light', resolved: 'light' }
   }
   if (stored === 'dark' || stored === 'carbon-dark') {
@@ -195,7 +195,7 @@ export function useTheme(): [ResolvedTheme, (t: ThemePreference | Theme) => void
     const mediaQuery = window.matchMedia('(prefers-color-scheme: light)')
     const onMediaChange = (e: MediaQueryListEvent) => {
       const currentStored = localStorage.getItem(STORAGE_KEY)
-      if (!currentStored || currentStored === 'system') {
+      if (currentStored === 'system') {
         const nextResolved: ResolvedTheme = e.matches ? 'light' : 'dark'
         document.documentElement.dataset.theme = nextResolved
         setResolvedState(nextResolved)

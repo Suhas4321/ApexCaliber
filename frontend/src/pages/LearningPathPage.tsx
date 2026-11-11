@@ -27,7 +27,7 @@ export default function LearningPathPage() {
   const done = lessons.filter((lesson) => lesson.mastered).length
   const nextLesson = lessons.find((lesson) => lesson.ready && !lesson.mastered)
 
-  return <div className="study-page study-reading space-y-8">
+  return <div className="study-page study-reading study-syllabus space-y-8">
     <header className="space-y-4">
       <Link to={`/citadel/${citadelId}`} className="inline-flex items-center gap-2 text-sm text-muted hover:text-chalk"><ArrowLeft size={16} /> Back to {citadel.shortName}</Link>
       <div className="study-panel">
@@ -35,7 +35,7 @@ export default function LearningPathPage() {
         <h1 className="mt-3 font-plate text-3xl font-semibold text-chalk">{citadel.shortName}: start with the foundations</h1>
         <p className="mt-2 max-w-2xl text-muted">One small idea at a time. See it in a real situation, work through an example, then check your understanding.</p>
         <div className="mt-6 flex items-center gap-4"><div role="progressbar" aria-label={`${citadel.shortName} concept progress`} aria-valuenow={done} aria-valuemin={0} aria-valuemax={lessons.length} className="h-2 flex-1 overflow-hidden rounded-full bg-panel-3"><div className="h-full rounded-full bg-cyan" style={{ width: `${lessons.length ? done / lessons.length * 100 : 0}%` }} /></div><span className="text-sm text-muted">{done} of {lessons.length} concepts</span></div>
-        {nextLesson ? <Link to={`/lesson/${nextLesson.id}`} className="study-button mt-5">Continue: {nextLesson.title} <ArrowRight size={16} /></Link> : done === lessons.length ? <p className="mt-5 text-sm font-semibold text-emerald-300">Route complete. Revisit any lesson or try a practice challenge.</p> : null}
+        {nextLesson ? <Link to={`/lesson/${nextLesson.id}`} className="study-button mt-5">Continue: {nextLesson.title} <ArrowRight size={16} /></Link> : lessons.length > 0 && done === lessons.length ? <p className="mt-5 text-sm font-semibold text-success">Route complete. Revisit any lesson or try a practice challenge.</p> : null}
       </div>
     </header>
 

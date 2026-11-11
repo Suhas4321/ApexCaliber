@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { ChevronRight, Search } from 'lucide-react'
-import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { StudySidebar, StudyNavigationDrawer } from './components/StudyNavigation'
 import AccountMenu from './components/AccountMenu'
 import CommandPalette, { openCommandPalette } from './components/CommandPalette'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -68,7 +70,7 @@ function BreadcrumbBar() {
 
   return (
     <nav aria-label="Breadcrumb" className="w-full border-b border-line bg-panel-2/70 text-xs text-muted backdrop-blur-md">
-      <div className="shell flex h-9 items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <div className="shell flex h-9 items-center gap-1.5 overflow-x-auto">
         {crumbs.map((c, i) => {
           const isLast = i === crumbs.length - 1
           return (
@@ -79,7 +81,7 @@ function BreadcrumbBar() {
                   {c.label}
                 </Link>
               ) : (
-                <span className={isLast ? 'font-medium text-chalk' : ''}>{c.label}</span>
+                <span aria-current={isLast ? 'page' : undefined} className={isLast ? 'font-medium text-chalk' : ''}>{c.label}</span>
               )}
             </div>
           )
@@ -94,18 +96,13 @@ function TopBar() {
   const auth = useAuth()
   const { pathname } = useLocation()
   const worldMatch = /^\/world\/(\d+)/.exec(pathname)
-  const navClass = ({ isActive }: { isActive: boolean }) => `study-nav-link${isActive ? ' is-active' : ''}`
 
   return <header className="study-topbar no-print">
     <div className="shell study-topbar-inner">
+      <StudyNavigationDrawer />
       <Link to="/app" aria-label="ApexCaliber learning home" className="study-topbar-brand"><ApexCaliberLogo size="sm" /></Link>
-      <nav aria-label="Primary navigation" className="study-main-nav">
-        <NavLink to="/app" end className={navClass}>Learning home</NavLink>
-        <NavLink to="/citadel/dsa" className={({ isActive }) => navClass({ isActive: isActive || pathname.startsWith('/world/') })} aria-current={pathname.startsWith('/world/') ? 'page' : undefined}>Practice</NavLink>
-        <NavLink to="/stats" className={navClass}>Progress</NavLink>
-      </nav>
       <div className="study-topbar-tools">
-        <button type="button" onClick={openCommandPalette} aria-label="Search lessons and questions" className="study-search-button"><Search size={16} /><span>Search</span></button>
+        <button type="button" onClick={openCommandPalette} aria-label="Search topics and questions" className="study-search-button"><Search size={16} /><span>Search topics and questions</span><kbd>⌘ K</kbd></button>
         <ThemeToggle compact />
         <MoreMenu onOpenGrimoire={() => openGrimoire(worldMatch ? Number(worldMatch[1]) : undefined)} />
         {auth.session ? <AccountMenu /> : <Link to={`/sign-in?next=${encodeURIComponent(pathname)}`} className="study-signin">Sign in</Link>}
@@ -118,6 +115,16 @@ function TopBar() {
 function AppShell() {
   const { pathname, search, hash } = useLocation()
   const auth = useAuth()
+  useEffect(() => {
+    if (hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' }))
+    else window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname, hash])
+  useEffect(() => {
+    const names: Record<string, string> = { '/app': 'Learning home', '/stats': 'Your progress', '/finder': 'Pattern finder', '/system-design': 'System design', '/resume-grill': 'Interview practice', '/playground': 'Code playground', '/sign-in': 'Sign in' }
+    const subject = /^\/(?:citadel|learn)\/([^/]+)/.exec(pathname)
+    const title = names[pathname] ?? (subject ? getCitadel(subject[1]).shortName : pathname.startsWith('/lesson/') ? 'Lesson' : pathname.startsWith('/q/') ? 'Coding practice' : 'Learning workspace')
+    document.title = `${title} · ApexCaliber`
+  }, [pathname])
   // Hide the website header on full-screen IDE routes (/q/:slug and /playground)
   const isFullscreenIde = pathname.startsWith('/q/') || pathname === '/playground'
 
@@ -131,9 +138,9 @@ function AppShell() {
   }
 
   return (
-    <div className={isFullscreenIde ? 'h-screen w-screen overflow-hidden bg-void text-chalk' : 'min-h-screen bg-void text-chalk'}>
+    <div className={isFullscreenIde ? 'h-screen w-screen overflow-hidden bg-void text-chalk' : `min-h-screen bg-void text-chalk${!isAuthRoute ? ' studio-shell' : ''}${pathname === '/system-design' || pathname === '/resume-grill' ? ' studio-shell-focus' : ''}`}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-panel focus:px-4 focus:py-2 focus:text-chalk focus:shadow-xl">Skip to main content</a>
-      {!isFullscreenIde && !isAuthRoute && <TopBar />}
+      {!isFullscreenIde && !isAuthRoute && <><StudySidebar /><TopBar /></>}
       <CommandPalette />
       <main id="main-content" tabIndex={-1} className={isFullscreenIde ? 'h-full w-full overflow-hidden' : ''}>
         <ErrorBoundary key={pathname} fallbackTitle="Workspace encountered an unexpected error">

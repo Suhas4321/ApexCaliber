@@ -101,7 +101,7 @@ type ButtonVariant = 'primary' | 'emerald' | 'glass' | 'outline' | 'ghost'
 const BUTTON_STYLES: Record<ButtonVariant, string> = {
   // Quiet, consistent actions across lessons and tools.
   primary:
-    'bg-action text-surface-0 font-semibold hover:brightness-110',
+    'bg-action text-[var(--study-on-accent)] font-semibold hover:bg-action-hi',
   emerald:
     'bg-success text-white font-semibold hover:bg-emerald',
   glass: 'text-chalk border border-line-strong bg-panel hover:bg-panel-2 hover:border-chalk/25',

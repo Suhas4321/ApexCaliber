@@ -1,12 +1,12 @@
 .auth-page {
-  --color-void: #141b18;
-  --color-panel: #1c2520;
-  --color-panel-2: #26312a;
-  --color-line: #35443a;
-  --color-chalk: #f1f4ef;
-  --color-muted: #bec9be;
-  --color-faint: #a3b1a4;
-  --color-cyan: #a8d5af;
+  --color-void: #101522;
+  --color-panel: #182132;
+  --color-panel-2: #212d42;
+  --color-line: #303e55;
+  --color-chalk: #f0f4fc;
+  --color-muted: #bdc8dc;
+  --color-faint: #9caac1;
+  --color-cyan: #91adff;
   --color-reward: #dbc28b;
   color-scheme: dark;
 }

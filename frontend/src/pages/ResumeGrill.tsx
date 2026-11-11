@@ -13,6 +13,8 @@ import {
   Play,
   Sparkles,
   Terminal,
+  UserRound,
+  GraduationCap,
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -521,7 +523,7 @@ export default function ResumeGrill() {
   // ========================================================================================
   if (screen === 'rounds') {
     return (
-      <div className="shell max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col gap-6">
+      <div className="study-page study-interview flex flex-col gap-8">
         <header className="study-heading">
           <span className="study-eyebrow">Interview practice · 8 scenarios</span>
           <h1>Explain the work behind your résumé.</h1>
@@ -550,7 +552,7 @@ export default function ResumeGrill() {
                   key={s.id}
                   type="button"
                   onClick={() => handleSelectScenario(s.id)}
-                  className="group relative flex w-full flex-col justify-between rounded-xl border border-line bg-panel p-5 text-left transition-colors hover:border-line-strong hover:bg-panel-2"
+                  className="group relative flex w-full flex-col justify-between rounded-xl border border-line bg-panel p-7 text-left transition-colors hover:border-line-strong hover:bg-panel-2"
                 >
                   <div>
                     {/* Top row: Company chip + status */}
@@ -579,20 +581,20 @@ export default function ResumeGrill() {
                     <div className="flex items-start gap-3 mb-2">
                       <div
                         className="p-2 rounded-xl border border-line shrink-0 mt-0.5"
-                        style={{ color: s.color, backgroundColor: `${s.color}15` }}
+                        style={{ color: 'var(--study-accent)', backgroundColor: 'var(--surface-2)' }}
                       >
                         <SIcon size={18} />
                       </div>
                       <div className="min-w-0">
                         <span className="text-[10px] font-mono text-muted uppercase">Round {idx + 1}</span>
-                        <h3 className="font-plate text-base font-bold text-chalk group-hover:text-accent transition-colors leading-snug line-clamp-2">
+                        <h3 className="font-plate text-base font-bold text-chalk group-hover:text-accent transition-colors leading-snug ">
                           {s.title}
                         </h3>
                       </div>
                     </div>
 
                     {/* Subtitle / metric */}
-                    <p className="text-2xs text-muted leading-relaxed line-clamp-2 mb-4">
+                    <p className="text-2xs text-muted leading-relaxed  mb-4">
                       {s.subtitle}
                     </p>
                   </div>
@@ -619,7 +621,7 @@ export default function ResumeGrill() {
   // SCREEN 2: The Interview Conversation (Chat Layout)
   // ========================================================================================
   return (
-    <div className="shell max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col gap-6">
+    <div className="study-page study-interview flex flex-col gap-8">
       {/* Top Navigation Bar: Back to Rounds + Current Round Info */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
         <div className="flex items-center gap-3">
@@ -635,7 +637,7 @@ export default function ResumeGrill() {
             <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-2xs font-mono font-semibold text-muted border border-line">
               {activeScenario.category}
             </span>
-            <h1 className="font-plate text-sm sm:text-base font-bold text-chalk truncate max-w-[280px] sm:max-w-md">
+            <h1 className="font-plate text-sm sm:text-base font-bold text-chalk max-w-md">
               {activeScenario.title}
             </h1>
           </div>
@@ -667,7 +669,7 @@ export default function ResumeGrill() {
                 step === 3 ? 'bg-cyan/20 text-cyan border border-cyan/40' : 'text-muted hover:text-chalk'
               }`}
             >
-              📖 Study Mode
+              Study mode
             </button>
             <button
               type="button"
@@ -676,14 +678,14 @@ export default function ResumeGrill() {
                 step < 3 ? 'bg-amber/20 text-amber border border-amber/40' : 'text-muted hover:text-chalk'
               }`}
             >
-              🎙️ Delivery Drill
+              Delivery drill
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => setRightPanelOpen(!rightPanelOpen)}
-            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs text-muted hover:text-chalk transition-colors hidden xl:inline-flex"
+            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs text-muted hover:text-chalk transition-colors inline-flex"
           >
             {rightPanelOpen ? 'Hide Resume Context' : 'Show Resume Context'}
           </button>
@@ -691,7 +693,7 @@ export default function ResumeGrill() {
       </header>
 
       {/* 3-Column Conversational Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,760px)_300px] gap-6 justify-center w-full">
+      <div className={`grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] ${rightPanelOpen ? '2xl:grid-cols-[240px_minmax(0,760px)_280px]' : '2xl:grid-cols-[240px_minmax(0,900px)]'} gap-6 justify-center w-full`}>
         {/* Left Rail: Scenario List (Hidden on mobile; mobile uses dropdown) */}
         <aside className="hidden lg:flex flex-col gap-2 rounded-2xl border border-line bg-panel p-3 h-fit sticky top-20">
           <div className="px-2 py-1.5 text-2xs font-bold uppercase tracking-wider text-muted border-b border-line mb-1">
@@ -707,7 +709,7 @@ export default function ResumeGrill() {
                   onClick={() => handleSelectScenario(s.id)}
                   className={`flex flex-col rounded-xl p-2.5 text-left transition-all ${
                     isSelected
-                      ? 'border border-sky-500/40 bg-sky-500/10 shadow-sm'
+                      ? 'border border-cyan/40 bg-cyan/10 shadow-sm'
                       : 'border border-transparent hover:border-line hover:bg-panel-2'
                   }`}
                 >
@@ -735,12 +737,12 @@ export default function ResumeGrill() {
         </aside>
 
         {/* Center: The Chat Thread (max 760px) */}
-        <main className="flex flex-col gap-6 max-w-[760px] mx-auto w-full">
+        <section aria-label="Interview conversation" className="flex flex-col gap-6 max-w-[760px] mx-auto w-full">
           {/* 1. Interviewer Bubble: Primary Question */}
           <ChatMessage
             role="interviewer"
             senderName="Lead Systems Interviewer"
-            avatar="🧐"
+            avatar={<UserRound size={15} />}
             badge="Primary Question"
           >
             <div className="text-2xs font-mono uppercase tracking-wider text-amber mb-1.5">
@@ -771,7 +773,7 @@ export default function ResumeGrill() {
             <ChatMessage
               role="candidate"
               senderName="You (Candidate)"
-              avatar="💻"
+              avatar={<Terminal size={15} />}
               badge="Your Response"
             >
               <p className="text-sm text-chalk leading-relaxed whitespace-pre-wrap">
@@ -785,7 +787,7 @@ export default function ResumeGrill() {
             <ChatMessage
               role="interviewer"
               senderName="Lead Systems Interviewer"
-              avatar="⚠️"
+              avatar={<AlertTriangle size={15} />}
               badge="Follow-Up Trap"
               className="animate-in fade-in slide-in-from-bottom-3 duration-300"
             >
@@ -819,7 +821,7 @@ export default function ResumeGrill() {
             <ChatMessage
               role="candidate"
               senderName="You (Candidate)"
-              avatar="💻"
+              avatar={<Terminal size={15} />}
               badge="Trap Response"
             >
               <p className="text-sm text-chalk leading-relaxed whitespace-pre-wrap">
@@ -833,7 +835,7 @@ export default function ResumeGrill() {
             <ChatMessage
               role="senior"
               senderName="Staff / Senior Systems Engineer"
-              avatar="🏆"
+              avatar={<GraduationCap size={15} />}
               badge="Gold Standard Script"
               className="animate-in fade-in zoom-in-95 duration-400"
               actions={
@@ -876,7 +878,7 @@ export default function ResumeGrill() {
               }
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xs font-mono uppercase tracking-wider text-sky-400">
+                <span className="text-2xs font-mono uppercase tracking-wider text-cyan">
                   Verbatim Spoken Defense
                 </span>
                 <span className="text-2xs text-muted">Structure: Problem ➔ Traps ➔ Choice ➔ Result</span>
@@ -1010,7 +1012,7 @@ export default function ResumeGrill() {
             <div className="rounded-2xl border border-line bg-panel p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in duration-300">
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-chalk">Rate Your Defense</span>
-                <span className="text-2xs text-muted">Saves mastery state to your expedition log</span>
+                <span className="text-2xs text-muted">Saves your interview practice progress</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1059,11 +1061,11 @@ export default function ResumeGrill() {
               </div>
             </div>
           )}
-        </main>
+        </section>
 
         {/* Right Panel: Resume Bullet & Context (Collapsible on wide screens) */}
         {rightPanelOpen && (
-          <aside className="hidden xl:flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5 h-fit sticky top-20">
+          <aside className="flex flex-col gap-4 rounded-xl border border-line bg-panel p-6 h-fit lg:col-start-2 2xl:col-start-3 2xl:sticky 2xl:top-32">
             <div>
               <span className="text-2xs font-bold uppercase tracking-wider text-muted">
                 Resume Bullet Mapped

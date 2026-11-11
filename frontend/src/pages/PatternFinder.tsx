@@ -26,7 +26,7 @@ export default function PatternFinder() {
   const trail = ['start', ...path]
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="study-page study-reading study-finder flex flex-col gap-6">
       <header className="study-heading">
         <span className="study-eyebrow">Pattern finder</span>
         <h1>Which pattern fits this problem?</h1>
