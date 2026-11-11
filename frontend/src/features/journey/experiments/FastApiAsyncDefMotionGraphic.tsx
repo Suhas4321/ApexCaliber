@@ -243,22 +243,22 @@ export default function FastApiAsyncDefMotionGraphic() {
       {/* Strategy Selector Deck */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-panel-2 p-3 rounded-xl border border-line">
         <div className="flex items-center gap-2">
-          <Cpu size={16} className="text-brand-light" />
+          <Cpu size={16} className="text-cyan" />
           <span className="text-xs font-semibold text-chalk uppercase tracking-wider">
             FastAPI Execution Paradigm:
           </span>
         </div>
-        <div className="inline-flex rounded-lg border border-line bg-panel p-0.5 text-xs font-medium">
+        <div className="inline-flex flex-wrap rounded-lg border border-line bg-panel p-1 text-xs font-medium gap-1">
           <button
             type="button"
             onClick={() => {
               setStrategyMode('async_def_blocking')
               setCurrentTime(0)
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
               strategyMode === 'async_def_blocking'
-                ? 'bg-panel-3 text-red-400 font-bold shadow-xs'
-                : 'text-muted hover:text-chalk'
+                ? 'bg-panel-3 text-red-400 font-semibold border border-line-strong'
+                : 'text-muted hover:text-chalk border border-transparent'
             }`}
           >
             <AlertOctagon size={13} />
@@ -270,10 +270,10 @@ export default function FastApiAsyncDefMotionGraphic() {
               setStrategyMode('sync_def_threadpool')
               setCurrentTime(0)
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
               strategyMode === 'sync_def_threadpool'
-                ? 'bg-panel-3 text-brand-light font-bold shadow-xs'
-                : 'text-muted hover:text-chalk'
+                ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                : 'text-muted hover:text-chalk border border-transparent'
             }`}
           >
             <Cpu size={13} />
@@ -285,10 +285,10 @@ export default function FastApiAsyncDefMotionGraphic() {
               setStrategyMode('pure_async_await')
               setCurrentTime(0)
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
               strategyMode === 'pure_async_await'
-                ? 'bg-panel-3 text-emerald-400 font-bold shadow-xs'
-                : 'text-muted hover:text-chalk'
+                ? 'bg-panel-3 text-emerald-400 font-semibold border border-line-strong'
+                : 'text-muted hover:text-chalk border border-transparent'
             }`}
           >
             <Zap size={13} />

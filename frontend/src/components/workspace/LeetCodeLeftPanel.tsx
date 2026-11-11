@@ -115,7 +115,7 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
           'Trace',
           <Eye size={13} className="text-emerald" />,
           steps.length > 0 ? (
-            <span className="rounded-full bg-emerald/20 px-1.5 py-0.2 font-mono text-[10px] font-bold text-emerald">
+            <span className="rounded-full bg-emerald/20 px-1.5 py-0.5 font-mono text-2xs font-bold text-emerald">
               {steps.length}
             </span>
           ) : null,
@@ -125,7 +125,7 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
             'drills',
             'Exercises',
             <Cpu size={13} className="text-amber" />,
-            <span className="font-mono text-[10px] text-muted">
+            <span className="font-mono text-2xs text-muted">
               {progress.drills_passed.length}/{drills.length}
             </span>,
           )}
@@ -179,7 +179,7 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
             <details className="problem-disclosure">
               <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-xs font-semibold text-chalk hover:bg-panel-2 select-none">
                 <span>Concept notes & self-checks</span>
-                <span className="font-mono text-[11px] text-cyan">Expand ▾</span>
+                <span className="font-mono text-2xs text-cyan">Expand ▾</span>
               </summary>
               <div className="space-y-4 border-t border-line p-4 text-xs leading-relaxed text-muted">
                 <div>
@@ -247,8 +247,8 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
                 activeTarget === 'main' ? 'border-cyan bg-cyan/10 text-chalk' : 'border-line bg-panel-2 text-muted hover:text-chalk'
               }`}
             >
-              <span className="font-semibold">⚡ Main Problem Solution ({content.function.name})</span>
-              <span className="font-mono text-[11px] text-cyan">{activeTarget === 'main' ? 'Active in Editor' : 'Switch →'}</span>
+              <span className="font-semibold">Main Problem Solution ({content.function.name})</span>
+              <span className="font-mono text-2xs text-cyan">{activeTarget === 'main' ? 'Active in Editor' : 'Switch →'}</span>
             </button>
 
             {drills.map((d: Drill, i: number) => {
@@ -267,7 +267,7 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
                       {isPassed ? (
                         <CheckCircle2 size={15} className="text-emerald" />
                       ) : (
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full border border-muted font-mono text-[10px]">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full border border-muted font-mono text-2xs">
                           {i + 1}
                         </span>
                       )}
@@ -286,7 +286,7 @@ export default function LeetCodeLeftPanel(props: LeftPanelProps) {
                   <div className="text-xs text-muted leading-relaxed mb-3">
                     <Markdown>{d.instructions}</Markdown>
                   </div>
-                  <div className="space-y-1 font-mono text-[11px]">
+                  <div className="space-y-1 font-mono text-2xs">
                     {d.tests.map((tc, tIdx) => (
                       <div key={tIdx} className="rounded bg-void/70 px-2 py-1">
                         <span className="text-chalk">{formatArgs(tc.args, d.function)}</span>

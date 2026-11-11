@@ -79,7 +79,7 @@ export function RustBadge({ rust }: { rust: Rust }) {
 /** Solid surface for reading and coding: never glass, so text stays crisp. */
 export function Panel({ title, children, className = '', aside }: { title?: ReactNode; children: ReactNode; className?: string; aside?: ReactNode }) {
   return (
-    <section className={`card rounded-2xl ${className}`}>
+    <section className={`card ${className}`}>
       {title && (
         <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
           <h3 className="text-sm font-semibold text-chalk">{title}</h3>
@@ -91,9 +91,9 @@ export function Panel({ title, children, className = '', aside }: { title?: Reac
   )
 }
 
-/** Floating liquid-glass container (navigation, journey nodes, capsules). */
+/** Floating surface container (navigation capsules, secondary callouts). */
 export function GlassCard({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`card rounded-2xl ${className}`}>{children}</div>
+  return <div className={`card ${className}`}>{children}</div>
 }
 
 type ButtonVariant = 'primary' | 'emerald' | 'glass' | 'outline' | 'ghost'
@@ -121,7 +121,7 @@ export function Button({
     <button
       type={type}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm transition-[background-color,border-color] duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${BUTTON_STYLES[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm transition-[transform,background-color,border-color] duration-150 ease-[cubic-bezier(0.2,0.8,0.2,1)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 ${BUTTON_STYLES[variant]} ${className}`}
       {...props}
     >
       {children}

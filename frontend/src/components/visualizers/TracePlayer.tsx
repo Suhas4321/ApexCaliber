@@ -200,20 +200,20 @@ export default function TracePlayer({
         </button>
 
         {/* Scrubber Seek-bar */}
-        <div className="relative flex-1 mx-1.5 flex items-center min-w-[80px]">
+        <div className="relative flex-1 mx-1.5 flex items-center min-w-[80px] py-2">
           <input
             type="range"
             min={0}
             max={last}
             value={index}
             onChange={(e) => onIndex(Number(e.target.value))}
-            className="w-full h-1.5 bg-panel rounded-full appearance-none cursor-pointer accent-cyan focus:outline-none"
+            className="w-full h-1.5 bg-panel rounded-full appearance-none cursor-pointer accent-cyan focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan"
             aria-label="Scrub through execution steps"
           />
         </div>
 
         {/* Speed Selector Pills */}
-        <div className="flex items-center rounded-lg border border-line bg-panel p-0.5 text-2xs font-mono">
+        <div className="flex items-center rounded-lg border border-line bg-panel p-1 text-2xs font-mono gap-0.5">
           {SPEEDS.map((s) => {
             const isSpeedActive = speed === s
             return (
@@ -221,9 +221,9 @@ export default function TracePlayer({
                 key={s}
                 type="button"
                 onClick={() => onSpeed(s)}
-                className={`px-1.5 py-0.5 rounded text-caption font-semibold transition-colors ${
+                className={`min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center px-2 py-0.5 rounded text-caption font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan ${
                   isSpeedActive
-                    ? 'bg-cyan text-void shadow-xs'
+                    ? 'bg-cyan text-void'
                     : 'text-muted hover:text-chalk'
                 }`}
                 title={`Playback speed ${s}x`}

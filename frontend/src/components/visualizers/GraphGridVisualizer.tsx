@@ -274,7 +274,7 @@ function GraphView({
             <g key={i}>
               <line x1={a.x} y1={a.y} x2={x2} y2={y2} stroke="#475569" strokeWidth={1.6} markerEnd={both ? undefined : 'url(#g-arrow)'} />
               {e.weight && (
-                <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 4} textAnchor="middle" className="fill-ochre font-mono text-[10px] font-bold">
+                <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 4} textAnchor="middle" className="fill-ochre font-mono text-2xs font-bold">
                   {e.weight}
                 </text>
               )}
@@ -337,7 +337,7 @@ function GraphView({
                 {(model.labels.get(id) ?? id).slice(0, 5)}
               </text>
               {dist.has(id) && (
-                <text x={p.x} y={p.y + R + 14} textAnchor="middle" className="fill-sky font-mono text-[10px] font-bold">
+                <text x={p.x} y={p.y + R + 14} textAnchor="middle" className="fill-sky font-mono text-2xs font-bold">
                   {dist.get(id)}
                 </text>
               )}

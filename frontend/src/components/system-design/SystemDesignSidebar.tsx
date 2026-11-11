@@ -98,7 +98,7 @@ export default function SystemDesignSidebar({
               <button
                 type="button"
                 onClick={() => toggle(sec.key)}
-                className="flex w-full items-center justify-between px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted hover:text-chalk"
+                className="flex w-full items-center justify-between px-2 py-1 text-2xs font-bold uppercase tracking-wider text-muted hover:text-chalk"
               >
                 <div className="flex items-center gap-1.5">
                   <Icon size={13} className={sec.color} />
@@ -125,7 +125,7 @@ export default function SystemDesignSidebar({
                           <span className="font-mono text-2xs text-faint">{it.num}</span>
                           <span className="truncate">{it.label}</span>
                         </div>
-                        {done ? <CheckCircle2 size={12} className="text-emerald shrink-0" /> : <span className="font-mono text-[10px] text-faint shrink-0">{it.tag}</span>}
+                        {done ? <CheckCircle2 size={12} className="text-emerald shrink-0" /> : <span className="font-mono text-2xs text-faint shrink-0">{it.tag}</span>}
                       </button>
                     )
                   })}

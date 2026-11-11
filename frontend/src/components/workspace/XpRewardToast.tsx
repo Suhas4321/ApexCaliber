@@ -140,8 +140,8 @@ export default function XpRewardToast({ reward, onDismiss }: Props) {
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-chalk">{reward.title}</span>
             {reward.isWorldComplete && (
-              <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accent">
-                CAMP COMPLETED 🚩
+              <span className="rounded bg-accent/20 px-1.5 py-0.5 text-2xs font-bold text-accent">
+                TOPIC COMPLETED
               </span>
             )}
           </div>

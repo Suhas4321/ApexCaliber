@@ -1,8 +1,10 @@
 import '@fontsource/inter/latin-400.css'
 import '@fontsource/inter/latin-500.css'
 import '@fontsource/inter/latin-600.css'
+import '@fontsource/sora/latin-400.css'
 import '@fontsource/sora/latin-500.css'
 import '@fontsource/sora/latin-600.css'
+import '@fontsource/sora/latin-700.css'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/600.css'
 import './index.css'
@@ -59,6 +61,9 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider><RouterProvider router={router} /></AuthProvider>
+    <AuthProvider>
+      <div className="achilles-grain-overlay" aria-hidden="true" />
+      <RouterProvider router={router} />
+    </AuthProvider>
   </StrictMode>,
 )

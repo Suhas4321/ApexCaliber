@@ -188,16 +188,16 @@ export default function VirtualMemoryMotionGraphic() {
 
           const textPrimary = isLight ? '#0f172a' : '#f8fafc'
           const textSecondary = isLight ? '#475569' : '#94a3b8'
-          const cardBg = isLight ? '#ffffff' : '#111726'
-          const cardBorder = isLight ? '#cbd5e1' : '#334155'
-          const mmuPurple = '#8b5cf6'
+          const cardBg = isLight ? '#ffffff' : '#0F1311'
+          const cardBorder = isLight ? '#cbd5e1' : 'rgba(255, 255, 255, 0.14)'
+          const mmuCobalt = isLight ? '#008A54' : '#00F59B'
           const ramGreen = '#10b981'
           const diskAmber = '#f59e0b'
           const dangerRed = '#ef4444'
 
           return (
             <div className="relative w-full aspect-[16/10] max-w-[840px] mx-auto py-2">
-              <svg viewBox="0 0 880 500" className="w-full h-full transition-all duration-300">
+              <svg viewBox="0 0 880 500" className="w-full h-full transition-colors duration-300">
                 <defs>
                   <marker id="vm-arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#38bdf8" />
@@ -261,7 +261,7 @@ export default function VirtualMemoryMotionGraphic() {
 
                 {/* NODE 2: MEMORY MANAGEMENT UNIT (MMU + TLB) */}
                 <g transform="translate(230, 130)" filter="url(#vm-shadow)">
-                  <rect x="0" y="0" width="150" height="160" rx="14" fill={cardBg} stroke={mmuPurple} strokeWidth="3" />
+                  <rect x="0" y="0" width="150" height="160" rx="14" fill={cardBg} stroke={mmuCobalt} strokeWidth="3" />
                   <text x="75" y="30" textAnchor="middle" fill={textPrimary} fontSize="14" fontWeight="bold" fontFamily="sans-serif">
                     Hardware MMU
                   </text>

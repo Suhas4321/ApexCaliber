@@ -77,11 +77,11 @@ export function StepLog({ steps, currentIndex, onSelectStep, open }: StepLogProp
               }`}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[10px] text-faint shrink-0 w-6">#{i + 1}</span>
+                <span className="text-2xs text-faint shrink-0 w-7">#{i + 1}</span>
                 <EventIcon kind={kind} size={13} className="shrink-0" />
                 <span className="truncate text-2xs">{title}</span>
               </div>
-              <span className="text-[10px] text-faint shrink-0">L{st.line}</span>
+              <span className="text-2xs text-faint shrink-0">L{st.line}</span>
             </button>
           )
         })}

@@ -113,7 +113,7 @@ export default function InterviewAnswerPlaybook({ question, progress, onProgress
                   if (timerSec === 0) setTimerSec(60)
                   setTimerRunning((r) => !r)
                 }}
-                className="rounded bg-panel-3 px-2 py-0.5 text-[11px] font-medium text-chalk hover:opacity-90"
+                className="rounded bg-panel-3 px-2 py-0.5 text-2xs font-medium text-chalk hover:opacity-90"
               >
                 {timerRunning ? 'Pause' : '60s Pacer'}
               </button>

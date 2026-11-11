@@ -45,6 +45,12 @@ export default function ArchitectureFlowSimulator({
     onHopChange(0)
   }, [systemTitle])
 
+  const getDeterministicLatency = (hop: number, simMode: typeof mode) => {
+    if (simMode === 'spike') return [24, 1, 38, 42][hop % 4]
+    if (simMode === 'cache_hit') return [8, 10, 2, 6][hop % 4]
+    return [12, 16, 14, 18][hop % 4]
+  }
+
   useEffect(() => {
     if (!isPlaying) {
       lastTimeRef.current = null
@@ -52,6 +58,34 @@ export default function ArchitectureFlowSimulator({
     }
 
     const durationPerHop = mode === 'spike' ? 600 / speed : 1100 / speed
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const advanceHop = () => {
+      const nextHop = (activeHop + 1) % nodes.length
+      onHopChange(nextHop)
+
+      const hopLatency = getDeterministicLatency(activeHop, mode)
+      setAccumulatedMs((m) => m + hopLatency)
+
+      const currentNode = nodes[activeHop]
+      let statusText = `Passed ${currentNode.label.split(' ')[0]} (+${hopLatency}ms)`
+      if (mode === 'spike' && activeHop === 1) {
+        statusText = 'Token Bucket 429 Shedding 20% Surge (+1ms)'
+      } else if (mode === 'cache_hit' && activeHop === 2) {
+        statusText = '100% SHA256 Cache Hit (Short-Circuit in 2ms)'
+      }
+      setPacketStatus(statusText)
+    }
+
+    if (reducedMotion) {
+      const timer = window.setTimeout(() => {
+        advanceHop()
+        setPacketProgress(0)
+      }, durationPerHop)
+      return () => window.clearTimeout(timer)
+    }
 
     const tick = (time: number) => {
       if (lastTimeRef.current === null) lastTimeRef.current = time
@@ -61,20 +95,7 @@ export default function ArchitectureFlowSimulator({
         const next = prev + delta / durationPerHop
         if (next >= 1) {
           lastTimeRef.current = time
-          const nextHop = (activeHop + 1) % nodes.length
-          onHopChange(nextHop)
-
-          const hopLatency = mode === 'spike' ? Math.round(18 + Math.random() * 45) : Math.round(8 + Math.random() * 16)
-          setAccumulatedMs((m) => m + hopLatency)
-
-          const currentNode = nodes[activeHop]
-          let statusText = `✓ Passed ${currentNode.label.split(' ')[0]} (+${hopLatency}ms)`
-          if (mode === 'spike' && activeHop === 1) {
-            statusText = `⚡ Token Bucket 429 Shedding 20% Surge (+1ms)`
-          } else if (mode === 'cache_hit' && activeHop === 2) {
-            statusText = `★ 100% SHA256 Cache Hit (Short-Circuit in 2ms)`
-          }
-          setPacketStatus(statusText)
+          advanceHop()
           return 0
         }
         return next
@@ -92,7 +113,7 @@ export default function ArchitectureFlowSimulator({
   const stepForward = () => {
     const nextHop = (activeHop + 1) % nodes.length
     onHopChange(nextHop)
-    const hopLatency = Math.round(12 + Math.random() * 15)
+    const hopLatency = getDeterministicLatency(activeHop, mode)
     setAccumulatedMs((m) => m + hopLatency)
     setPacketStatus(`Step: ${nodes[activeHop].label} (+${hopLatency}ms)`)
   }
@@ -162,7 +183,7 @@ export default function ArchitectureFlowSimulator({
         <div className="relative overflow-hidden rounded-lg border border-line bg-panel-2/60 p-4 min-h-[200px] flex flex-col justify-between select-none">
           <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-2xs border-b border-line pb-2.5">
             <span className="flex items-center gap-1.5 text-muted">
-              <span className="h-2 w-2 rounded-full bg-emerald animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-emerald" aria-hidden="true" />
               <span>Status:</span>
               <strong className="text-chalk font-semibold">{packetStatus}</strong>
             </span>
@@ -174,8 +195,8 @@ export default function ArchitectureFlowSimulator({
           </div>
 
           {/* Node Flow Diagram */}
-          <div className="py-5 overflow-x-auto">
-            <div className="flex items-center justify-between min-w-[660px] gap-2 px-1 relative">
+          <div className="py-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 px-1 relative">
               {nodes.map((node, idx) => {
                 const isActive = activeHop === idx
                 const isPassed = activeHop > idx
@@ -185,23 +206,20 @@ export default function ArchitectureFlowSimulator({
                     <button
                       type="button"
                       onClick={() => onHopChange(idx)}
-                      className={`group relative flex flex-col items-start rounded-lg border p-3 text-left transition-all duration-200 flex-1 min-w-[125px] ${
+                      className={`group relative flex flex-col items-start rounded-lg border p-3 text-left transition-colors duration-200 w-full md:w-auto md:flex-1 md:min-w-0 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
                         isActive
-                          ? 'border-amber bg-amber/15 shadow-md shadow-amber/10 scale-[1.03] z-10'
+                          ? 'border-amber bg-amber/15 z-10'
                           : isPassed
                           ? 'border-emerald/40 bg-emerald/5 hover:border-emerald/60'
                           : 'border-line bg-panel hover:border-line-strong hover:bg-panel-2'
                       }`}
                     >
                       {isActive && (
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-amber" />
-                        </span>
+                        <span className="absolute top-2.5 right-2.5 flex h-2 w-2 rounded-full bg-amber" aria-hidden="true" />
                       )}
-                      <div className="flex items-center justify-between w-full font-mono text-[10px] text-faint mb-1">
+                      <div className="flex items-center justify-between w-full font-mono text-2xs text-faint mb-1">
                         <span className="font-bold">0{idx + 1}</span>
-                        <span className={`px-1 rounded text-[9px] font-semibold ${
+                        <span className={`px-1.5 py-0.5 rounded text-2xs font-semibold ${
                           isActive ? 'bg-amber text-void' : isPassed ? 'text-emerald' : 'text-muted'
                         }`}>
                           {node.metric}
@@ -213,16 +231,35 @@ export default function ArchitectureFlowSimulator({
                     </button>
 
                     {idx < nodes.length - 1 && (
-                      <div className="relative flex items-center justify-center w-7 shrink-0">
-                        <div className="h-0.5 w-full bg-line" />
-                        <ArrowRight size={12} className={`absolute text-muted ${isActive ? 'text-amber' : ''}`} />
-                        {isActive && isPlaying && (
-                          <div
-                            className="absolute h-2.5 w-2.5 rounded-full bg-amber shadow-[0_0_8px_var(--color-amber)]"
-                            style={{ left: `${packetProgress * 100}%`, transform: 'translateX(-50%)' }}
-                          />
-                        )}
-                      </div>
+                      <>
+                        {/* Desktop horizontal connector */}
+                        <div className="hidden md:flex relative items-center justify-center w-8 h-6 shrink-0">
+                          <div className="h-0.5 w-full bg-line" />
+                          <ArrowRight size={12} className={`relative z-10 text-muted ${isActive ? 'text-amber' : ''}`} />
+                          {isActive && isPlaying && (
+                            <div
+                              className="pointer-events-none absolute inset-x-1 inset-y-0"
+                              style={{ transform: `translate3d(${packetProgress * 100}%, 0, 0)` }}
+                            >
+                              <span className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-amber ring-2 ring-panel" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Mobile stacked vertical connector */}
+                        <div className="flex md:hidden relative items-center justify-center h-6 w-full shrink-0">
+                          <div className="w-0.5 h-full bg-line" />
+                          <ArrowRight size={12} className={`relative z-10 rotate-90 text-muted ${isActive ? 'text-amber' : ''}`} />
+                          {isActive && isPlaying && (
+                            <div
+                              className="pointer-events-none absolute inset-x-0 inset-y-1"
+                              style={{ transform: `translate3d(0, ${packetProgress * 100}%, 0)` }}
+                            >
+                              <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-amber ring-2 ring-panel" />
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 )
@@ -248,7 +285,7 @@ export default function ArchitectureFlowSimulator({
             <button
               type="button"
               onClick={() => setIsPlaying((p) => !p)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-chalk px-3.5 py-1.5 font-semibold text-void hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              className="inline-flex min-h-[44px] sm:min-h-[36px] items-center gap-1.5 rounded-md bg-chalk px-3.5 py-1.5 font-semibold text-void hover:opacity-90 active:scale-[0.985] transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)]"
             >
               {isPlaying ? <Pause size={13} /> : <Play size={13} />}
               <span>{isPlaying ? 'Pause' : 'Play Simulation'}</span>
@@ -278,7 +315,7 @@ export default function ArchitectureFlowSimulator({
                 key={s}
                 type="button"
                 onClick={() => setSpeed(s)}
-                className={`px-2 py-0.5 rounded transition-colors ${
+                className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[36px] inline-flex items-center justify-center px-2 py-0.5 rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
                   speed === s ? 'bg-amber text-void font-bold' : 'border border-line bg-panel text-muted hover:text-chalk'
                 }`}
               >

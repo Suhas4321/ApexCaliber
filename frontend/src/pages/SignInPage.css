@@ -1,12 +1,16 @@
 .auth-page {
-  --color-void: #101522;
-  --color-panel: #182132;
-  --color-panel-2: #212d42;
-  --color-line: #303e55;
-  --color-chalk: #f0f4fc;
-  --color-muted: #bdc8dc;
-  --color-faint: #9caac1;
-  --color-cyan: #91adff;
-  --color-reward: #dbc28b;
+  --color-void: #070908;
+  --color-panel: #0F1311;
+  --color-panel-2: #141A17;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-chalk: #F4F6F5;
+  --color-muted: #8E9893;
+  --color-faint: #828D87;
+  --color-cyan: #00F59B;
+  --color-reward: #F59E0B;
+  --study-accent: #00F59B;
+  --study-on-accent: #070908;
+  --color-action: #00F59B;
+  --color-action-hi: #00CF7C;
   color-scheme: dark;
 }

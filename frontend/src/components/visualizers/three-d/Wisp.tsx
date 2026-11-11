@@ -14,7 +14,7 @@ interface WispProps {
 const POINTER_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
   i: { bg: 'bg-cyan-500', border: 'border-cyan-300', text: 'text-cyan-950', glow: 'rgba(6,182,212,0.6)' },
   j: { bg: 'bg-amber-500', border: 'border-amber-300', text: 'text-amber-950', glow: 'rgba(245,158,11,0.6)' },
-  k: { bg: 'bg-violet-500', border: 'border-violet-300', text: 'text-violet-950', glow: 'rgba(139,92,246,0.6)' },
+  k: { bg: 'bg-blue-500', border: 'border-blue-300', text: 'text-blue-950', glow: 'rgba(49,94,251,0.5)' },
   l: { bg: 'bg-emerald-500', border: 'border-emerald-300', text: 'text-emerald-950', glow: 'rgba(16,185,129,0.6)' },
   r: { bg: 'bg-rose-500', border: 'border-rose-300', text: 'text-rose-950', glow: 'rgba(239,68,68,0.6)' },
   left: { bg: 'bg-emerald-500', border: 'border-emerald-300', text: 'text-emerald-950', glow: 'rgba(16,185,129,0.6)' },
@@ -63,7 +63,7 @@ export const Wisp: React.FC<WispProps> = ({
       >
         {/* Pointer Name Flag Pill */}
         <div
-          className={`px-2 py-0.5 rounded-full border text-[11px] font-mono font-extrabold shadow-lg ${scheme.bg} ${scheme.border} ${scheme.text}`}
+          className={`px-2 py-0.5 rounded-full border text-2xs font-mono font-extrabold shadow-lg ${scheme.bg} ${scheme.border} ${scheme.text}`}
           style={{
             boxShadow: `0 0 12px ${scheme.glow}`,
             transform: 'rotateZ(14deg)',

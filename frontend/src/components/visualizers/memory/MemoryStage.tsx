@@ -35,7 +35,7 @@ function renderFieldValue(val: TraceValue, heap: Record<string, HeapObject>) {
     const obj = heap[id]
     const label = obj?.fields?.val !== undefined ? `${obj.type}(${obj.fields.val})` : `#${id}`
     return (
-      <span className="inline-flex items-center gap-1 rounded border border-cyan/40 bg-cyan/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-cyan">
+      <span className="inline-flex items-center gap-1 rounded border border-cyan/40 bg-cyan/15 px-1.5 py-0.5 font-mono text-2xs font-semibold text-cyan">
         <ArrowRight size={10} />
         <span>ref {label}</span>
       </span>
@@ -70,7 +70,7 @@ export default function MemoryStage({ step }: MemoryStageProps) {
           <span className="flex items-center gap-1.5 text-2xs font-bold uppercase text-cyan">
             <Layers size={12} /> Call Stack ({frames.length})
           </span>
-          <span className="text-[11px] text-faint">Line {step.line}</span>
+          <span className="text-2xs text-faint">Line {step.line}</span>
         </div>
         {frames.map((frame, idx) => {
           const isTop = idx === frames.length - 1
@@ -82,11 +82,11 @@ export default function MemoryStage({ step }: MemoryStageProps) {
             >
               <div className="mb-1.5 flex items-center justify-between border-b border-line/60 pb-1">
                 <span className="font-bold text-chalk">{frame.func}()</span>
-                <span className="text-[10px] font-semibold uppercase text-cyan">{isTop ? 'Active' : `Depth ${idx}`}</span>
+                <span className="text-2xs font-semibold uppercase text-cyan">{isTop ? 'Active' : `Depth ${idx}`}</span>
               </div>
               <div className="flex flex-col gap-1">
                 {entries.map(([varName, val]) => (
-                  <div key={varName} className="flex items-center justify-between gap-2 text-[11px]">
+                  <div key={varName} className="flex items-center justify-between gap-2 text-2xs">
                     <span className="font-semibold text-muted">{varName}</span>
                     <div className="truncate">{renderFieldValue(val, heap)}</div>
                   </div>
@@ -102,7 +102,7 @@ export default function MemoryStage({ step }: MemoryStageProps) {
           <span className="flex items-center gap-1.5 text-2xs font-bold uppercase text-emerald">
             <Box size={12} /> Heap Objects ({heapEntries.length})
           </span>
-          <span className="text-[11px] text-faint">Heap</span>
+          <span className="text-2xs text-faint">Heap</span>
         </div>
         {heapEntries.length === 0 ? (
           <div className="rounded-xl border border-dashed border-line p-4 text-center text-2xs text-faint">
@@ -114,17 +114,17 @@ export default function MemoryStage({ step }: MemoryStageProps) {
               key={id}
               className={`rounded-xl border p-2.5 ${activeRefs.has(id) ? 'border-emerald/50 bg-emerald/[0.07]' : 'border-line bg-panel-2/80'}`}
             >
-              <div className="mb-1.5 flex items-center justify-between border-b border-line/50 pb-1 text-[11px]">
+              <div className="mb-1.5 flex items-center justify-between border-b border-line/50 pb-1 text-2xs">
                 <span className="font-bold text-emerald">
                   {obj.type} <span className="font-normal text-faint">#{id}</span>
                 </span>
                 {activeRefs.has(id) && (
-                  <span className="rounded-full bg-emerald/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald">
+                  <span className="rounded-full bg-emerald/20 px-1.5 py-0.5 text-2xs font-bold uppercase text-emerald">
                     Active Ref
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1 text-[11px]">
+              <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1 text-2xs">
                 {Object.entries(obj.fields).map(([field, fval]) => (
                   <div key={field} className="contents">
                     <span className="text-faint">.{field}</span>

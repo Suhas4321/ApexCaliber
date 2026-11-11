@@ -112,7 +112,7 @@ export default function LeetCodeRightPanel({
       {/* 36px LeetCode Editor Toolbar */}
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-line bg-panel px-3 text-xs select-none">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 whitespace-nowrap rounded bg-panel-2 px-2 py-0.5 font-mono text-[11px] font-semibold text-cyan">
+          <span className="shrink-0 whitespace-nowrap rounded bg-panel-2 px-2 py-0.5 font-mono text-2xs font-semibold text-cyan">
             {question.runner_type === 'sql_sqlite' ? 'SQLite' : 'Python 3'}
           </span>
 
@@ -120,7 +120,7 @@ export default function LeetCodeRightPanel({
             <select
               value={activeTarget}
               onChange={(e) => onSelectTarget(e.target.value)}
-              className="min-w-0 max-w-[150px] sm:max-w-[240px] rounded-md border border-line bg-panel-2 px-2 py-0.5 font-mono text-[11px] text-chalk"
+              className="min-w-0 max-w-[150px] sm:max-w-[240px] rounded-md border border-line bg-panel-2 px-2 py-0.5 font-mono text-2xs text-chalk"
               aria-label="Target function"
             >
               <option value="main">Main: {content.function.name}()</option>
@@ -137,7 +137,7 @@ export default function LeetCodeRightPanel({
           <button
             type="button"
             onClick={copyCode}
-            className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted hover:bg-panel-2 hover:text-chalk"
+            className="flex items-center gap-1 rounded px-2 py-1 text-2xs text-muted hover:bg-panel-2 hover:text-chalk"
             title="Copy code"
           >
             {copied ? <Check size={12} className="text-emerald" /> : <Copy size={12} />}
@@ -146,7 +146,7 @@ export default function LeetCodeRightPanel({
           <button
             type="button"
             onClick={onResetCode}
-            className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted hover:bg-panel-2 hover:text-chalk"
+            className="flex items-center gap-1 rounded px-2 py-1 text-2xs text-muted hover:bg-panel-2 hover:text-chalk"
             title="Reset to starter code"
           >
             <RotateCcw size={12} />
@@ -202,7 +202,7 @@ export default function LeetCodeRightPanel({
             <span>Test Result</span>
             {result && (
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.2 font-mono text-[10px] font-bold ${
+                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 font-mono text-2xs font-bold ${
                   result.passed ? 'bg-emerald/20 text-emerald' : 'bg-crimson/20 text-crimson'
                 }`}
               >
@@ -216,7 +216,7 @@ export default function LeetCodeRightPanel({
         <button
           type="button"
           onClick={() => setConsoleCollapsed((c) => !c)}
-          className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted hover:bg-panel-3 hover:text-chalk"
+          className="flex items-center gap-1 rounded px-2 py-1 text-2xs text-muted hover:bg-panel-3 hover:text-chalk"
         >
           <span>{consoleCollapsed ? 'Expand Console' : 'Hide Console'}</span>
           {consoleCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -273,11 +273,11 @@ export default function LeetCodeRightPanel({
                 activeTests[selectedCase] && (
                   <div className="space-y-2 font-mono text-xs">
                     <div className="rounded-xl border border-line bg-void/80 p-2.5">
-                      <div className="text-[10px] uppercase tracking-wider text-muted mb-0.5">Input</div>
+                      <div className="text-2xs uppercase tracking-wider text-muted mb-0.5">Input</div>
                       <div className="text-chalk">{formatArgs(activeTests[selectedCase].args, activeSpec)}</div>
                     </div>
                     <div className="rounded-xl border border-line bg-void/80 p-2.5">
-                      <div className="text-[10px] uppercase tracking-wider text-muted mb-0.5">Expected Output</div>
+                      <div className="text-2xs uppercase tracking-wider text-muted mb-0.5">Expected Output</div>
                       <div className="font-semibold text-emerald">{JSON.stringify(activeTests[selectedCase].expected)}</div>
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export default function LeetCodeRightPanel({
               ) : (
                 <div className="flex h-28 flex-col items-center justify-center text-center text-xs text-muted">
                   <p>Run your code to see test case results.</p>
-                  <p className="mt-1 font-mono text-[11px] text-faint">Press Ctrl+Enter or click Run in the top bar.</p>
+                  <p className="mt-1 font-mono text-2xs text-faint">Press Ctrl+Enter or click Run in the top bar.</p>
                 </div>
               )}
             </div>

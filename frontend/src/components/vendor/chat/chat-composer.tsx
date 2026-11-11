@@ -132,7 +132,7 @@ export function ChatComposer({
 
         {/* Submit button */}
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline text-[11px] text-muted">
+          <span className="hidden sm:inline text-2xs text-muted">
             <kbd className="font-mono bg-surface-3 px-1.5 py-0.5 rounded border border-line text-2xs">Ctrl</kbd> + <kbd className="font-mono bg-surface-3 px-1.5 py-0.5 rounded border border-line text-2xs">Enter</kbd>
           </span>
           <button

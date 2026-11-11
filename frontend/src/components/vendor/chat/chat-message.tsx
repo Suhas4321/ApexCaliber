@@ -65,7 +65,7 @@ export function ChatMessage({
         {badge && (
           <span
             className={cn(
-              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+              'rounded-full px-2 py-0.5 text-2xs font-semibold uppercase tracking-wider',
               isInterviewer && 'bg-panel-2 text-muted border border-line',
               isCandidate && 'bg-line/40 text-muted border border-line',
               isSenior && 'bg-cyan/10 text-cyan border border-cyan/30',

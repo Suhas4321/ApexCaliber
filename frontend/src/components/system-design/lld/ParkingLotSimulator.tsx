@@ -50,7 +50,7 @@ export default function ParkingLotSimulator() {
           >
             <div className="flex justify-between font-bold">
               <span>F{s.floor} · #{s.id}</span>
-              <span className="text-[10px] uppercase">{s.type}</span>
+              <span className="text-2xs uppercase">{s.type}</span>
             </div>
             <span className="text-2xs font-semibold mt-1 block">{s.occupied ? 'OCCUPIED' : 'FREE'}</span>
           </div>

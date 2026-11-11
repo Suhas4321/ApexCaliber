@@ -84,9 +84,14 @@ export default function SystemDesignLldView({ index, onNavigate, completedIds, o
           <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-cyan-500/15 font-mono text-2xs text-cyan font-semibold">2</span>
           <span>Core Domain Invariant & Interactive Concurrency Simulation</span>
         </h2>
-        <blockquote className="rounded-r-md border-l-[3px] border-cyan bg-panel-2 px-4 py-3 font-mono text-xs sm:text-sm leading-relaxed text-chalk shadow-xs">
-          {lld.invariant}
-        </blockquote>
+        <div className="rounded-lg border border-line bg-panel-2 p-4 space-y-2">
+          <span className="inline-flex items-center rounded bg-cyan/15 border border-cyan/30 px-2 py-0.5 font-mono text-2xs uppercase tracking-wider text-cyan font-semibold">
+            Core Invariant
+          </span>
+          <p className="font-mono text-xs sm:text-sm leading-relaxed text-chalk">
+            {lld.invariant}
+          </p>
+        </div>
 
         <LldDomainSimulator problemId={lld.id} problemTitle={lld.title} />
       </section>

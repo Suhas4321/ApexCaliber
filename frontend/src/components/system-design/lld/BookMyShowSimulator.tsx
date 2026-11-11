@@ -37,7 +37,7 @@ export default function BookMyShowSimulator() {
           }`}>
             <span className="text-2xs text-muted">Seat</span>
             <strong className="text-base font-bold">B12</strong>
-            <span className="text-[10px] font-semibold">{seatState.status}</span>
+            <span className="text-2xs font-semibold">{seatState.status}</span>
           </div>
           <div>
             <div className="text-chalk font-semibold">Row B · Seat 12</div>

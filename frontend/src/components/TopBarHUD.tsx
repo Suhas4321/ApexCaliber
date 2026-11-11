@@ -3,63 +3,47 @@ import { Link } from 'react-router-dom'
 import { useUserStats } from '../lib/userStats'
 import CountUp from './vendor/react-bits/CountUp'
 
+/** Compact studio telemetry bar docked inside TopBar: solved total, level meter, and streak. */
 export default function TopBarHUD() {
   const stats = useUserStats()
 
   return (
     <Link
       to="/stats"
-      aria-label="User stats and level progress"
-      title={`${stats.totalSolved}/${stats.totalQuestions} Solved · Level ${stats.level} (${stats.levelXp}/100 XP) · ${stats.streak} Day Streak`}
-      className="hidden sm:flex items-center gap-2.5 rounded-lg border border-line bg-panel-2/90 px-2.5 py-1 text-xs transition-colors hover:border-line-strong hover:bg-panel-3"
+      aria-label={`Studio telemetry: ${stats.totalSolved} of ${stats.totalQuestions} solved, level ${stats.level}, ${stats.streak} day streak`}
+      title={`${stats.totalSolved}/${stats.totalQuestions} solved · Lvl ${stats.level} (${stats.levelXp}/100 XP) · ${stats.streak}d streak`}
+      className="hidden lg:inline-flex items-center gap-2.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-xs transition-[border-color,background-color,transform] duration-150 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:border-[var(--study-accent)]/40 hover:bg-panel-3 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)]"
     >
-      {/* 0. Clear Solved Counter Pill */}
-      <div
-        className="flex items-center gap-1 rounded-md border border-emerald/30 bg-emerald/10 px-1.5 py-0.5 font-mono text-[11px] font-bold text-emerald"
-        title={`${stats.totalSolved} of ${stats.totalQuestions} total questions solved`}
-      >
-        <CheckCircle2 size={12} className="text-emerald shrink-0" />
-        <span>{stats.totalSolved}/{stats.totalQuestions}</span>
-      </div>
-
-      <div className="h-3 w-px bg-line" />
-
-      {/* 1. Level badge with mini XP bar */}
-      <div className="flex items-center gap-1.5">
-        <span className="font-plate text-xs font-bold text-chalk">
-          Lvl <CountUp to={stats.level} duration={0.8} />
+      {/* Solved Counter */}
+      <span className="inline-flex items-center gap-1.5 rounded border border-emerald/30 bg-emerald/10 px-2 py-0.5 font-mono text-2xs font-semibold tabular-nums text-emerald">
+        <CheckCircle2 size={12} className="shrink-0" aria-hidden="true" />
+        <span>
+          <CountUp to={stats.totalSolved} duration={0.6} />/{stats.totalQuestions}
         </span>
-        <div
-          className="h-1.5 w-8 overflow-hidden rounded-full bg-line"
-          title={`${stats.levelXp}/100 XP to Level ${stats.level + 1}`}
-        >
-          <div
-            className="h-full rounded-full bg-[var(--peak-accent,#6EE7B7)] transition-all duration-500"
-            style={{ width: `${stats.levelXp}%` }}
+      </span>
+
+      <span className="h-3.5 w-px bg-line" aria-hidden="true" />
+
+      {/* Level & Hairline XP Meter */}
+      <span className="inline-flex items-center gap-2">
+        <span className="font-mono text-2xs font-semibold tabular-nums text-chalk">
+          Lvl {stats.level}
+        </span>
+        <span className="h-1.5 w-10 overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
+          <span
+            className="block h-full rounded-full bg-[var(--study-accent)] shadow-[0_0_8px_var(--accent-glow)] transition-[width] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+            style={{ width: `${Math.min(100, Math.max(0, stats.levelXp))}%` }}
           />
-        </div>
-      </div>
-
-      <div className="h-3 w-px bg-line" />
-
-      {/* 2. Streak Flame with Number */}
-      <div className="flex items-center gap-1 text-amber" title={`${stats.streak} day streak`}>
-        <Flame size={14} className="fill-amber/30 text-amber" />
-        <span className="font-plate text-xs font-semibold tabular-nums text-chalk">
-          <CountUp to={stats.streak} duration={0.8} />
         </span>
-      </div>
+      </span>
 
-      <div className="h-3 w-px bg-line" />
+      <span className="h-3.5 w-px bg-line" aria-hidden="true" />
 
-      {/* 3. Gold Coin-style XP Today */}
-      <div
-        className="flex items-center gap-1 rounded-full bg-reward/10 px-2 py-0.5 border border-reward/25 text-reward text-2xs font-semibold"
-        title={`${stats.xpToday} XP earned today`}
-      >
-        <span>🪙</span>
-        <span>+<CountUp to={stats.xpToday} duration={0.8} /> XP</span>
-      </div>
+      {/* Day Streak */}
+      <span className="inline-flex items-center gap-1 font-mono text-2xs font-semibold tabular-nums text-amber">
+        <Flame size={13} className="shrink-0" aria-hidden="true" />
+        <span>{stats.streak}d</span>
+      </span>
     </Link>
   )
 }

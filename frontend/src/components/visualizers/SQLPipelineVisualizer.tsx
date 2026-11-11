@@ -131,7 +131,7 @@ export default function SQLPipelineVisualizer({ step }: VisualizerProps) {
             {/* SQL Execution Order Stepper */}
             <div className="mt-auto rounded-xl border border-[#222838] bg-[#141722] p-2.5 text-2xs text-[#94A3B8]">
               <span className="font-semibold text-white block mb-1">True Database Engine Execution Order:</span>
-              <div className="flex flex-wrap items-center gap-1 text-[11px] font-mono">
+              <div className="flex flex-wrap items-center gap-1 text-2xs font-mono">
                 <span className="rounded bg-cyan/20 text-cyan px-1.5 py-0.5 font-bold">1. FROM/JOIN</span>
                 <span>➔</span>
                 <span className="rounded bg-sky-500/20 text-sky-400 px-1.5 py-0.5">2. WHERE</span>
@@ -239,8 +239,8 @@ export default function SQLPipelineVisualizer({ step }: VisualizerProps) {
               {[1, 2, 3, 4, 5, 6, 7, 8].map((page) => (
                 <div key={page} className="flex flex-col items-center justify-center rounded-xl border border-crimson/40 bg-crimson/[0.08] p-2.5 text-center">
                   <span className="text-2xs font-mono font-bold text-crimson">Page #{page}</span>
-                  <span className="text-[10px] text-muted">8KB Heap</span>
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-crimson animate-pulse" />
+                  <span className="text-2xs text-muted">8KB Heap</span>
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-crimson" />
                 </div>
               ))}
             </div>

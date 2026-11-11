@@ -103,16 +103,16 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
           <strong className="text-chalk font-semibold">Naive Setup:</strong>{' '}
           <span className="text-muted">{hld.naiveFailure.setup}</span>
         </p>
-        <blockquote className="rounded-r-md border-l-[3px] border-amber-500 bg-panel-2 px-4 py-3 text-sm leading-relaxed text-chalk space-y-1.5 shadow-xs">
-          <div className="font-mono text-2xs uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">
-            Breaking Point: {hld.naiveFailure.breakingPoint}
+        <div className="rounded-lg border border-line bg-panel-2 p-4 text-sm leading-relaxed text-chalk space-y-2">
+          <div className="inline-flex items-center rounded bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 font-mono text-2xs uppercase tracking-wider text-amber font-semibold">
+            Breaking Point · {hld.naiveFailure.breakingPoint}
           </div>
-          <ul className="list-disc list-inside space-y-0.5 text-muted">
+          <ul className="list-disc list-inside space-y-1 text-muted">
             {hld.naiveFailure.crashes.map((cr, idx) => (
               <li key={idx}>{cr}</li>
             ))}
           </ul>
-        </blockquote>
+        </div>
       </section>
 
       {/* 3. Scaled Hop-by-Hop Flow & Live Interactive Simulation */}
@@ -124,14 +124,14 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
           </h2>
 
           {index >= 0 && index < 10 && (
-            <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
+            <div className="inline-flex flex-wrap rounded-lg border border-line bg-panel-2 p-1 text-xs font-medium gap-1">
               <button
                 type="button"
                 onClick={() => setSimViewMode('motion')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
                   simViewMode === 'motion'
-                    ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
-                    : 'text-muted hover:text-chalk'
+                    ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                    : 'text-muted hover:text-chalk border border-transparent'
                 }`}
               >
                 <Film size={13} />
@@ -140,10 +140,10 @@ export default function SystemDesignHldView({ index, onNavigate, completedIds, o
               <button
                 type="button"
                 onClick={() => setSimViewMode('hop')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
                   simViewMode === 'hop'
-                    ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
-                    : 'text-muted hover:text-chalk'
+                    ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                    : 'text-muted hover:text-chalk border border-transparent'
                 }`}
               >
                 <Sliders size={13} />

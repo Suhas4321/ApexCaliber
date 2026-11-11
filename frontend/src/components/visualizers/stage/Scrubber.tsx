@@ -9,7 +9,7 @@ interface ScrubberProps {
 
 function getStepTickColor(step: TraceStep): string {
   if (step.event === 'exception') return 'bg-crimson'
-  if (step.event === 'call' || step.event === 'return') return 'bg-orchid'
+  if (step.event === 'call' || step.event === 'return') return 'bg-viz-read'
 
   // Inspect title or func or custom state
   const desc = `${step.func} ${step.title || ''}`.toLowerCase()

@@ -111,11 +111,11 @@ export default function DataFramePipelineVisualizer({ step }: VisualizerProps) {
                       <td className="px-3 py-2">{row.status}</td>
                       <td className="px-3 py-2 text-right">
                         {row.is_nan ? (
-                          <span className="rounded bg-crimson/20 text-crimson text-[10px] px-1.5 py-0.5 font-bold">Dropped NaN</span>
+                          <span className="rounded bg-crimson/20 text-crimson text-2xs px-1.5 py-0.5 font-bold">Dropped NaN</span>
                         ) : row.is_filtered ? (
-                          <span className="rounded bg-amber/20 text-amber text-[10px] px-1.5 py-0.5 font-bold">Latency &gt; 500ms</span>
+                          <span className="rounded bg-amber/20 text-amber text-2xs px-1.5 py-0.5 font-bold">Latency &gt; 500ms</span>
                         ) : (
-                          <span className="text-emerald text-[10px]">Active</span>
+                          <span className="text-emerald text-2xs">Active</span>
                         )}
                       </td>
                     </tr>

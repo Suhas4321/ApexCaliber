@@ -247,22 +247,22 @@ export default function BTreeVsHashIndexMotionGraphic() {
       {/* Strategy Selector Deck */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-panel-2 p-3 rounded-xl border border-line">
         <div className="flex items-center gap-2">
-          <Database size={16} className="text-brand-light" />
+          <Database size={16} className="text-cyan" />
           <span className="text-xs font-semibold text-chalk uppercase tracking-wider">
             DBMS Storage Engine Architecture Mode:
           </span>
         </div>
-        <div className="inline-flex rounded-lg border border-line bg-panel p-0.5 text-xs font-medium">
+        <div className="inline-flex flex-wrap rounded-lg border border-line bg-panel p-1 text-xs font-medium gap-1">
           <button
             type="button"
             onClick={() => {
               setStrategyMode('range_query')
               setCurrentTime(0)
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
               strategyMode === 'range_query'
-                ? 'bg-panel-3 text-brand-light font-bold shadow-xs'
-                : 'text-muted hover:text-chalk'
+                ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                : 'text-muted hover:text-chalk border border-transparent'
             }`}
           >
             <ArrowRightLeft size={13} />
@@ -274,10 +274,10 @@ export default function BTreeVsHashIndexMotionGraphic() {
               setStrategyMode('point_query')
               setCurrentTime(0)
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
               strategyMode === 'point_query'
-                ? 'bg-panel-3 text-brand-light font-bold shadow-xs'
-                : 'text-muted hover:text-chalk'
+                ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                : 'text-muted hover:text-chalk border border-transparent'
             }`}
           >
             <Search size={13} />
@@ -289,10 +289,10 @@ export default function BTreeVsHashIndexMotionGraphic() {
               setStrategyMode('composite_prefix')
               setCurrentTime(0)
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
               strategyMode === 'composite_prefix'
-                ? 'bg-panel-3 text-brand-light font-bold shadow-xs'
-                : 'text-muted hover:text-chalk'
+                ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                : 'text-muted hover:text-chalk border border-transparent'
             }`}
           >
             <AlertTriangle size={13} />

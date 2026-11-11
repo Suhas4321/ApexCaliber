@@ -23,8 +23,8 @@ export function CaptionBar({ caption, why, kind = 'info' }: CaptionBarProps) {
     textColor = 'text-forge'
     chipBg = 'bg-forge/15 border-forge/40'
   } else if (normKind.includes('read')) {
-    textColor = 'text-orchid'
-    chipBg = 'bg-orchid/15 border-orchid/40'
+    textColor = 'text-viz-read'
+    chipBg = 'bg-viz-read/15 border-viz-read/40'
   } else if (normKind.includes('return') || normKind.includes('done')) {
     textColor = 'text-emerald'
     chipBg = 'bg-emerald/15 border-emerald/40'

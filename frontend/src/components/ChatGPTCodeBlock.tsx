@@ -31,12 +31,12 @@ export default function ChatGPTCodeBlock({
   return (
     <div
       data-zone="night"
-      className={`overflow-hidden rounded-lg border border-white/10 bg-[#0d1117] text-[#e6edf3] font-mono text-xs shadow-md ${className}`}
+      className={`overflow-hidden rounded-lg border border-line bg-void text-chalk font-mono text-xs ${className}`}
     >
-      {/* ChatGPT-style clean header bar */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#161b22] px-4 py-2 select-none">
+      {/* Header bar */}
+      <div className="flex items-center justify-between border-b border-line bg-panel px-4 py-2.5 select-none">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-muted">
             {language}
           </span>
           {title && (
@@ -71,7 +71,7 @@ export default function ChatGPTCodeBlock({
 
       {/* Code body */}
       <pre
-        className="overflow-x-auto p-4 leading-relaxed text-[#e6edf3] font-mono text-[13px]"
+        className="overflow-x-auto p-4 leading-relaxed text-chalk font-mono text-sm"
         style={maxHeight ? { maxHeight, overflowY: 'auto' } : undefined}
       >
         <code>{code.trim()}</code>

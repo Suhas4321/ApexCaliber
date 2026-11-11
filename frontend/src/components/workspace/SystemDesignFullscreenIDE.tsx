@@ -46,10 +46,10 @@ export default function SystemDesignFullscreenIDE({
   const allPassed = outcomes !== null && outcomes.length > 0 && outcomes.every((o) => o.passed)
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#090D16] text-[#F1F5F9]" data-zone="night">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 bg-[#0F1624] px-4 select-none">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-violet-500/20 font-mono text-xs font-semibold text-violet-300">
+    <div className="fixed inset-0 z-50 flex flex-col bg-void text-chalk" data-zone="night">
+      <header className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line bg-panel px-4 py-1.5 select-none">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-cyan/30 bg-cyan/15 font-mono text-xs font-semibold text-cyan">
             {stepNumber}
           </span>
           <span className="font-plate text-sm font-bold text-chalk truncate max-w-sm">
@@ -94,7 +94,7 @@ export default function SystemDesignFullscreenIDE({
             <button
               type="button"
               onClick={() => { onClose(); onNextLesson() }}
-              className="inline-flex items-center gap-1.5 rounded bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500"
+              className="inline-flex items-center gap-1.5 rounded bg-action px-3 py-1.5 text-xs font-semibold text-[var(--study-on-accent)] hover:bg-action-hi active:scale-[0.985] transition-[transform,background-color]"
             >
               <span>Next</span>
               <ArrowRight size={12} />
@@ -112,14 +112,14 @@ export default function SystemDesignFullscreenIDE({
       </header>
 
       {/* Main Split Body */}
-      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 w-full overflow-y-auto lg:overflow-hidden">
         {/* Left Column */}
-        <div className="w-[420px] shrink-0 border-r border-line bg-[#0B0F17] overflow-y-auto p-5 space-y-4">
-          <div className="font-mono text-2xs uppercase tracking-wider text-violet-400 font-semibold">
+        <div className="w-full lg:w-[420px] shrink-0 border-b lg:border-b-0 lg:border-r border-line bg-panel overflow-y-auto p-5 space-y-4">
+          <div className="font-mono text-2xs uppercase tracking-wider text-cyan font-semibold">
             Assignment
           </div>
           <h3 className="text-base font-bold text-chalk">{spec.scenarioTitle}</h3>
-          <p className="text-sm leading-relaxed text-slate-300">{spec.scenarioPrompt}</p>
+          <p className="text-sm leading-relaxed text-muted">{spec.scenarioPrompt}</p>
 
           {showHint && (
             <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
@@ -128,7 +128,7 @@ export default function SystemDesignFullscreenIDE({
             </div>
           )}
 
-          <div className="space-y-2 pt-2 border-t border-white/10">
+          <div className="space-y-2 pt-2 border-t border-line">
             <div className="font-mono text-2xs uppercase tracking-wider text-muted font-semibold">
               Reference: {spec.workedExampleTitle}
             </div>
@@ -137,15 +137,15 @@ export default function SystemDesignFullscreenIDE({
         </div>
 
         {/* Right Column: Editor & Test Results */}
-        <div className="flex-1 min-w-0 flex flex-col bg-void overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col bg-void overflow-hidden min-h-[360px]">
           <div className="flex-1 min-h-0 w-full">
             <CodeEditor value={code} onChange={onCodeChange} height="100%" />
           </div>
 
           {(outcomes || compileErr) && (
-            <div className="h-44 shrink-0 border-t border-line bg-[#0E1524] overflow-y-auto p-3.5 space-y-2">
+            <div className="h-44 shrink-0 border-t border-line bg-panel-2 overflow-y-auto p-3.5 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="font-mono uppercase text-slate-300">Test Execution</span>
+                <span className="font-mono uppercase text-muted">Test Execution</span>
                 {allPassed ? (
                   <span className="font-mono text-emerald flex items-center gap-1">
                     <CheckCircle2 size={13} /> All Tests Passed ({outcomes?.length}/{outcomes?.length})

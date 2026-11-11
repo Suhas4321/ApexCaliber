@@ -1,19 +1,11 @@
-# PatternForge / ApexCaliber Engineering & UI Rules (.clinerules)
+# PatternForge / ApexCaliber Rules (`.clinerules`)
 
-1. **Zero "AI Box Slop"**:
-   - Never nest a bordered card (`border rounded-2xl`) inside another bordered card.
-   - Prefer connected hairline grids (`divide-x`, `divide-y`, `border-b border-line`) over floating rounded rectangles.
-   - Use sharp architectural radii (`rounded-md` for controls/badges, `rounded-lg` or `rounded-xl` for panels).
+> **Canonical Rules:** This repository is governed by [AGENTS.md](./AGENTS.md), [DESIGN.md](./DESIGN.md), [UX-CONTRACT.md](./UX-CONTRACT.md), and modular workspace rules under [`.agents/rules/`](./.agents/rules/). Keep this file aligned as a quick compatibility pointer.
 
-2. **Strict Light / Dark Mode Contrast**:
-   - Any dark stage or `<Sky />` container MUST have `data-zone="night"` or `.stage` and use crisp white/silver text (`#F8FAFC` / `#CBD5E1`).
-   - Never place `text-chalk` on an unscoped dark background in Light Mode, and never place hardcoded `text-white` on a light card (`bg-panel`) in Light Mode.
-
-3. **Zero Empty-Textarea Busywork**:
-   - Do not force learners to fill out ungraded empty essay boxes (`Brute Force`, `Trigger`, etc.).
-   - Always present structured **Study Exemplars** first: Clarifying Questions to Ask, Step-by-Step Spoken Walkthrough, and First-Principles Time/Space Complexity Derivation.
-
-4. **3-Step Question Pedagogical Flow (`/q/:slug`)**:
-   - Step 1 (`1. Learn DS & Pattern`): Teach the underlying Data Structure (`Array`, `Hash Map / dict`, `Set`, etc.), Python idioms, and complexity math *before* coding.
-   - Step 2 (`2. Code in Terminal`): Fullscreen `100dvh` LeetCode draggable split-pane IDE.
-   - Step 3 (`3. Interview Answer Guide`): Full-width structured interview answer playbook unlocked/shown after solving or via top-bar tab.
+1. **Cobalt Studio & Zero Slop:** Follow `.agents/rules/01-design-invariants.md` and `02-geometry-and-type.md` (Cobalt palette `#101522` / `#182132` dark & `#F3F5F9` / `#FFFFFF` light; zero violet/lavender; concentric corner math $R_{inner} = R_{outer} - P$; max 2 container levels; zero single-sided card borders).
+2. **Dark Night Zone Contrast:** Code editors, stages, and canvases must carry `data-zone="night"` or `.stage` and consume semantic surface tokens (`var(--surface-*)`, `text-chalk`, `text-muted`).
+3. **Motion & Interactive Completeness:** Follow `.agents/rules/03-motion-and-visualizers.md` and `04-interactive-states.md` (GPU `transform`/`opacity` only, approved easing, `>=44px` mobile hit targets, visible focus rings on sliders/controls, shape-matched skeletons, `prefers-reduced-motion`).
+4. **3-Step Question Pedagogical Flow (`/q/:slug`) & Zero Empty-Textarea Busywork:**
+   - Step 1 (`1. Learn DS & Pattern`): Teach underlying Data Structure, idioms, and complexity math before coding, presenting structured Study Exemplars first.
+   - Step 2 (`2. Code in Terminal`): Fullscreen draggable split-pane IDE preserving native `<select>` ownership.
+   - Step 3 (`3. Interview Answer Guide`): Full-width structured interview walkthrough.

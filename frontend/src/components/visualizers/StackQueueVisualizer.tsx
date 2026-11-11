@@ -59,7 +59,7 @@ function GlassTubeStack({
         {/* Glowing Rim Mouth */}
         <div className="relative z-10 -mb-1 flex h-4 w-36 items-center justify-center rounded-t-xl border border-sky/40 bg-gradient-to-r from-sky/20 via-sky/40 to-sky/20 shadow-[0_0_12px_rgba(56,189,248,0.25)]">
           <div className="h-1.5 w-24 rounded-full bg-sky/30 blur-[1px]" />
-          <span className="absolute -top-3.5 right-1 font-mono text-[9px] uppercase tracking-wider text-sky/70">
+          <span className="absolute -top-4 right-1 font-mono text-2xs uppercase tracking-wider text-sky/80">
             Open Rim
           </span>
         </div>
@@ -97,14 +97,14 @@ function GlassTubeStack({
                     transition: { duration: 0.22 },
                   }}
                   transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                  className={`group relative flex h-10 items-center justify-between rounded-lg border px-2.5 font-mono text-sm shadow-md transition-all ${
+                  className={`group relative flex h-10 items-center justify-between rounded-lg border px-2.5 font-mono text-sm shadow-md transition-colors ${
                     top
                       ? 'border-forge bg-forge/20 text-chalk shadow-[0_0_12px_rgba(255,107,0,0.25)] ring-1 ring-forge/40'
                       : 'border-line/70 bg-panel/90 text-chalk/90 hover:border-line'
                   }`}
                 >
                   {/* Left Index Indicator */}
-                  <span className="font-mono text-[10px] text-muted/60">[{actualIdx}]</span>
+                  <span className="font-mono text-2xs text-muted/70">[{actualIdx}]</span>
 
                   {/* Element Value */}
                   <span className="font-semibold">{formatValue(v, heap, 1)}</span>
@@ -118,7 +118,7 @@ function GlassTubeStack({
 
                   {/* TOP Badge Pill on Inner Block */}
                   {top && (
-                    <span className="absolute -top-2 right-1.5 rounded-full border border-forge/60 bg-forge px-1.5 py-0.2 font-mono text-[8px] font-bold uppercase tracking-wider text-ink shadow-sm">
+                    <span className="absolute -top-2.5 right-1.5 rounded-full border border-forge/60 bg-forge px-1.5 py-0.5 font-mono text-2xs font-bold uppercase tracking-wider text-ink shadow-sm">
                       TOP
                     </span>
                   )}
@@ -134,7 +134,7 @@ function GlassTubeStack({
           {items.length === 0 && (
             <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
               <span className="font-mono text-xs text-muted/60">Empty Tube</span>
-              <span className="text-[10px] text-faint">Awaiting push</span>
+              <span className="text-2xs text-faint">Awaiting push</span>
             </div>
           )}
         </div>
@@ -179,12 +179,12 @@ function GlassConveyorQueue({
       <div className="relative flex max-w-full items-center overflow-x-auto rounded-2xl border border-line/60 bg-gradient-to-r from-surface-2/90 via-ink/90 to-surface-2/90 p-3 shadow-[inset_0_2px_16px_rgba(0,0,0,0.5),0_8px_24px_rgba(0,0,0,0.25)]">
         {/* Conveyor Chute Headers */}
         <div className="mr-3 flex flex-col items-center border-r border-line/60 pr-3">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-verdigris">FRONT</span>
+          <span className="font-mono text-2xs uppercase tracking-wider text-verdigris">FRONT</span>
           <span className="text-2xs text-muted">← OUT</span>
         </div>
 
         {/* Queue Items Row */}
-        <div className="flex items-center gap-2 min-h-12">
+        <div className="flex items-center gap-2 min-h-14">
           <AnimatePresence initial={false}>
             {visible.map((v, i) => {
               const isFront = i === 0
@@ -203,7 +203,7 @@ function GlassConveyorQueue({
                   }`}
                 >
                   <span className="font-semibold">{formatValue(v, heap, 1)}</span>
-                  <span className="absolute -bottom-3 text-[9px] text-muted/60">[{i}]</span>
+                  <span className="absolute -bottom-4 text-2xs text-muted/70">[{i}]</span>
                 </motion.div>
               )
             })}
@@ -219,7 +219,7 @@ function GlassConveyorQueue({
         </div>
 
         <div className="ml-3 flex flex-col items-center border-l border-line/60 pl-3">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-sky">REAR</span>
+          <span className="font-mono text-2xs uppercase tracking-wider text-sky">REAR</span>
           <span className="text-2xs text-muted">IN ←</span>
         </div>
       </div>

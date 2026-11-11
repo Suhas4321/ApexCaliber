@@ -17,11 +17,11 @@ export default function SplitwiseSimulator() {
 
       <div className="rounded-lg border border-line bg-panel-2/60 p-4 min-h-[110px] flex items-center justify-center font-mono text-xs">
         {!simplified ? (
-          <div className="flex items-center justify-around w-full">
+          <div className="flex flex-wrap items-center justify-around gap-2 w-full">
             <div className="rounded border border-line bg-panel p-2 text-center">Alice<br /><span className="text-crimson text-2xs">-$40</span></div>
-            <div className="text-amber flex flex-col items-center"><span className="text-[10px]">owes $40</span><ArrowRight size={14} /></div>
+            <div className="text-amber flex flex-col items-center"><span className="text-2xs">owes $40</span><ArrowRight size={14} /></div>
             <div className="rounded border border-line bg-panel p-2 text-center">Bob<br /><span className="text-muted text-2xs">$0 Net</span></div>
-            <div className="text-amber flex flex-col items-center"><span className="text-[10px]">owes $40</span><ArrowRight size={14} /></div>
+            <div className="text-amber flex flex-col items-center"><span className="text-2xs">owes $40</span><ArrowRight size={14} /></div>
             <div className="rounded border border-line bg-panel p-2 text-center">Charlie<br /><span className="text-emerald text-2xs">+$40</span></div>
           </div>
         ) : (

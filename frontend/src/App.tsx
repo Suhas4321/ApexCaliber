@@ -7,6 +7,7 @@ import CommandPalette, { openCommandPalette } from './components/CommandPalette'
 import ErrorBoundary from './components/ErrorBoundary'
 import MoreMenu from './components/MoreMenu'
 import ApexCaliberLogo from './components/ApexCaliberLogo'
+import TopBarHUD from './components/TopBarHUD'
 import { ThemeToggle } from './components/effects'
 import { citadelForWorld, getCitadel } from './lib/citadels'
 import { GrimoireProvider, useGrimoire } from './lib/grimoire'
@@ -19,7 +20,7 @@ function BreadcrumbBar() {
   const { pathname, state } = useLocation()
   if (pathname === '/app') return null
 
-  const crumbs: { label: string; to?: string }[] = [{ label: 'Learning home', to: '/app' }]
+  const crumbs: { label: string; to?: string }[] = [{ label: 'Studio', to: '/app' }]
 
   const citadelMatch = /^\/citadel\/([^/]+)/.exec(pathname)
   const worldMatch = /^\/world\/(\d+)/.exec(pathname)
@@ -70,7 +71,7 @@ function BreadcrumbBar() {
 
   return (
     <nav aria-label="Breadcrumb" className="w-full border-b border-line bg-panel-2/70 text-xs text-muted backdrop-blur-md">
-      <div className="shell flex h-9 items-center gap-1.5 overflow-x-auto">
+      <div className="w-full px-4 sm:px-6 flex h-9 items-center gap-1.5 overflow-x-auto">
         {crumbs.map((c, i) => {
           const isLast = i === crumbs.length - 1
           return (
@@ -98,11 +99,17 @@ function TopBar() {
   const worldMatch = /^\/world\/(\d+)/.exec(pathname)
 
   return <header className="study-topbar no-print">
-    <div className="shell study-topbar-inner">
-      <StudyNavigationDrawer />
-      <Link to="/app" aria-label="ApexCaliber learning home" className="study-topbar-brand"><ApexCaliberLogo size="sm" /></Link>
-      <div className="study-topbar-tools">
+    <div className="w-full px-4 sm:px-6 flex items-center justify-between gap-4 study-topbar-inner">
+      <div className="flex items-center gap-3 shrink-0">
+        <StudyNavigationDrawer />
+        <Link to="/app" aria-label="ApexCaliber learning home" className="study-topbar-brand"><ApexCaliberLogo size="sm" /></Link>
+      </div>
+      <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
         <button type="button" onClick={openCommandPalette} aria-label="Search topics and questions" className="study-search-button"><Search size={16} /><span>Search topics and questions</span><kbd>⌘ K</kbd></button>
+      </div>
+      <div className="study-topbar-tools shrink-0">
+        <TopBarHUD />
+        <button type="button" onClick={openCommandPalette} aria-label="Search topics and questions" className="md:hidden study-search-button study-search-button-mobile"><Search size={16} /></button>
         <ThemeToggle compact />
         <MoreMenu onOpenGrimoire={() => openGrimoire(worldMatch ? Number(worldMatch[1]) : undefined)} />
         {auth.session ? <AccountMenu /> : <Link to={`/sign-in?next=${encodeURIComponent(pathname)}`} className="study-signin">Sign in</Link>}
@@ -120,7 +127,7 @@ function AppShell() {
     else window.scrollTo({ top: 0, behavior: 'instant' })
   }, [pathname, hash])
   useEffect(() => {
-    const names: Record<string, string> = { '/app': 'Learning home', '/stats': 'Your progress', '/finder': 'Pattern finder', '/system-design': 'System design', '/resume-grill': 'Interview practice', '/playground': 'Code playground', '/sign-in': 'Sign in' }
+    const names: Record<string, string> = { '/app': 'Studio', '/stats': 'Telemetry', '/finder': 'Pattern Finder', '/system-design': 'System Design', '/resume-grill': 'Interview Drills', '/playground': 'Sandbox', '/sign-in': 'Sign in' }
     const subject = /^\/(?:citadel|learn)\/([^/]+)/.exec(pathname)
     const title = names[pathname] ?? (subject ? getCitadel(subject[1]).shortName : pathname.startsWith('/lesson/') ? 'Lesson' : pathname.startsWith('/q/') ? 'Coding practice' : 'Learning workspace')
     document.title = `${title} · ApexCaliber`

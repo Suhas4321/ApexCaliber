@@ -163,7 +163,7 @@ function DataTree({
                   initial={false}
                   animate={{ x: cx, y: cy + NODE_R + 14 }}
                   textAnchor="middle"
-                  className="fill-sky font-mono text-[10px] font-bold"
+                  className="fill-sky font-mono text-2xs font-bold"
                 >
                   {names.slice(0, 2).join(', ')}
                 </motion.text>
@@ -247,7 +247,7 @@ function HeapTree({
                 >
                   {formatValue(v, heap, 1).slice(0, 5)}
                 </text>
-                <text x={p.cx} y={p.cy - NODE_R - 3} textAnchor="middle" className="fill-faint font-mono text-[9px]">
+                <text x={p.cx} y={p.cy - NODE_R - 4} textAnchor="middle" className="fill-faint font-mono text-2xs">
                   [{i}]
                 </text>
               </g>
@@ -270,7 +270,7 @@ function HeapTree({
               }`}
             >
               <span className="font-semibold">{formatValue(v, heap, 1)}</span>
-              <span className="text-[9px] text-muted/70">[{i}]</span>
+              <span className="text-2xs text-muted/70">[{i}]</span>
             </div>
           ))}
         </div>

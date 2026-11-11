@@ -42,8 +42,8 @@ export function ComplexityBadges({ timeComplexity, spaceComplexity }: Complexity
           role="note"
           aria-label={`Time complexity: ${timeParsed.bigO}`}
         >
-          <div className="flex items-center gap-1.5 rounded-full border border-forge/60 bg-forge/10 px-2.5 py-0.5 shadow-[0_0_12px_rgba(110,231,183,0.15)] cursor-help transition-all hover:bg-forge/15">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted">
+          <div className="flex items-center gap-1.5 rounded-full border border-forge/60 bg-forge/10 px-2.5 py-0.5 shadow-[0_0_12px_rgba(110,231,183,0.15)] cursor-help transition-colors hover:bg-forge/15">
+            <span className="text-2xs font-mono font-bold uppercase tracking-wider text-muted">
               TIME
             </span>
             <span className="text-xs font-mono font-bold text-forge">
@@ -53,7 +53,7 @@ export function ComplexityBadges({ timeComplexity, spaceComplexity }: Complexity
 
           {activeTooltip === 'time' && (
             <div className="absolute right-0 top-full mt-2 z-50 min-w-[220px] max-w-[280px] rounded-xl border border-line-strong bg-panel-2 p-2.5 text-xs text-chalk shadow-2xl backdrop-blur animate-in fade-in zoom-in-95">
-              <div className="text-[10px] font-mono uppercase text-forge font-bold mb-1">
+              <div className="text-2xs font-mono uppercase text-forge font-bold mb-1">
                 Reference Time Complexity
               </div>
               <p className="text-2xs text-muted leading-relaxed">
@@ -76,8 +76,8 @@ export function ComplexityBadges({ timeComplexity, spaceComplexity }: Complexity
           role="note"
           aria-label={`Space complexity: ${spaceParsed.bigO}`}
         >
-          <div className="flex items-center gap-1.5 rounded-full border border-cyan/60 bg-cyan/10 px-2.5 py-0.5 shadow-[0_0_12px_rgba(103,232,249,0.15)] cursor-help transition-all hover:bg-cyan/15">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted">
+          <div className="flex items-center gap-1.5 rounded-full border border-cyan/60 bg-cyan/10 px-2.5 py-0.5 shadow-[0_0_12px_rgba(103,232,249,0.15)] cursor-help transition-colors hover:bg-cyan/15">
+            <span className="text-2xs font-mono font-bold uppercase tracking-wider text-muted">
               SPACE
             </span>
             <span className="text-xs font-mono font-bold text-cyan">
@@ -87,7 +87,7 @@ export function ComplexityBadges({ timeComplexity, spaceComplexity }: Complexity
 
           {activeTooltip === 'space' && (
             <div className="absolute right-0 top-full mt-2 z-50 min-w-[220px] max-w-[280px] rounded-xl border border-line-strong bg-panel-2 p-2.5 text-xs text-chalk shadow-2xl backdrop-blur animate-in fade-in zoom-in-95">
-              <div className="text-[10px] font-mono uppercase text-cyan font-bold mb-1">
+              <div className="text-2xs font-mono uppercase text-cyan font-bold mb-1">
                 Reference Space Complexity
               </div>
               <p className="text-2xs text-muted leading-relaxed">

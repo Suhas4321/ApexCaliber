@@ -232,17 +232,17 @@ export default function LinkedListVisualizer({ step, prev, steps, config, narrat
                       <rect
                         x={-12}
                         y={-9}
-                        width={l.name.length * 7 + 12}
-                        height={15}
+                        width={l.name.length * 8 + 14}
+                        height={18}
                         rx={4}
-                        fill="rgba(15,18,32,0.92)"
+                        fill="rgba(16,21,34,0.92)"
                         stroke={l.color}
                         strokeWidth={1.2}
                       />
                       <text
                         x={-6}
-                        y={2}
-                        className="font-mono text-[9px] font-bold tracking-wide"
+                        y={3}
+                        className="font-mono text-2xs font-bold tracking-wide"
                         fill={l.color}
                       >
                         {l.name}
@@ -285,7 +285,7 @@ export default function LinkedListVisualizer({ step, prev, steps, config, narrat
                   {/* None Indicator */}
                   {isNull && (
                     <g transform={`translate(${x + NODE_W + 8}, ${y + NODE_H / 2 + 4})`}>
-                      <text className="fill-faint font-mono text-[10px] italic">
+                      <text className="fill-faint font-mono text-2xs italic">
                         → None
                       </text>
                     </g>

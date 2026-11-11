@@ -67,14 +67,14 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
-          <div className="inline-flex rounded-lg border border-line bg-panel-2 p-0.5 text-xs font-medium">
+          <div className="inline-flex flex-wrap rounded-lg border border-line bg-panel-2 p-1 text-xs font-medium gap-1">
             <button
               type="button"
               onClick={() => setMotionViewMode('motion')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
                 motionViewMode === 'motion'
-                  ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
-                  : 'text-muted hover:text-chalk'
+                  ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                  : 'text-muted hover:text-chalk border border-transparent'
               }`}
             >
               <Film size={13} />
@@ -83,10 +83,10 @@ export default function LessonExperiment({ stage, question }: { stage: JourneySt
             <button
               type="button"
               onClick={() => setMotionViewMode('code')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
                 motionViewMode === 'code'
-                  ? 'bg-panel-3 text-brand-light font-semibold shadow-xs'
-                  : 'text-muted hover:text-chalk'
+                  ? 'bg-panel-3 text-cyan font-semibold border border-line-strong'
+                  : 'text-muted hover:text-chalk border border-transparent'
               }`}
             >
               <Terminal size={13} />

@@ -118,7 +118,7 @@ export default function CodeEditor({
             <Variable size={13} className="text-amber" />
             <span>Variables</span>
             {Object.keys(locals).length > 0 && (
-              <span className="ml-1 rounded bg-amber/20 px-1 py-0.2 text-[10px] text-amber font-bold">
+              <span className="ml-1 rounded bg-amber/20 px-1.5 py-0.5 text-2xs text-amber font-bold">
                 {Object.keys(locals).length}
               </span>
             )}
@@ -127,16 +127,16 @@ export default function CodeEditor({
           <button
             type="button"
             onClick={() => setActiveTab('memory')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs font-semibold transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-2xs font-semibold transition-colors ${
               activeTab === 'memory'
-                ? 'bg-panel border border-line-strong text-chalk shadow-xs'
+                ? 'bg-panel border border-line-strong text-chalk'
                 : 'text-muted hover:text-chalk'
             }`}
           >
-            <Cpu size={13} className="text-orchid" />
+            <Cpu size={13} className="text-emerald" />
             <span>Memory</span>
             {step && Object.keys(step.heap).length > 0 && (
-              <span className="ml-1 rounded bg-orchid/20 px-1 py-0.2 text-[10px] text-orchid font-bold">
+              <span className="ml-1 rounded bg-panel-3 border border-line px-1.5 py-0.5 text-2xs text-chalk font-bold">
                 {Object.keys(step.heap).length}
               </span>
             )}
@@ -145,8 +145,8 @@ export default function CodeEditor({
 
         {/* Floating Line Chip */}
         {traceLine && activeTab === 'code' && (
-          <div className="flex items-center gap-1 rounded-full border border-cyan/40 bg-cyan/15 px-2 py-0.5 text-[11px] font-mono font-bold text-cyan animate-in fade-in">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan animate-pulse" />
+          <div className="flex items-center gap-1.5 rounded-full border border-cyan/40 bg-cyan/15 px-2.5 py-0.5 text-2xs font-mono font-bold text-cyan">
+            <span className="h-2.5 w-0.5 rounded-full bg-cyan" aria-hidden="true" />
             <span>Line {traceLine}</span>
           </div>
         )}

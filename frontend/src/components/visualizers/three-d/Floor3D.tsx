@@ -57,7 +57,7 @@ export const Floor3D: React.FC<Floor3DProps> = ({
             {Array.from({ length: itemCount }).map((_, idx) => (
               <div
                 key={idx}
-                className="font-mono text-[11px] font-semibold text-muted text-center select-none"
+                className="font-mono text-2xs font-semibold text-muted text-center select-none"
                 style={{ width: `${itemWidth}px` }}
               >
                 {idx}

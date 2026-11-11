@@ -45,7 +45,7 @@ export default function ElevatorSimulator() {
               key={floor}
               type="button"
               onClick={() => callFloor(floor)}
-              className={`flex-1 min-w-[50px] h-20 rounded-lg border flex flex-col items-center justify-between p-2 font-mono text-xs transition-all ${
+              className={`flex-1 min-w-[54px] min-h-[88px] rounded-lg border flex flex-col items-center justify-between p-2 font-mono text-xs transition-[transform,colors] active:scale-[0.985] ${
                 isCar
                   ? 'border-cyan bg-cyan/20 text-cyan scale-105 shadow-md font-bold'
                   : isTarget
@@ -54,8 +54,8 @@ export default function ElevatorSimulator() {
               }`}
             >
               <span>F{floor}</span>
-              <span className="text-[10px] font-semibold">{isCar ? 'CAR 1' : isTarget ? 'STOP' : ''}</span>
-              <span className="text-[9px] text-faint">Call</span>
+              <span className="text-2xs font-semibold">{isCar ? 'CAR 1' : isTarget ? 'STOP' : ''}</span>
+              <span className="text-2xs text-faint">Call</span>
             </button>
           )
         })}

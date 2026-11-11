@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { ChevronDown, ShieldCheck } from 'lucide-react'
+import { ChevronDown, Landmark, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CITADELS, getCitadel } from '../lib/citadels'
@@ -34,9 +34,9 @@ export default function CitadelSwitcher() {
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-label="Switch Citadel Realm"
-        className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 text-xs font-medium text-chalk transition-all hover:border-action hover:bg-panel shadow-sm"
+        className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 text-xs font-medium text-chalk transition-colors hover:border-action hover:bg-panel shadow-sm active:scale-[0.985]"
       >
-        <span className="text-sm">{isSystemDesign ? '🏛️' : activeCitadel.icon}</span>
+        <span className="text-sm flex items-center">{isSystemDesign ? <Landmark size={14} className="text-cyan" aria-hidden="true" /> : activeCitadel.icon}</span>
         <span className="font-plate font-semibold tracking-wide text-xs">
           Citadel {isSystemDesign ? 'VII' : activeCitadel.numeral}:
         </span>
@@ -59,7 +59,7 @@ export default function CitadelSwitcher() {
               <span className="text-2xs font-semibold uppercase tracking-wider text-muted">
                 Select Engineering Citadel
               </span>
-              <span className="text-2xs rounded-full bg-violet-500/15 px-2 py-0.5 font-medium text-violet-300">
+              <span className="text-2xs rounded-full border border-cyan/30 bg-cyan/10 px-2 py-0.5 font-medium text-cyan">
                 7 Realms Active
               </span>
             </div>
@@ -74,13 +74,13 @@ export default function CitadelSwitcher() {
                       setOpen(false)
                       navigate(citadel.id === 'dsa' ? '/app' : `/citadel/${citadel.id}`)
                     }}
-                    className={`flex items-start gap-3 rounded-xl p-2.5 text-left transition-all ${
+                    className={`flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors ${
                       isActive
                         ? 'border border-action/40 bg-action/[0.08] shadow-sm'
                         : 'border border-transparent hover:border-line hover:bg-panel-2'
                     }`}
                   >
-                    <span className="text-xl p-1 rounded-lg bg-panel-2 border border-line">
+                    <span className="text-xl p-1 rounded bg-panel-2 border border-line">
                       {citadel.icon}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -97,7 +97,7 @@ export default function CitadelSwitcher() {
                       </p>
                     </div>
                     {isActive && (
-                      <span className="h-2 w-2 rounded-full bg-action shadow-[0_0_8px_var(--color-action)] mt-2 mr-1" />
+                      <span className="h-2 w-2 rounded-full bg-action mt-2 mr-1" />
                     )}
                   </button>
                 )
@@ -110,26 +110,26 @@ export default function CitadelSwitcher() {
                   setOpen(false)
                   navigate('/system-design')
                 }}
-                className={`flex items-start gap-3 rounded-xl p-2.5 text-left transition-all ${
+                className={`flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors ${
                   isSystemDesign
-                    ? 'border border-violet-400/50 bg-violet-500/10 shadow-sm'
+                    ? 'border border-cyan/50 bg-cyan/10 shadow-sm'
                     : 'border border-transparent hover:border-line hover:bg-panel-2'
                 }`}
               >
-                <span className="text-xl p-1 rounded-lg bg-panel-2 border border-line">
-                  🏛️
+                <span className="p-2 rounded bg-panel-2 border border-line text-cyan">
+                  <Landmark size={18} aria-hidden="true" />
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-plate text-xs font-bold text-violet-400">
+                      <span className="font-plate text-xs font-bold text-cyan">
                         Realm VII
                       </span>
                       <span className="font-plate text-sm font-semibold text-chalk truncate">
                         System Design & Architecture
                       </span>
                     </div>
-                    <span className="font-mono text-2xs text-violet-300">
+                    <span className="font-mono text-2xs text-cyan">
                       {sysSolved}/{sysTotal}
                     </span>
                   </div>
@@ -138,7 +138,7 @@ export default function CitadelSwitcher() {
                   </p>
                 </div>
                 {isSystemDesign && (
-                  <span className="h-2 w-2 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.8)] mt-2 mr-1" />
+                  <span className="h-2 w-2 rounded-full bg-cyan mt-2 mr-1" />
                 )}
               </button>
             </div>
@@ -147,7 +147,7 @@ export default function CitadelSwitcher() {
               <Link
                 to="/resume-grill"
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-between gap-2 rounded-xl p-2.5 text-xs font-medium text-chalk hover:bg-sky-500/[0.08] hover:border hover:border-sky-500/30 transition-colors"
+                className="flex items-center justify-between gap-2 rounded-lg p-2.5 text-xs font-medium text-chalk border border-transparent hover:bg-sky-500/[0.08] hover:border-sky-500/30 transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={16} className="text-sky-400" />

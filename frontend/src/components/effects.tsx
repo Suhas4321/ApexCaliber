@@ -287,14 +287,14 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       {resolved === 'light' ? (
         <>
           <Sun size={14} className="text-amber shrink-0" />
-          <span className={`${compact ? 'hidden' : 'hidden lg:inline'} font-mono text-[11px] font-semibold tracking-tight uppercase text-amber`}>
+          <span className={`${compact ? 'hidden' : 'hidden lg:inline'} font-mono text-2xs font-semibold tracking-tight uppercase text-amber`}>
             Light
           </span>
         </>
       ) : (
         <>
           <Moon size={14} className="text-action shrink-0" />
-          <span className={`${compact ? 'hidden' : 'hidden lg:inline'} font-mono text-[11px] font-semibold tracking-tight uppercase text-action`}>
+          <span className={`${compact ? 'hidden' : 'hidden lg:inline'} font-mono text-2xs font-semibold tracking-tight uppercase text-action`}>
             Dark
           </span>
         </>

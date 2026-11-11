@@ -178,7 +178,7 @@ export default function DPTableVisualizer({ step, prev, config, code, narration 
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 rounded-2xl border border-forge/40 bg-gradient-to-r from-forge/15 via-forge/5 to-surface-2/60 px-4 py-3 shadow-md"
         >
-          <span className="rounded-md border border-forge/60 bg-forge px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-ink shadow-sm">
+          <span className="rounded-md border border-forge/60 bg-forge px-2 py-0.5 font-mono text-2xs font-bold uppercase tracking-wider text-ink shadow-sm">
             Recurrence
           </span>
           <span className="font-mono text-sm font-semibold text-chalk">

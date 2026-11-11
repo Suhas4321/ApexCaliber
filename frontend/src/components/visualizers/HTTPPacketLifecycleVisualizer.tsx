@@ -175,21 +175,21 @@ export default function HTTPPacketLifecycleVisualizer({ step: _step }: Visualize
 
             return (
               <div key={gate.id} className="flex items-center gap-1.5 flex-1 min-w-[110px]">
-                <div className={`flex flex-col items-center justify-center rounded-xl p-2.5 w-full border text-center transition-all ${
+                <div className={`flex flex-col items-center justify-center rounded-xl p-2.5 w-full border text-center transition-colors ${
                   fails
-                    ? 'border-crimson bg-crimson/[0.18] shadow-[0_0_20px_rgb(244_63_94/0.4)] animate-bounce'
+                    ? 'border-crimson bg-crimson/[0.18] shadow-[0_0_20px_rgb(244_63_94/0.4)]'
                     : passes
                     ? 'border-emerald/50 bg-emerald/[0.08]'
                     : 'border-[#222838] bg-[#141722] opacity-40'
                 }`}>
                   <GIcon size={16} className={fails ? 'text-crimson' : passes ? 'text-emerald' : 'text-muted'} />
-                  <span className={`text-[11px] font-mono mt-1 font-bold ${
+                  <span className={`text-2xs font-mono mt-1 font-bold ${
                     fails ? 'text-crimson' : passes ? 'text-emerald' : 'text-muted'
                   }`}>
                     {gate.name}
                   </span>
                   {fails && (
-                    <span className="mt-1 rounded bg-crimson text-white text-[9px] px-1 py-0.5 font-bold uppercase">
+                    <span className="mt-1 rounded bg-crimson text-white text-2xs px-1.5 py-0.5 font-bold uppercase">
                       Rejected Here!
                     </span>
                   )}

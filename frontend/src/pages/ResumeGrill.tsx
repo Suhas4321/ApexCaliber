@@ -557,11 +557,11 @@ export default function ResumeGrill() {
                   <div>
                     {/* Top row: Company chip + status */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-chalk border border-line">
+                      <span className="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-2xs font-semibold text-chalk border border-line">
                         {s.category}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
+                        className={`rounded-full px-2 py-0.5 text-2xs font-bold uppercase tracking-wider border ${
                           status === 'defended'
                             ? 'bg-forge/15 text-forge border-forge/30'
                             : status === 'attempted'
@@ -586,7 +586,7 @@ export default function ResumeGrill() {
                         <SIcon size={18} />
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-muted uppercase">Round {idx + 1}</span>
+                        <span className="text-2xs font-mono text-muted uppercase">Round {idx + 1}</span>
                         <h3 className="font-plate text-base font-bold text-chalk group-hover:text-accent transition-colors leading-snug ">
                           {s.title}
                         </h3>
@@ -660,12 +660,12 @@ export default function ResumeGrill() {
             </select>
           </div>
 
-          {/* Study Mode vs Delivery Practice Mode Switcher */}
-          <div className="inline-flex rounded-xl border border-line bg-panel-2 p-0.5 text-xs">
+          {/* Study Mode vs Delivery Practice Mode Switcher (concentric rounded-lg + p-1 -> rounded) */}
+          <div className="inline-flex rounded-lg border border-line bg-panel-2 p-1 gap-1 text-xs">
             <button
               type="button"
               onClick={() => setStep(3)}
-              className={`rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+              className={`rounded px-2.5 py-1 font-semibold transition-colors ${
                 step === 3 ? 'bg-cyan/20 text-cyan border border-cyan/40' : 'text-muted hover:text-chalk'
               }`}
             >
@@ -674,7 +674,7 @@ export default function ResumeGrill() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className={`rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+              className={`rounded px-2.5 py-1 font-semibold transition-colors ${
                 step < 3 ? 'bg-amber/20 text-amber border border-amber/40' : 'text-muted hover:text-chalk'
               }`}
             >
@@ -707,13 +707,13 @@ export default function ResumeGrill() {
                 <button
                   key={s.id}
                   onClick={() => handleSelectScenario(s.id)}
-                  className={`flex flex-col rounded-xl p-2.5 text-left transition-all ${
+                  className={`flex flex-col rounded-xl p-2.5 text-left transition-colors ${
                     isSelected
                       ? 'border border-cyan/40 bg-cyan/10 shadow-sm'
                       : 'border border-transparent hover:border-line hover:bg-panel-2'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[10px] font-mono mb-0.5">
+                  <div className="flex items-center justify-between text-2xs font-mono mb-0.5">
                     <span className="text-muted">Round {idx + 1}</span>
                     <span
                       className={`font-semibold ${
@@ -959,7 +959,7 @@ export default function ResumeGrill() {
                         key={i}
                         className="rounded-xl border border-line bg-surface-1 p-3 text-xs text-chalk flex items-start gap-2.5"
                       >
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan/15 text-cyan font-bold text-[11px]">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan/15 text-cyan font-bold text-2xs">
                           {i + 1}
                         </span>
                         <span className="leading-relaxed">{why}</span>

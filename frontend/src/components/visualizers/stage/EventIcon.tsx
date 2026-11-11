@@ -52,7 +52,7 @@ export function EventIcon({ kind = 'info', className = '', size = 14 }: EventIco
     return <ArrowDownToLine size={size} className={`text-forge ${className}`} />
   }
   if (normKind.includes('read')) {
-    return <Eye size={size} className={`text-orchid ${className}`} />
+    return <Eye size={size} className={`text-viz-read ${className}`} />
   }
   if (normKind.includes('push') || normKind.includes('enqueue')) {
     return <ArrowDownToLine size={size} className={`text-cyan ${className}`} />
@@ -64,7 +64,7 @@ export function EventIcon({ kind = 'info', className = '', size = 14 }: EventIco
     return <CheckCircle2 size={size} className={`text-emerald ${className}`} />
   }
   if (normKind.includes('call')) {
-    return <CornerDownLeft size={size} className={`text-orchid ${className}`} />
+    return <CornerDownLeft size={size} className={`text-viz-read ${className}`} />
   }
   if (normKind.includes('target') || normKind.includes('found')) {
     return <Crosshair size={size} className={`text-crimson ${className}`} />
