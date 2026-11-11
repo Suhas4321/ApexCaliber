@@ -553,19 +553,15 @@ kbd.keycap {
 
 /* ---- Flagship Workspace & Telemetry Cockpit (Linear / VS Code aesthetic) ---- */
 .pf-glass-panel {
-  background: color-mix(in srgb, var(--surface-1, #101218) 85%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
-  box-shadow: var(--card-shadow), inset 0 1px 0 var(--card-highlight);
+  background: var(--surface-1, #182132);
+  border: 1px solid var(--line, #303e55);
+  box-shadow: var(--card-shadow);
 }
 
 .pf-telemetry-panel {
-  background: color-mix(in srgb, var(--surface-0, #090A0F) 88%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
-  box-shadow: inset 0 1px 0 var(--card-highlight), var(--card-shadow);
+  background: var(--surface-0, #101522);
+  border: 1px solid var(--line, #303e55);
+  box-shadow: var(--card-shadow);
 }
 
 @keyframes beacon-pulse {
