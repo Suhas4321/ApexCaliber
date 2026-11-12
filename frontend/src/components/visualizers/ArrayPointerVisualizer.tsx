@@ -24,7 +24,7 @@ export default function ArrayPointerVisualizer({
     primaryModel.cells.length <= 24
 
   return (
-    <div className="w-full h-full flex flex-col justify-between">
+    <div className="w-full min-h-full flex flex-col justify-between gap-3">
       {models.length === 0 && (
         <div className="flex items-center justify-center h-48 text-sm text-muted">
           No arrays in scope at this step.
@@ -33,7 +33,7 @@ export default function ArrayPointerVisualizer({
 
       {/* Hero 3D Block Stage for arrays with N <= 24 */}
       {use3D && (
-        <div className="w-full flex-1 min-h-[260px] flex items-center justify-center">
+        <div className="w-full h-[290px] sm:h-[310px] shrink-0 flex items-center justify-center">
           <Scene3D
             items={primaryModel.cells}
             narration={narration}

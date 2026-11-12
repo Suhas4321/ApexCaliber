@@ -1,15 +1,6 @@
 import {
   ArrowRight,
-  BookOpen,
-  BrainCircuit,
-  Code2,
-  Cpu,
-  Database,
-  Globe,
-  Network,
   ScanSearch,
-  Server,
-  Shapes,
   Terminal,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -22,6 +13,7 @@ import SubjectArtwork from '../components/SubjectArtwork'
 import { ErrorNote, Skeleton } from '../components/ui'
 import { hostedAuthEnabled } from '../lib/auth'
 import { CITADELS, citadelForWorld, getCitadel, type Citadel } from '../lib/citadels'
+import { CitadelIcon } from '../components/CitadelIcon'
 import { currentQuest, questUrl, stagesDone } from '../lib/journey'
 import { useSystemDesignProgress } from '../lib/systemDesignProgress'
 import './StudyPages.css'
@@ -55,17 +47,11 @@ const TRACK_COPY: Record<string, { tag: string; blurb: string }> = {
     tag: 'RAG & Defense',
     blurb: 'Embedding retrieval, vector RAG pipelines, agent state graphs, and defense drills.',
   },
+  system_design: {
+    tag: 'SOLID · LLD · HLD',
+    blurb: 'SOLID boundaries, OOP domain labs (LLD), and fault-tolerant distributed scale (HLD).',
+  },
 }
-
-const icons = {
-  dsa: Shapes,
-  python_data: Code2,
-  sql_dbms: Database,
-  os_concurrency: Cpu,
-  backend_apis: Server,
-  computer_networking: Globe,
-  ai_resume: BrainCircuit,
-} as const
 
 function lessonCount(path: LearningPath | undefined) {
   return path?.modules.reduce((sum, module) => sum + module.lessons.length, 0) ?? 0
@@ -92,96 +78,79 @@ function trackMetrics(citadel: Citadel, path: LearningPath | undefined, worlds: 
   return { labsCount, totalItems, solvedItems, dueQuestions, pct }
 }
 
-function BentoTrackCard({
-  citadel,
-  path,
-  worlds,
-  variant = 'domain',
-}: {
-  citadel: Citadel
-  path?: LearningPath
-  worlds: World[]
-  variant?: 'flagship' | 'domain'
-}) {
-  const Icon = icons[citadel.id as keyof typeof icons] ?? BookOpen
-  const meta = TRACK_COPY[citadel.id]
-  const { labsCount, totalItems, solvedItems, dueQuestions, pct } = trackMetrics(citadel, path, worlds)
-  const isFlagship = variant === 'flagship'
+interface TrackCardModel {
+  id: string
+  to: string
+  tag: string
+  title: string
+  blurb: string
+  pct: number
+  summary: string
+  due: number
+  showPct: boolean
+}
+
+function UniformTrackCard({ track }: { track: TrackCardModel }) {
+  const isComplete = track.pct >= 100
 
   return (
     <Link
-      to={`/citadel/${citadel.id}`}
-      style={{ '--category-accent': citadel.themeColor } as React.CSSProperties}
-      className={`study-path-card achilles-card-shell group rounded-xl p-5 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)] ${
-        isFlagship
-          ? 'md:col-span-6 xl:col-span-6 grid grid-cols-1 sm:grid-cols-12 gap-5 items-stretch'
-          : 'md:col-span-3 xl:col-span-4 flex flex-col justify-between gap-4'
-      }`}
+      to={track.to}
+      className="study-path-card achilles-track-card group w-full min-w-0 rounded-xl p-5 grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch aspect-[16/10] min-h-[280px] hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00FF88]"
     >
-      {!isFlagship && (
-        <div className="h-[140px] shrink-0 overflow-hidden rounded-lg border border-line">
-          <SubjectArtwork subject={citadel.id} />
-        </div>
-      )}
-
-      <div className={isFlagship ? 'sm:col-span-7 flex flex-col justify-between gap-4 min-w-0' : 'flex flex-col flex-1 justify-between gap-3 min-w-0'}>
+      <div className="md:col-span-7 flex flex-col justify-between gap-4 min-w-0">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="study-path-icon shrink-0">
-                <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                <CitadelIcon id={track.id} size={18} strokeWidth={1.75} />
               </span>
-              <span className="truncate font-mono text-2xs uppercase tracking-wider text-faint">
-                {meta?.tag ?? 'Track'}
+              <span className="truncate font-mono text-xs uppercase tracking-wider text-faint">
+                {track.tag}
               </span>
             </div>
             <ArrowRight
               size={17}
-              className="shrink-0 text-faint transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--study-accent)]"
+              className="shrink-0 text-faint transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:text-[#00FF88]"
               aria-hidden="true"
             />
           </div>
 
           <div className="space-y-1.5">
             <h3 className="font-plate text-lg font-semibold leading-snug text-chalk">
-              {citadel.shortName}
+              {track.title}
             </h3>
             <p className="text-sm leading-relaxed text-muted">
-              {meta?.blurb ?? citadel.description}
+              {track.blurb}
             </p>
           </div>
         </div>
 
-        <div className="space-y-2 pt-2 border-t border-line">
+        <div className="space-y-2 pt-3 border-t border-[#1a1a1a] [html[data-theme='light']_&]:border-line">
           <div className="h-1 w-full overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
             <div
               className={`h-full rounded-full transition-[width] duration-300 ${
-                pct >= 100 ? 'bg-emerald' : 'bg-[var(--study-accent)]'
+                isComplete ? 'bg-[#00FF88]' : 'bg-[var(--study-accent)]'
               }`}
-              style={{ width: `${pct}%` }}
+              style={{ width: `${track.pct}%` }}
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-2xs text-faint">
-            <span>
-              {labsCount} {labsCount === 1 ? 'lab' : 'labs'} ·{' '}
-              {totalItems > 0 ? `${solvedItems}/${totalItems} solved` : 'Practice ready'}
-            </span>
-            {dueQuestions > 0 ? (
-              <span className="rounded border border-amber/40 bg-amber/10 px-1.5 py-0.5 text-amber font-semibold">
-                {dueQuestions} due
+          <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-faint">
+            <span>{track.summary}</span>
+            {track.due > 0 ? (
+              <span className="rounded border border-[#00FF88]/30 bg-[#00FF88]/10 px-2 py-0.5 text-[#00FF88] [html[data-theme='light']_&]:border-[var(--study-accent)]/30 [html[data-theme='light']_&]:bg-[var(--study-accent)]/10 [html[data-theme='light']_&]:text-[var(--study-accent)] font-semibold tabular-nums">
+                {track.due} due
               </span>
             ) : (
-              totalItems > 0 && <span className="text-muted tabular-nums">{pct}%</span>
+              track.showPct && <span className="text-muted tabular-nums">{track.pct}%</span>
             )}
           </div>
         </div>
       </div>
 
-      {isFlagship && (
-        <div className="sm:col-span-5 min-h-[148px] overflow-hidden rounded-lg border border-line flex items-stretch">
-          <SubjectArtwork subject={citadel.id} />
-        </div>
-      )}
+      <div className="md:col-span-5 h-[132px] md:h-full min-h-[132px] overflow-hidden rounded-lg border border-[#1a1a1a] [html[data-theme='light']_&]:border-line flex items-stretch">
+        <SubjectArtwork subject={track.id} />
+      </div>
     </Link>
   )
 }
@@ -240,24 +209,18 @@ export default function Dashboard() {
           <Skeleton className="lg:col-span-5 h-60 w-full rounded-lg" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-5">
-          {[0, 1].map((i) => (
-            <div key={i} className="md:col-span-6 xl:col-span-6 rounded-xl border border-line bg-panel p-5 grid grid-cols-1 sm:grid-cols-12 gap-5">
-              <div className="sm:col-span-7 space-y-3">
-                <Skeleton className="h-5 w-32 rounded" />
-                <Skeleton className="h-6 w-2/3 rounded" />
-                <Skeleton className="h-4 w-full rounded" />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div key={i} className="w-full min-w-0 rounded-xl border border-[#1a1a1a] [html[data-theme='light']_&]:border-line bg-[#0a0a0a] [html[data-theme='light']_&]:bg-panel p-5 grid grid-cols-1 md:grid-cols-12 gap-5 aspect-[16/10] min-h-[280px]">
+              <div className="md:col-span-7 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-5 w-32 rounded" />
+                  <Skeleton className="h-6 w-2/3 rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                </div>
                 <Skeleton className="h-3 w-1/2 rounded" />
               </div>
-              <Skeleton className="sm:col-span-5 h-36 w-full rounded-lg" />
-            </div>
-          ))}
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="md:col-span-3 xl:col-span-4 rounded-xl border border-line bg-panel p-5 space-y-4">
-              <Skeleton className="h-36 w-full rounded-lg" />
-              <Skeleton className="h-5 w-2/3 rounded" />
-              <Skeleton className="h-4 w-full rounded" />
-              <Skeleton className="h-3 w-1/2 rounded" />
+              <Skeleton className="md:col-span-5 h-32 md:h-full w-full rounded-lg" />
             </div>
           ))}
         </div>
@@ -399,9 +362,41 @@ export default function Dashboard() {
       : 'Recommended Next Lab'
 
   const qStages = activeQuestion ? stagesDone(activeQuestion.progress) : null
+  const designPct = designTotal > 0 ? Math.min(100, Math.round((designSolved / designTotal) * 100)) : 0
   const dsaCitadel = CITADELS.find((citadel) => citadel.id === 'dsa')
   const domainCitadels = CITADELS.filter((citadel) => citadel.id !== 'dsa')
-  const designPct = designTotal > 0 ? Math.min(100, Math.round((designSolved / designTotal) * 100)) : 0
+
+  const toTrackCard = (citadel: Citadel): TrackCardModel => {
+    const meta = TRACK_COPY[citadel.id]
+    const { labsCount, totalItems, solvedItems, dueQuestions, pct } = trackMetrics(citadel, paths[citadel.id], worlds)
+    return {
+      id: citadel.id,
+      to: `/citadel/${citadel.id}`,
+      tag: meta?.tag ?? 'Track',
+      title: citadel.shortName,
+      blurb: meta?.blurb ?? citadel.description,
+      pct,
+      summary: `${labsCount} ${labsCount === 1 ? 'lab' : 'labs'} · ${totalItems > 0 ? `${solvedItems}/${totalItems} solved` : 'Practice ready'}`,
+      due: dueQuestions,
+      showPct: totalItems > 0,
+    }
+  }
+
+  const uniformTracks: TrackCardModel[] = [
+    ...(dsaCitadel ? [toTrackCard(dsaCitadel)] : []),
+    {
+      id: 'system_design',
+      to: '/system-design',
+      tag: TRACK_COPY.system_design.tag,
+      title: 'System Design',
+      blurb: TRACK_COPY.system_design.blurb,
+      pct: designPct,
+      summary: `${designTotal} labs · ${designSolved}/${designTotal} solved`,
+      due: 0,
+      showPct: true,
+    },
+    ...domainCitadels.map(toTrackCard),
+  ]
 
   return (
     <div className="study-page">
@@ -514,80 +509,9 @@ export default function Dashboard() {
           <p className="study-section-note">Live progress telemetry synced across labs and sandboxes.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-5">
-          {/* Flagship Bento Row (6 + 6) */}
-          {dsaCitadel && (
-            <BentoTrackCard
-              citadel={dsaCitadel}
-              path={paths[dsaCitadel.id]}
-              worlds={worlds}
-              variant="flagship"
-            />
-          )}
-
-          <Link
-            to="/system-design"
-            style={{ '--category-accent': 'var(--accent-system-design)' } as React.CSSProperties}
-            className="study-path-card group md:col-span-6 xl:col-span-6 rounded-xl border border-line bg-panel p-5 grid grid-cols-1 sm:grid-cols-12 gap-5 items-stretch transition-[border-color,transform,box-shadow] duration-150 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:border-[#00F59B]/40 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--study-accent)]"
-          >
-            <div className="sm:col-span-7 flex flex-col justify-between gap-4 min-w-0">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="study-path-icon shrink-0">
-                      <Network size={18} strokeWidth={1.8} aria-hidden="true" />
-                    </span>
-                    <span className="truncate font-mono text-2xs uppercase tracking-wider text-faint">
-                      SOLID · LLD · HLD
-                    </span>
-                  </div>
-                  <ArrowRight
-                    size={17}
-                    className="shrink-0 text-faint transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--study-accent)]"
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <h3 className="font-plate text-lg font-semibold leading-snug text-chalk">
-                    System Design
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted">
-                    SOLID boundaries, OOP domain labs (LLD), and fault-tolerant distributed scale (HLD).
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-line">
-                <div className="h-1 w-full overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
-                  <div
-                    className={`h-full rounded-full transition-[width] duration-300 ${
-                      designPct >= 100 ? 'bg-emerald' : 'bg-[var(--study-accent)]'
-                    }`}
-                    style={{ width: `${designPct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2 font-mono text-2xs text-faint">
-                  <span>{designTotal} labs · {designSolved}/{designTotal} solved</span>
-                  <span className="text-muted tabular-nums">{designPct}%</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="sm:col-span-5 min-h-[148px] overflow-hidden rounded-lg border border-line flex items-stretch">
-              <SubjectArtwork subject="system_design" />
-            </div>
-          </Link>
-
-          {/* 6 Domain Bento Cards (4 + 4 + 4 grid) */}
-          {domainCitadels.map((citadel) => (
-            <BentoTrackCard
-              key={citadel.id}
-              citadel={citadel}
-              path={paths[citadel.id]}
-              worlds={worlds}
-              variant="domain"
-            />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          {uniformTracks.map((track) => (
+            <UniformTrackCard key={track.id} track={track} />
           ))}
         </div>
       </section>

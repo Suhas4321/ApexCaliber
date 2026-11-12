@@ -48,7 +48,7 @@ export function StepLog({ steps, currentIndex, onSelectStep, open }: StepLogProp
   if (!open) return null
 
   return (
-    <div className="flex flex-col border-t border-line bg-panel-2/95 backdrop-blur max-h-56 overflow-hidden transition-all duration-200">
+    <div className="flex flex-col border-t border-line bg-panel-2/95 backdrop-blur max-h-56 overflow-hidden transition-opacity duration-200">
       <div className="flex items-center justify-between px-3.5 py-1.5 border-b border-line text-2xs font-mono text-muted bg-panel">
         <span className="font-semibold uppercase tracking-wider text-chalk">
           Execution Step Log ({steps.length} total)

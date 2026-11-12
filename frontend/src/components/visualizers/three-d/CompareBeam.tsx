@@ -57,7 +57,7 @@ export const CompareBeam: React.FC<CompareBeamProps> = ({
       <div className="flex flex-col items-center justify-center -translate-y-full pb-2">
         {/* Comparison Evaluation Chip */}
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-2xs font-mono font-bold shadow-xl backdrop-blur-md ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-2xs font-mono font-bold shadow-xl ${
             resultBool === true
               ? 'bg-rose-950/90 border-rose-500/80 text-rose-200'
               : resultBool === false

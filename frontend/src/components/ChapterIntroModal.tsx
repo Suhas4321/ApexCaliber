@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Citadel } from '../lib/citadels'
+import { CitadelIcon } from './CitadelIcon'
 import { Button } from './ui'
 import { GlassSurface } from './vendor/vsrc/glass-surface'
 
@@ -121,8 +122,10 @@ export default function ChapterIntroModal({ citadel }: ChapterIntroModalProps) {
             </button>
 
             {/* Header Badge */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">{citadel.icon}</span>
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/25 text-[#00FF88]">
+                <CitadelIcon id={citadel.id} size={18} />
+              </span>
               <span
                 className="font-plate text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
                 style={{

@@ -126,7 +126,7 @@ export function StageShell({
         }}
       >
         <div
-          className="w-full h-full flex flex-col justify-center items-center transition-transform origin-top"
+          className="w-full min-h-full flex flex-col justify-center items-center transition-transform origin-top"
           style={{
             transform: scaleFactor < 1 ? `scale(${scaleFactor})` : undefined,
           }}

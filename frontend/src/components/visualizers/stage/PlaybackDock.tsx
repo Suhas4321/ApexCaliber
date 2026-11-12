@@ -48,7 +48,7 @@ export function PlaybackDock({
   const isLast = currentIndex >= lastIndex
 
   const btnClass =
-    'flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel hover:text-chalk transition-all disabled:opacity-30 disabled:pointer-events-none'
+    'flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel hover:text-chalk transition-colors disabled:opacity-30 disabled:pointer-events-none'
 
   return (
     <div className="sticky bottom-2.5 z-20 mx-auto w-[96%] max-w-4xl rounded-2xl border border-line-strong bg-panel-2/90 backdrop-blur-md p-2 sm:p-2.5 shadow-2xl flex flex-col gap-2">
@@ -87,7 +87,7 @@ export function PlaybackDock({
             <button
               type="button"
               onClick={onTogglePlay}
-              className={`relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full font-mono text-xs font-bold transition-all shadow-lg select-none ${
+              className={`relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full font-mono text-xs font-bold transition-transform shadow-lg select-none ${
                 playing
                   ? 'bg-amber text-void shadow-[0_0_20px_rgba(242,184,102,0.5)] scale-95'
                   : 'bg-emerald text-void hover:bg-emerald/90 shadow-[0_0_20px_rgba(16,185,129,0.5)] hover:scale-105'

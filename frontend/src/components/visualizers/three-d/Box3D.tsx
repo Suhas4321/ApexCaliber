@@ -25,12 +25,12 @@ export const Box3D: React.FC<Box3DProps> = ({
   swapDirection,
   reduceMotion = false,
 }) => {
-  // Determine color theme based on role
-  let frontBg = 'bg-panel-2'
+  // Determine color theme based on role (3-plane lighting with crisp surface separation)
+  let frontBg = 'bg-panel-2 brightness-110'
   let frontBorder = 'border-line-strong'
-  let topBg = 'bg-panel'
-  let rightBg = 'bg-panel-3'
-  let textColor = 'text-chalk'
+  let topBg = 'bg-panel-3 brightness-125 ring-1 ring-inset ring-white/15'
+  let rightBg = 'bg-panel'
+  let textColor = 'text-chalk font-semibold'
   let glowStyle = ''
 
   if (role === 'compare') {
@@ -67,7 +67,7 @@ export const Box3D: React.FC<Box3DProps> = ({
     topBg = 'bg-[var(--viz-read)]'
     rightBg = 'bg-[var(--viz-read)]/70'
     textColor = 'text-white font-bold'
-    glowStyle = '0 0 16px rgba(109, 40, 217, 0.35)'
+    glowStyle = '0 0 16px rgba(56, 189, 248, 0.35)'
   }
 
   // Motion physics configuration
@@ -113,7 +113,7 @@ export const Box3D: React.FC<Box3DProps> = ({
       >
         {/* Dynamic floor contact shadow under the box */}
         <div
-          className="absolute inset-0 rounded-md bg-black/30 dark:bg-black/60 blur-md transition-all duration-300"
+          className="absolute inset-0 rounded-md bg-black/30 dark:bg-black/50 opacity-50 transition-transform duration-300"
           style={{
             transform: `translateZ(${-liftZ}px)`,
             opacity: isSwapping ? 0.25 : 0.6,
@@ -154,11 +154,11 @@ export const Box3D: React.FC<Box3DProps> = ({
 
         {/* RIGHT FACE (Shaded tone for ambient occlusion depth) */}
         <div
-          className={`absolute top-0 bottom-0 right-0 border-r border-t border-black/30 ${rightBg}`}
+          className={`absolute top-0 bottom-0 right-0 border-y border-white/10 ${rightBg}`}
           style={{
             width: `${height}px`,
             transformOrigin: 'right center',
-            transform: 'rotateY(90deg) rotateX(90deg)',
+            transform: 'rotateY(90deg)',
           }}
         >
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />

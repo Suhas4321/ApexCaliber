@@ -28,7 +28,7 @@ export const RangePlate: React.FC<RangePlateProps> = ({
     <motion.div
       layout={!reduceMotion}
       transition={{ type: 'spring', damping: 24, stiffness: 220 }}
-      className="absolute top-0 pointer-events-none rounded-xl border border-cyan/35 bg-cyan/10 backdrop-blur-xs shadow-lg"
+      className="absolute top-0 pointer-events-none rounded-xl border border-cyan/40 bg-cyan/12 shadow-lg"
       style={{
         left: `${left}px`,
         width: `${width}px`,

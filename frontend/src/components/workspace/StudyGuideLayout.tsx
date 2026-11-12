@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, ChevronDown, List } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
+import '../../features/journey/journey.css'
 
 interface Props {
   title: string

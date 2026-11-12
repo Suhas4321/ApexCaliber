@@ -56,10 +56,9 @@ export const Wisp: React.FC<WispProps> = ({
       }}
     >
       <motion.div
-        animate={reduceMotion ? undefined : { y: [-3, 3, -3] }}
-        transition={reduceMotion ? undefined : { repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+        animate={reduceMotion ? { y: offsetY } : { y: [offsetY - 3, offsetY + 3, offsetY - 3] }}
+        transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
         className="flex flex-col items-center justify-center -translate-y-full pb-1"
-        style={{ transform: `translateY(${offsetY}px)` }}
       >
         {/* Pointer Name Flag Pill */}
         <div

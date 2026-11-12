@@ -62,7 +62,7 @@ export const Scene3D: React.FC<Scene3DProps> = ({
 
   return (
     <div
-      className="relative w-full h-full flex items-center justify-center overflow-hidden select-none"
+      className="relative w-full h-full min-h-[280px] flex items-center justify-center overflow-x-hidden overflow-y-visible select-none"
       style={{
         perspective: '1100px',
         perspectiveOrigin: '50% 45%',
@@ -75,7 +75,7 @@ export const Scene3D: React.FC<Scene3DProps> = ({
           width: `${totalArrayWidth}px`,
           height: `${itemWidth}px`,
           transformStyle: 'preserve-3d',
-          transform: 'rotateX(52deg) rotateZ(-14deg)',
+          transform: 'translateY(22px) rotateX(52deg) rotateZ(-14deg)',
         }}
       >
         {/* Floor Slab Platform */}

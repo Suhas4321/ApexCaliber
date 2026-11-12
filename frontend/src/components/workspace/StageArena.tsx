@@ -728,7 +728,7 @@ export default function StageArena({ question, progress, blind, onProgress, onCo
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-chalk leading-relaxed prose prose-invert max-w-none">
+                <div className="text-xs text-chalk leading-relaxed prose-forge max-w-none">
                   <Markdown>{content.statement.clean}</Markdown>
                 </div>
               </div>

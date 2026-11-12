@@ -17,15 +17,18 @@ import AccountMenu from '../components/AccountMenu'
 import { Button, DifficultyBadge, ErrorNote, Skeleton } from '../components/ui'
 import VictoryModal from '../components/VictoryModal'
 import { usePlayback } from '../components/visualizers/stage/usePlayback'
-import DataStructurePrimer from '../components/workspace/DataStructurePrimer'
 import InterviewAnswerPlaybook from '../components/workspace/InterviewAnswerPlaybook'
-import LeetCodeLeftPanel, { type LeftTab } from '../components/workspace/LeetCodeLeftPanel'
 import LeetCodeRightPanel from '../components/workspace/LeetCodeRightPanel'
+import PersistentVisualAnchor, {
+  type LeftAnchorView,
+  type RunTraceMeta,
+  type StudioStage,
+} from '../components/workspace/PersistentVisualAnchor'
 import ResizableSplit from '../components/workspace/ResizableSplit'
-import JourneyPlayer from '../features/journey/JourneyPlayer'
+import UnifiedRightStage from '../components/workspace/UnifiedRightStage'
+import '../features/journey/journey.css'
 import { useGrimoire } from '../lib/grimoire'
 import { hostedAuthEnabled } from '../lib/auth'
-import { precomputeTraceNarration } from '../lib/narrator/index.ts'
 import { useDraft } from '../lib/useDraft'
 
 const compactQuery = '(max-width: 760px)'
@@ -56,22 +59,29 @@ function QuestionWorkspace() {
   const [victory, setVictory] = useState<{ review: boolean } | null>(null)
   const progressRef = useRef<Progress | null>(null)
 
-  const [leftTab, setLeftTab] = useState<LeftTab>(() => {
+  const [studioMode, setStudioMode] = useState<'studio' | 'interview'>(() =>
+    Number(search.get('stage')) === 4 ? 'interview' : 'studio',
+  )
+  const [studioStage, setStudioStage] = useState<StudioStage>(() => {
+    if (blind) return 3
     const st = Number(search.get('stage'))
-    if (st === 2) return 'drills'
-    return 'description'
+    if (st === 2 || st === 3) return 3
+    if (st === 1) return 2
+    return 1
   })
-  const [workspaceStep, setWorkspaceStep] = useState<'journey' | 'learn' | 'code' | 'interview'>(() => {
+  const [checkpointUnlocked, setCheckpointUnlocked] = useState<boolean>(() => {
     const st = Number(search.get('stage'))
-    if (blind) return 'code'
-    if (st === 1) return 'learn'
-    if (st === 2 || st === 3) return 'code'
-    if (st === 4) return 'interview'
-    return 'learn'
+    return blind || st >= 1
   })
+  const [arenaUnlocked, setArenaUnlocked] = useState<boolean>(() => {
+    const st = Number(search.get('stage'))
+    return blind || st === 2 || st === 3
+  })
+  const [leftView, setLeftView] = useState<LeftAnchorView>('trace')
   const [leftCollapsed, setLeftCollapsed] = useState(false)
-  const [mobilePane, setMobilePane] = useState<'problem' | 'editor'>('problem')
+  const [mobilePane, setMobilePane] = useState<'problem' | 'editor'>('editor')
   const [activeTarget, setActiveTarget] = useState<string>('main')
+  const [runTraceMeta, setRunTraceMeta] = useState<RunTraceMeta | null>(null)
 
   // Execution & Trace state
   const [running, setRunning] = useState(false)
@@ -93,15 +103,17 @@ function QuestionWorkspace() {
         setProgress(q.progress)
         progressRef.current = q.progress
         setTracedCode(q.content?.solution?.code || q.content?.starter_code || '')
-        if ((q.content?.journey && q.content.journey.length > 0) || (q.citadel_id && q.citadel_id !== 'dsa')) {
-          if (!requestedStage && !blind) {
-            setWorkspaceStep('journey')
-          }
+        if (q.progress.solved || q.progress.quiz_passed || blind) {
+          setCheckpointUnlocked(true)
+          setArenaUnlocked(true)
+        }
+        if (Number(search.get('stage')) === 2 && q.content?.drills?.length) {
+          setLeftView('drills')
         }
       })
       .catch((e) => { if (active) setError(e.message) })
 
-    // Preload demo trace so the Visualizer tab is immediately interactive
+    // Preload demo trace so the Persistent Left Visual Anchor is immediately interactive
     if (!hostedAuthEnabled) api
       .demoTrace(slug)
       .then((res) => {
@@ -111,7 +123,7 @@ function QuestionWorkspace() {
       })
       .catch(() => {})
     return () => { active = false }
-  }, [slug, requestedStage, blind])
+  }, [slug, blind, search])
 
   const onProgress = useCallback(
     (p: Progress) => {
@@ -149,12 +161,15 @@ function QuestionWorkspace() {
     }
   }
 
-  const runCode = async (customArgs?: unknown, switchToViz = false) => {
+  const runCode = async (customArgs?: unknown) => {
     if (hostedAuthEnabled) {
       setRunError('Code execution is paused on the hosted site until the isolated runner is ready.')
       return
     }
     if (!question?.content) return
+    setArenaUnlocked(true)
+    setStudioStage(3)
+    setStudioMode('studio')
     setRunning(true)
     setRunError(null)
     setPlaying(false)
@@ -171,11 +186,15 @@ function QuestionWorkspace() {
         setTrace(r.trace)
         setTracedCode(code)
         setStepIndex(0)
-        if (switchToViz) {
-          setLeftCollapsed(false)
-          setLeftTab('visualizer')
-          setPlaying(true)
-        }
+        setRunTraceMeta({
+          passed: r.passed,
+          passedCount: r.passed_count,
+          totalCount: r.total_count,
+          source: 'user',
+        })
+        setLeftCollapsed(false)
+        setLeftView('trace')
+        setPlaying(true)
       }
     } catch (e) {
       setRunError((e as Error).message)
@@ -194,10 +213,90 @@ function QuestionWorkspace() {
     onSpeed: setSpeed,
   })
 
-  const narrations = useMemo(() => {
-    if (!trace?.steps?.length || !question?.content) return []
-    return precomputeTraceNarration(trace.steps, trace.line_info, question.content.viz, question.visualizer)
-  }, [trace, question])
+  const totalTraceSteps = playback.steps.length
+  const checkpointFrameIdx = useMemo(
+    () => (totalTraceSteps > 2 ? Math.floor(totalTraceSteps * 0.45) : 0),
+    [totalTraceSteps],
+  )
+
+  const handleSelectStage = useCallback(
+    (nextStage: StudioStage) => {
+      setStudioStage(nextStage)
+      if (nextStage === 2) {
+        setCheckpointUnlocked(true)
+        setLeftView('trace')
+        setLeftCollapsed(false)
+        setPlaying(false)
+        setStepIndex(checkpointFrameIdx)
+      }
+      if (compactLayout) {
+        setMobilePane('editor')
+      }
+    },
+    [checkpointFrameIdx, compactLayout],
+  )
+
+  const handleProceedToCheckpoint = useCallback(() => {
+    setCheckpointUnlocked(true)
+    setStudioStage(2)
+    setLeftView('trace')
+    setLeftCollapsed(false)
+    setPlaying(false)
+    setStepIndex(checkpointFrameIdx)
+    if (compactLayout) {
+      setMobilePane('editor')
+    }
+  }, [checkpointFrameIdx, compactLayout])
+
+  const focusCheckpointFrame = useCallback(() => {
+    setLeftView('trace')
+    setLeftCollapsed(false)
+    setPlaying(false)
+    setStepIndex(checkpointFrameIdx)
+    if (compactLayout) {
+      setMobilePane('problem')
+    }
+  }, [checkpointFrameIdx, compactLayout])
+
+  const replayToCheckpoint = useCallback(() => {
+    setLeftView('trace')
+    setLeftCollapsed(false)
+    setStepIndex(0)
+    setPlaying(true)
+    if (compactLayout) {
+      setMobilePane('problem')
+    }
+  }, [compactLayout])
+
+  const handleUnlockArena = useCallback(
+    (passedQuiz: boolean) => {
+      setArenaUnlocked(true)
+      setStudioStage(3)
+      if (compactLayout) {
+        setMobilePane('editor')
+      }
+      api
+        .patchProgress(slug, {
+          concept_done: true,
+          ...(passedQuiz ? { quiz_passed: true } : {}),
+        })
+        .then(onProgress)
+        .catch(() => {})
+    },
+    [compactLayout, onProgress, slug],
+  )
+
+  const handleSelectTarget = useCallback(
+    (target: string) => {
+      setActiveTarget(target)
+      if (target !== 'main') {
+        setArenaUnlocked(true)
+        setStudioStage(3)
+        if (compactLayout) setMobilePane('editor')
+      }
+    },
+    [compactLayout],
+  )
 
   if (error) {
     return (
@@ -242,6 +341,7 @@ function QuestionWorkspace() {
   }
 
   const content = question.content
+  const freeAccess = Boolean(progress.solved || progress.quiz_passed || blind || requestedStage === '2' || requestedStage === '3')
   const isBoss = question.position === question.world_total - 1
   const steps = playback.steps
   const curStep = steps[stepIndex]
@@ -261,22 +361,34 @@ function QuestionWorkspace() {
           <h1 title={question.title}>{question.title}</h1>
           <span className="question-difficulty"><DifficultyBadge difficulty={question.difficulty} /></span>
         </div>
-        <nav className="question-modes" aria-label="Question workspace">
-          <button aria-pressed={workspaceStep === 'journey' || workspaceStep === 'learn'} onClick={() => setWorkspaceStep(question.citadel_id !== 'dsa' || content?.journey?.length ? 'journey' : 'learn')}>Learn</button>
-          <button aria-pressed={workspaceStep === 'code'} onClick={() => setWorkspaceStep('code')}>Practice</button>
-          <button aria-pressed={workspaceStep === 'interview'} onClick={() => setWorkspaceStep('interview')}>Interview</button>
+        <nav className="question-modes" aria-label="Question workspace mode">
+          <button aria-pressed={studioMode === 'studio'} onClick={() => setStudioMode('studio')}>Split Studio</button>
+          <button aria-pressed={studioMode === 'interview'} onClick={() => setStudioMode('interview')}>Interview</button>
         </nav>
         <div className="question-tools">
-          {workspaceStep === 'code' && <div className="question-code-tools flex items-center gap-2">
-            <Button className="h-7 px-3 text-xs" onClick={() => runCode()} disabled={running || hostedAuthEnabled}><Play size={12} />{running ? 'Running…' : 'Run'}</Button>
-          </div>}
+          {studioMode === 'studio' && (arenaUnlocked || freeAccess) && (
+            <div className="question-code-tools flex items-center gap-2">
+              <Button className="h-7 px-3 text-xs" onClick={() => runCode()} disabled={running || hostedAuthEnabled}>
+                <Play size={12} />{running ? 'Running…' : 'Run'}
+              </Button>
+            </div>
+          )}
           <details className="question-resource-menu">
             <summary aria-label="More question tools and resources" title="More tools"><ScrollText size={16} /></summary>
             <div>
-              {workspaceStep === 'code' && <>
-                <button type="button" onClick={() => runCode(undefined, true)} disabled={running || hostedAuthEnabled}><Eye size={15} /> Run and visualize</button>
-                <button type="button" onClick={() => setLeftCollapsed(c => !c)}>{leftCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}{leftCollapsed ? 'Show problem' : 'Expand editor'}</button>
-              </>}
+              {studioMode === 'studio' && (
+                <>
+                  {(arenaUnlocked || freeAccess) && (
+                    <button type="button" onClick={() => runCode()} disabled={running || hostedAuthEnabled}>
+                      <Eye size={15} /> Run &amp; stream trace
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setLeftCollapsed((c) => !c)}>
+                    {leftCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+                    {leftCollapsed ? 'Show Visual Anchor' : 'Expand Workspace'}
+                  </button>
+                </>
+              )}
               <button type="button" onClick={() => openGrimoire(question.world_id)}>Topic reference sheet</button>
               {question.prev_slug && <Link to={`/q/${question.prev_slug}`}><ChevronLeft size={13} /> Previous question</Link>}
               {question.next_slug && <Link to={`/q/${question.next_slug}`}>Next question <ChevronRight size={13} /></Link>}
@@ -286,102 +398,118 @@ function QuestionWorkspace() {
           <AccountMenu />
         </div>
       </header>
-      {hostedAuthEnabled && workspaceStep === 'code' && <p className="border-b border-amber/30 bg-amber/10 px-4 py-2 text-xs text-amber" role="status">You can read and draft here. Running code is paused on the hosted site until a secure practice worker is ready.</p>}
+      {hostedAuthEnabled && studioMode === 'studio' && studioStage === 3 && (
+        <p className="border-b border-amber/30 bg-amber/10 px-4 py-2 text-xs text-amber" role="status">
+          You can read and draft here. Running code is paused on the hosted site until a secure practice worker is ready.
+        </p>
+      )}
       {!content ? (
         <div className="p-8">
           <ErrorNote message="This question's content is not yet available." />
         </div>
-      ) : workspaceStep === 'journey' ? (
-        <div className="flex-1 min-h-0 w-full overflow-y-auto bg-void">
-          <JourneyPlayer
-            key={slug}
-            question={question}
-            onProceedToCode={() => setWorkspaceStep('code')}
-          />
-        </div>
-      ) : workspaceStep === 'learn' ? (
-        <div className="flex-1 min-h-0 w-full overflow-y-auto bg-void">
-          <DataStructurePrimer
-            question={question}
-            steps={steps}
-            stepIndex={stepIndex}
-            onSeek={setStepIndex}
-            playing={playing}
-            onTogglePlay={playback.togglePlay}
-            onStepForward={playback.stepForward}
-            onStepBackward={playback.stepBackward}
-            onJumpFirst={playback.jumpFirst}
-            onJumpLast={playback.jumpLast}
-            speed={speed}
-            onSpeedChange={setSpeed}
-            narration={narrations[stepIndex]}
-            onProceedToCode={() => setWorkspaceStep('code')}
-          />
-        </div>
-      ) : workspaceStep === 'interview' ? (
+      ) : studioMode === 'interview' ? (
         <div className="flex-1 min-h-0 w-full overflow-y-auto bg-void">
           <InterviewAnswerPlaybook
             question={question}
             progress={progress}
             onProgress={onProgress}
-            onOpenTerminal={() => setWorkspaceStep('code')}
+            onOpenTerminal={() => {
+              setArenaUnlocked(true)
+              setStudioStage(3)
+              setStudioMode('studio')
+            }}
           />
         </div>
       ) : (
-
         <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
-          <div className="mobile-code-nav"><button aria-pressed={mobilePane === 'problem'} onClick={() => setMobilePane('problem')}>Problem & help</button><button aria-pressed={mobilePane === 'editor'} onClick={() => setMobilePane('editor')}>Code & tests</button><button disabled={running || hostedAuthEnabled} onClick={() => { setMobilePane('editor'); runCode() }}>{running ? 'Running…' : 'Run code'}</button></div>
+          <div className="mobile-code-nav">
+            <button aria-pressed={mobilePane === 'problem'} onClick={() => setMobilePane('problem')}>
+              Visual Anchor
+            </button>
+            <button aria-pressed={mobilePane === 'editor'} onClick={() => setMobilePane('editor')}>
+              Stage 0{studioStage}
+            </button>
+            {(arenaUnlocked || freeAccess) && (
+              <button
+                disabled={running || hostedAuthEnabled}
+                onClick={() => {
+                  setMobilePane('editor')
+                  runCode()
+                }}
+              >
+                {running ? 'Running…' : 'Run code'}
+              </button>
+            )}
+          </div>
           <ResizableSplit
             className={`question-code-split ${mobilePane}-view`}
             direction="horizontal"
             initialPrimaryPct={45}
-            minPrimaryPct={22}
-            maxPrimaryPct={76}
+            minPrimaryPct={25}
+            maxPrimaryPct={68}
             storageKey="pf-lc-split-x"
             primaryCollapsed={leftCollapsed && !compactLayout}
             first={
-              <LeetCodeLeftPanel
+              <PersistentVisualAnchor
                 question={question}
                 progress={progress}
-                onProgress={onProgress}
-                activeTab={leftTab}
-                onTabChange={setLeftTab}
-                activeTarget={activeTarget}
-                onSelectTarget={setActiveTarget}
+                leftView={leftView}
+                onChangeLeftView={setLeftView}
+                studioStage={studioStage}
                 steps={steps}
+                lineInfo={trace?.line_info}
+                tracedCode={tracedCode}
                 stepIndex={stepIndex}
-                onSeek={setStepIndex}
                 playing={playing}
+                speed={speed}
                 onTogglePlay={playback.togglePlay}
                 onStepForward={playback.stepForward}
                 onStepBackward={playback.stepBackward}
                 onJumpFirst={playback.jumpFirst}
                 onJumpLast={playback.jumpLast}
-                speed={speed}
+                onSeek={setStepIndex}
                 onSpeedChange={setSpeed}
-                narration={narrations[stepIndex]}
-                tracedCode={tracedCode}
-                currentCode={code}
-                onOpenInterviewGuide={() => setWorkspaceStep('interview')}
+                activeCode={code}
+                activeTarget={activeTarget}
+                onSelectTarget={handleSelectTarget}
+                onProgress={onProgress}
+                runTraceMeta={runTraceMeta}
+                onOpenInterviewGuide={() => setStudioMode('interview')}
               />
             }
             second={
-              <LeetCodeRightPanel
+              <UnifiedRightStage
                 question={question}
-                activeTarget={activeTarget}
-                onSelectTarget={setActiveTarget}
-                code={code}
-                onChangeCode={setCode}
-                onResetCode={resetCode}
-                onRun={(customArgs) => runCode(customArgs, false)}
-                running={running}
-                result={result}
-                error={runError}
-                traceLine={traceLine}
-                errorLine={errorLine}
-                step={curStep}
-                prevStep={prevStep}
-              />
+                progress={progress}
+                studioStage={studioStage}
+                checkpointUnlocked={checkpointUnlocked}
+                arenaUnlocked={arenaUnlocked}
+                freeAccess={freeAccess}
+                pausedStepIndex={Math.min(stepIndex, Math.max(0, steps.length - 1))}
+                totalSteps={steps.length}
+                onSelectStage={handleSelectStage}
+                onProceedToCheckpoint={handleProceedToCheckpoint}
+                onFocusCheckpointTrace={focusCheckpointFrame}
+                onReplayToCheckpoint={replayToCheckpoint}
+                onUnlockArena={handleUnlockArena}
+              >
+                <LeetCodeRightPanel
+                  question={question}
+                  activeTarget={activeTarget}
+                  onSelectTarget={handleSelectTarget}
+                  code={code}
+                  onChangeCode={setCode}
+                  onResetCode={resetCode}
+                  onRun={(customArgs) => runCode(customArgs)}
+                  running={running}
+                  result={result}
+                  error={runError}
+                  traceLine={traceLine}
+                  errorLine={errorLine}
+                  step={curStep}
+                  prevStep={prevStep}
+                />
+              </UnifiedRightStage>
             }
           />
         </div>

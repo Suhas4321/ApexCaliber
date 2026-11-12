@@ -57,7 +57,7 @@ export function Scrubber({ steps, currentIndex, onSeek }: ScrubberProps) {
       <div className="absolute inset-x-0 h-1.5 rounded-full bg-panel border border-line overflow-hidden pointer-events-none">
         {/* Active Progress Bar */}
         <div
-          className="h-full bg-cyan/80 transition-all duration-75"
+          className="h-full bg-cyan/80 transition-[width] duration-75"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -88,7 +88,7 @@ export function Scrubber({ steps, currentIndex, onSeek }: ScrubberProps) {
 
       {/* Visible Thumb Indicator */}
       <div
-        className="absolute h-3.5 w-3.5 rounded-full bg-cyan border-2 border-void shadow-[0_0_8px_rgba(56,189,248,0.7)] pointer-events-none transition-all duration-75 -translate-x-1/2"
+        className="absolute h-3.5 w-3.5 rounded-full bg-cyan border-2 border-void shadow-[0_0_8px_rgba(56,189,248,0.7)] pointer-events-none transition-[left] duration-75 -translate-x-1/2"
         style={{ left: `${progressPercent}%` }}
       />
     </div>

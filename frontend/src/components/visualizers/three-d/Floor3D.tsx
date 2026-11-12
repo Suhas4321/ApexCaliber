@@ -26,13 +26,13 @@ export const Floor3D: React.FC<Floor3DProps> = ({
     >
       {/* Contact shadow on bottom plane */}
       <div
-        className="absolute inset-0 rounded-2xl bg-black/30 dark:bg-black/60 blur-xl"
+        className="absolute inset-0 rounded-2xl bg-black/45 opacity-60"
         style={{ transform: 'translateZ(-28px)' }}
       />
 
       {/* Top face of floor plate */}
       <div
-        className="absolute inset-0 rounded-xl border border-line bg-gradient-to-b from-panel to-panel-2/80 backdrop-blur-md"
+        className="absolute inset-0 rounded-xl border border-line-strong bg-gradient-to-b from-panel-2 to-panel"
         style={{
           boxShadow: 'var(--card-highlight), var(--card-shadow)',
         }}
@@ -57,7 +57,7 @@ export const Floor3D: React.FC<Floor3DProps> = ({
             {Array.from({ length: itemCount }).map((_, idx) => (
               <div
                 key={idx}
-                className="font-mono text-2xs font-semibold text-muted text-center select-none"
+                className="font-mono text-2xs font-semibold text-chalk/80 text-center select-none"
                 style={{ width: `${itemWidth}px` }}
               >
                 {idx}
@@ -67,11 +67,11 @@ export const Floor3D: React.FC<Floor3DProps> = ({
         </div>
       </div>
 
-      {/* Front edge face of floor slab */}
+      {/* Front edge face of floor slab (extrudes downward -Z below floor plane) */}
       <div
-        className="absolute left-0 right-0 bottom-0 h-[18px] rounded-b-xl border-b border-x border-line bg-panel-3/90 shadow-md"
+        className="absolute left-0 right-0 top-full h-[14px] rounded-b-xl border-b border-x border-line bg-panel-3/90 shadow-md"
         style={{
-          transformOrigin: 'bottom',
+          transformOrigin: 'top center',
           transform: 'rotateX(-90deg)',
         }}
       />

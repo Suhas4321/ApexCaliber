@@ -6,6 +6,7 @@ import type { NarratorResult } from '../../lib/narrator/types'
 import { formatArgs } from '../RunResults'
 import { Button, ErrorNote, Markdown } from '../ui'
 import VisualizerHost from '../visualizers/VisualizerHost'
+import '../../features/journey/journey.css'
 import ConstraintsCheatWidget from './ConstraintsCheatWidget'
 import Quiz from './Quiz'
 

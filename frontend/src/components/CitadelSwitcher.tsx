@@ -3,6 +3,7 @@ import { ChevronDown, Landmark, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CITADELS, getCitadel } from '../lib/citadels'
+import { CitadelIcon } from './CitadelIcon'
 import { useSystemDesignProgress } from '../lib/systemDesignProgress'
 
 export default function CitadelSwitcher() {
@@ -36,7 +37,7 @@ export default function CitadelSwitcher() {
         aria-label="Switch Citadel Realm"
         className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 text-xs font-medium text-chalk transition-colors hover:border-action hover:bg-panel shadow-sm active:scale-[0.985]"
       >
-        <span className="text-sm flex items-center">{isSystemDesign ? <Landmark size={14} className="text-cyan" aria-hidden="true" /> : activeCitadel.icon}</span>
+        <span className="text-sm flex items-center">{isSystemDesign ? <Landmark size={14} className="text-cyan" aria-hidden="true" /> : <CitadelIcon id={activeCitadel.id} size={14} className="text-cyan" />}</span>
         <span className="font-plate font-semibold tracking-wide text-xs">
           Citadel {isSystemDesign ? 'VII' : activeCitadel.numeral}:
         </span>
@@ -80,8 +81,8 @@ export default function CitadelSwitcher() {
                         : 'border border-transparent hover:border-line hover:bg-panel-2'
                     }`}
                   >
-                    <span className="text-xl p-1 rounded bg-panel-2 border border-line">
-                      {citadel.icon}
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-panel-2 border border-line text-cyan">
+                      <CitadelIcon id={citadel.id} size={16} />
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">

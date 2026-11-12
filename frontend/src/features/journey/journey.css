@@ -1,7 +1,5 @@
 /* Scoped lesson workspace: quiet surfaces, one reading task, wide experiments. */
-.question-workspace { --lesson-accent: #a8d5af; --lesson-on-accent: #15251b; }
-html[data-theme='light'] .question-workspace,
-html[data-theme='studio-contrast'] .question-workspace { --lesson-accent: #245c42; --lesson-on-accent: #fff; }
+.question-workspace { --lesson-accent: var(--study-accent); --lesson-on-accent: var(--study-on-accent); }
 .question-header { display:flex; align-items:center; gap:16px; min-height:58px; padding:0 20px; border-bottom:1px solid var(--line); background:var(--surface-1); }
 .question-identity { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
 .question-identity h1 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 13px var(--font-sans); }
@@ -146,9 +144,9 @@ html[data-theme='studio-contrast'] .question-workspace { --lesson-accent: #245c4
 .question-resource-menu button:disabled { cursor:not-allowed; opacity:.45; }
 .mobile-code-nav { display:none; }
 @media(max-width:760px) {
-  .mobile-code-nav { display:flex; gap:20px; align-items:center; padding:0 16px; height:40px; flex-shrink:0; border-bottom:1px solid var(--line); font-size:12px; }
-  .mobile-code-nav button { color:var(--text-2); }
-  .mobile-code-nav button[aria-pressed='true'] { color:var(--lesson-accent); }
+  .mobile-code-nav { display:flex; gap:16px; align-items:center; padding:0 16px; min-height:44px; flex-shrink:0; border-bottom:1px solid var(--line); background:var(--surface-1); font-size:12px; }
+  .mobile-code-nav button { min-height:40px; padding:0 4px; color:var(--text-2); white-space:nowrap; }
+  .mobile-code-nav button[aria-pressed='true'] { color:var(--lesson-accent); font-weight:600; }
   .mobile-code-nav button:last-child { margin-left:auto; }
   .question-code-split > [role='separator'] { display:none; }
   .question-code-split.problem-view > div:first-child { width:100%!important; height:100%; }
@@ -162,7 +160,7 @@ html[data-theme='studio-contrast'] .question-workspace { --lesson-accent: #245c4
 .problem-disclosure summary { cursor:pointer; font-weight:500; }
 .problem-disclosure > .prose-forge { margin-top:16px; font-size:14px; }
 .problem-help { margin-top:28px; padding-top:24px; border-top:1px solid var(--line); scroll-margin-top:20px; }
-.lesson-sandbox { margin-top:20px; padding:20px; border-radius:8px; border:1px solid rgba(255, 255, 255, 0.08); background:#08090A; color:#F9FAFB; }
+.lesson-sandbox { margin-top:20px; padding:20px; border-radius:8px; border:1px solid rgba(255, 255, 255, 0.08); background:var(--color-void, #070908); color:var(--color-chalk, #F4F6F5); }
 .lesson-sandbox .overflow-y-auto { overflow-y:visible; }
 .lesson-sandbox > div { height:auto; }
 .study-guide-meta { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }

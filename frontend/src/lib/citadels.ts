@@ -15,12 +15,13 @@ export interface Citadel {
 }
 
 const CITADEL_ICONS: Record<string, string> = {
-  dsa: '⚔️',
-  python_data: '🐍',
-  sql_dbms: '🗄️',
-  os_concurrency: '⚡',
-  backend_apis: '🌐',
-  ai_resume: '🧠',
+  dsa: 'code',
+  python_data: 'terminal',
+  sql_dbms: 'database',
+  os_concurrency: 'cpu',
+  backend_apis: 'server',
+  ai_resume: 'sparkles',
+  computer_networking: 'globe',
 }
 
 interface RawCitadel {
@@ -36,44 +37,45 @@ interface RawCitadel {
 }
 
 export const PEAK_ACCENTS_DARK: Record<string, string> = {
-  dsa: '#6EE7B7',
-  python_data: '#F2B866',
-  sql_dbms: '#67E8F9',
-  os_concurrency: '#FB923C',
-  backend_apis: '#FB7185',
-  ai_resume: '#38BDF8',
+  dsa: '#00FF88',
+  python_data: '#00FF88',
+  sql_dbms: '#00FF88',
+  os_concurrency: '#00FF88',
+  backend_apis: '#00FF88',
+  ai_resume: '#00FF88',
+  computer_networking: '#00FF88',
 }
 
 export const PEAK_ACCENTS_LIGHT: Record<string, string> = {
   dsa: '#047857',
-  python_data: '#B45309',
-  sql_dbms: '#0E7490',
-  os_concurrency: '#C2410C',
-  backend_apis: '#BE123C',
-  ai_resume: '#0284C7',
+  python_data: '#047857',
+  sql_dbms: '#047857',
+  os_concurrency: '#047857',
+  backend_apis: '#047857',
+  ai_resume: '#047857',
+  computer_networking: '#047857',
 }
 
 export const PEAK_ACCENTS: Record<string, string> = PEAK_ACCENTS_DARK
 
 export function getCitadelAccent(citadelId: string, isLight = false): string {
-  return isLight ? (PEAK_ACCENTS_LIGHT[citadelId] ?? '#047857') : (PEAK_ACCENTS_DARK[citadelId] ?? '#6EE7B7')
+  return isLight ? (PEAK_ACCENTS_LIGHT[citadelId] ?? '#047857') : (PEAK_ACCENTS_DARK[citadelId] ?? '#00FF88')
 }
 
 export const CITADELS: Citadel[] = (((curriculumData as unknown) as { citadels?: RawCitadel[] }).citadels || []).map((raw) => {
   const worldIds = raw.tiers.flat()
-  const cssVarName = `--accent-${raw.id.replace(/_/g, '-')}`
   return {
     id: raw.id,
     name: raw.name,
     shortName: raw.short_name,
     numeral: raw.numeral,
-    icon: CITADEL_ICONS[raw.id] ?? '🏔️',
+    icon: CITADEL_ICONS[raw.id] ?? 'compass',
     tagline: raw.tagline,
     description: raw.description,
     worldIds,
     tiers: raw.tiers,
     edges: (raw.edges || []).map(([f, t]) => [f, t] as [number, number]),
-    themeColor: `var(${cssVarName}, ${PEAK_ACCENTS_DARK[raw.id] ?? raw.accent})`,
+    themeColor: `var(--study-accent, ${PEAK_ACCENTS_DARK[raw.id] ?? '#00FF88'})`,
   }
 })
 
